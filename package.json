@@ -1,6 +1,6 @@
 {
   "name": "gulpfile.js",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Because I spent too much time redoing my gulp tasks.",
   "license": "MIT",
   "engines": {

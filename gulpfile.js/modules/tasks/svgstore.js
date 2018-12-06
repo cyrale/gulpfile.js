@@ -27,7 +27,8 @@ class SVGStore extends Task {
         plugins: [
           {
             inlineStyles: {
-              onlyMatchedOnce: false
+              onlyMatchedOnce: true,
+              removeMatchedSelectors: true
             }
           },
           {
