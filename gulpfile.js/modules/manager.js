@@ -12,11 +12,11 @@ let options = conf.load();
 let runners = {
     'browsersync': require('./tasks/browsersync'),
     'pug'        : require('./tasks/pug'),
-    'sass'       : require('./tasks/sass'),
-    'javascript' : require('./tasks/javascript'),
     'images'     : require('./tasks/images'),
     'sprites'    : require('./tasks/sprites'),
-    'fonts'      : require('./tasks/fonts')
+    'fonts'      : require('./tasks/fonts'),
+    'sass'       : require('./tasks/sass'),
+    'javascript' : require('./tasks/javascript')
 };
 
 // Task names.

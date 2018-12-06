@@ -1,15 +1,30 @@
-[![NPM version][npm-image]][npm-url]
+[![npm version](https://badge.fury.io/js/gulpfile.js.svg)](https://badge.fury.io/js/gulpfile.js)
+[![Dependency Status](https://david-dm.org/cyrale/gulpfile.js.svg?theme=shields.io)](https://david-dm.org/cyrale/gulpfile.js)
+[![devDependency Status](https://david-dm.org/cyrale/gulpfile.js/dev-status.svg?theme=shields.io)](https://david-dm.org/cyrale/gulpfile.js#info=devDependencies)
+[![Inline docs](https://inch-ci.org/github/cyrale/gulpfile.js.svg?branch=master)](https://inch-ci.org/github/cyrale/gulpfile.js)
 
 Because I spent too much time redoing my gulp tasks, I make this to work 
 with a unique configuration file written in YAML.
 
-The project is inspired by https://github.com/vigetlabs/gulp-starter.
+The project is inspired by [**Blendid** *(formerly known as Gulp Starter)*](https://github.com/vigetlabs/blendid).
 
 ## Quick start on a fresh project (empty directory)
 
+Install **gulpfile.js**:
 ```bash
 yarn init
-yarn add gulpfile.js
+yarn add gulpfile.js --dev
+yarn run gulpfile
+```
+
+Create configuration files:
+```bash
+touch gulpconfig.yml
+touch .eslintrc
+```
+
+Start **gulpfile.js**:
+```bash
 yarn run gulpfile
 ```
 
@@ -54,19 +69,220 @@ yarn run build
 
 ## Configuring tasks
 
+Except for browsersync, all section define a set of tasks build on the same
+template. Each section define 2 entries:
+- tasks: list of tasks
+- settings: global override of task settings
+
+For each tasks, you can override settings globally or for the task only. All
+options is detailed below.
+
 ### Browsersync
+
+Override default settings and watch files not watched by other tasks.
+
+**Template:**
+```yaml
+browsersync:
+  settings:
+    server:
+      baseDir: "build/"
+  watch:
+    - "**/*.html"
+```
+
+In this configuration, files in `build` directory will by served at 
+http://localhost:3000 and all changes on HTML file will reload the browser. You
+can proxy an existing website as written below:
+
+```yaml
+browsersync:
+  settings:
+    proxy: "http://website.dev"
+```
+
+Related documentation:
+- [Browsersync options](https://www.browsersync.io/docs/options)
 
 ### Pug
 
+Build PUG files into HTML. In the template below, one task called `public` is 
+defined and compile all PUG files in directory `assets/views` in HTML file 
+stored in `build`. You can pass data to PUG with `data` settings.
+
+**Template:**
+```yaml
+pug:
+  tasks:
+    public:
+      src:
+        - "assets/views/**/*.pug"
+      dst: "build"
+      settings:
+        data: "pugdata-task.yml"
+  settings:
+    data: "pugdata.yml"
+```
+
 ### SASS
 
+Build SASS files into CSS. In the template below, one task called `public` is 
+defined and compile all SASS files in directory `assets/sass` in HTML file 
+stored in `build/css`. You can override settings of SASS and autoprefixer.
+
+**Template:**
+```yaml
+sass:
+  tasks:
+    public:
+      src:
+        - "assets/sass/**/*.scss"
+      dst: "build/css"
+  settings:
+    sass:
+      errLogToConsole: true
+    autoprefixer:
+      browsers:
+        - "> 1%"
+        - "IE >= 9"
+      cascade: false
+```
+
+Related documentation:
+- [SASS](https://github.com/sass/node-sass#options)
+- [Autoprefixer](https://github.com/postcss/autoprefixer#options)
+      
 ### JavaScript
+
+Build javascript files into two files: one with all scripts and the other 
+minified. In the template below, one task called `public` is defined and 
+compile all javascript files in directory `assets/js` in two files (app.js and
+app.min.js) stored in `build/js`. You can override settings of browserify and
+babel.
+
+**Template:**
+```yaml
+javascript:
+  tasks:
+    public:
+      src:
+        - "assets/js/*.js"
+      dst: "build/js"
+      filename: "app.js"
+```
+      
+Related documentation:
+- [Browserify](https://github.com/browserify/browserify#browserifyfiles--opts)
+- [Babel](https://babeljs.io/docs/core-packages/#options)
 
 ### Images
 
+Minify images with [imagemin](https://www.npmjs.com/package/gulp-imagemin). In
+the template below, one task called `public` is defined and optimize all images
+in directory `assets/images` and store them in `build/images`. You can override 
+settings of imagemin.
+
+**Template:**
+```yaml
+images:
+  tasks:
+    public:
+      src:
+        - "assets/images/**/*.png"
+        - "assets/images/**/*.jpg"
+        - "assets/images/**/*.jpeg"
+        - "assets/images/**/*.gif"
+        - "assets/images/**/*.svg"
+      dst: "build/images"
+  settings:
+    optimizationLevel: 4
+```
+
+Related documentation:
+- [imagemin](https://github.com/sindresorhus/gulp-imagemin#options)
+
 ### Sprites
 
+Convert a set of images into a spritesheet and CSS variables. The two templates
+below show the two way to define sprites: first one is normal method, the second
+is for retina configuration. All images in `assets/sprites` will be converted in
+a sprite stored in `build/images`. The name of the task define the name of the 
+sprite file but you can add a prefix. SASS file is build in `assets/sass/sprites`.
+You can override settings of imagemin.
+
+**Template:**
+```yaml
+sprites:
+  tasks:
+    icon:
+      src:
+        - "assets/sprites/*.png"
+        - "assets/sprites/*.jpg"
+      dst: "build/images"
+      settings:
+        sass:
+          dst: "assets/sass/sprites"
+          rel: "../images"
+        prefix: "icon"
+  settings:
+    imagemin:
+      optimizationLevel: 4
+```
+
+```yaml
+sprites:
+  tasks:
+    icon:
+      src-1x:
+        - "assets/sprites/*.png"
+        - "assets/sprites/*.jpg"
+      src-2x:
+        - "assets/sprites/*@2x.png"
+        - "assets/sprites/*@2x.jpg"
+      dst: "build/images"
+      settings:
+        sass:
+          dst: "assets/sass/sprites"
+          rel: "../images"
+        prefix: "icon"
+  settings:
+    imagemin:
+      optimizationLevel: 4
+```
+
+Related documentation:
+- [imagemin](https://github.com/sindresorhus/gulp-imagemin#options)
+
 ### Fonts
+
+Convert a set of SVG file in font files like FontAwesome or Foundation. In the
+template below, one task called `custom` is defined and convert all SVG in
+directory `assets/svg` and store font files in `build/fonts` and SASS file in
+`assets/sass/fonts`. In default behavior, the icons was named 
+`icon-custom-{name-of-svg}`. You can change the default prefix and name by any 
+value in settings. In this case, the name of each icon is 
+`{prefix}-{name}-{name-of-svg}`.
+
+**Template:**
+```yaml
+fonts:
+  tasks:
+    custom:
+      src:
+        - "assets/svg/*.svg"
+      dst: "build/fonts"
+      settings:
+        sass:
+          dst: "assets/sass/fonts"
+          rel: "../fonts"
+        prefix: "font"
+        name: "icon"
+  settings:
+    template: "fontawesome"
+```
+
+Related documentation:
+- [spritesmith](https://github.com/Ensighten/spritesmith)
 
 ## What's under the hood?
    

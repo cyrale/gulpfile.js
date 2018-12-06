@@ -106,7 +106,7 @@ class Fonts extends Task {
             ? 'font-'
             : ('' === this.options.settings.prefix ? '' : (this.options.settings.prefix + '-')));
 
-        let sanitizedTaskName = this.name.replace(':', '-').replace('fonts-', prefix);
+        let sanitizedTaskName = prefix + (this.options.settings.name || this.name.replace(':', '-').replace('fonts-', ''));
 
         return gulp.src(this.options.src, {cwd: this.options.cwd})
             .pipe(plumber((error) => {

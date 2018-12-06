@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 
+const fs    = require('fs');
 const path  = require('path');
 const chalk = require('chalk');
 
@@ -74,8 +75,18 @@ class JavaScript extends Task {
     }
 
     lint(done, funcName) {
+        let eslintIgnore  = path.join(this.options.cwd, '.eslintignore');
+        let eslintOptions = {};
+
+        try {
+            if (fs.lstatSync(eslintIgnore).isFile()) {
+                eslintOptions.ignorePath = eslintIgnore;
+            }
+        } catch (e) {
+        }
+
         return gulp.src(this.options.src, {cwd: this.options.cwd})
-            .pipe(eslint({ignorePath: path.join(this.options.cwd, '.eslintignore')}))
+            .pipe(eslint(eslintOptions))
             .pipe(eslint.format())
             .pipe(eslint.results((filesWithErrors) => {
                 return this.failOnError(filesWithErrors, funcName);

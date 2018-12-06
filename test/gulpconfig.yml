@@ -183,6 +183,7 @@ fonts:
           dst: "test/assets/sass/fonts"
           rel: "../fonts"
         template: "fontawesome"
+        name: "icon"
         prefix: "font"
   settings:
     template: "foundation"

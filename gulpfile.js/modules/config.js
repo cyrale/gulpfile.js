@@ -29,7 +29,7 @@ class Config {
             return this.settings;
         }
 
-        this.options  = minimist(process.argv.slice(2), this.options);
+        this.options = minimist(process.argv.slice(2), this.options);
 
         if (!path.isAbsolute(this.options.config)) {
             this.options.config = path.resolve(process.env.PWD, this.options.config);
