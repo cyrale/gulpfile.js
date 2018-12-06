@@ -115,21 +115,26 @@ class JavaScript extends Task {
 
     let displayLintError = minified || _.indexOf(conf.options._, `${this.name}:${funcName}`) >= 0;
 
-    const browserifySettings = _.merge(
-      {
-        entries: this.options.src,
-        insertGlobals: true,
-        debug: this.options.debug || false
-      },
-      this.options.settings.browserify || {}
-    );
+    let babelSettings = {};
+    if (false !== this.options.settings.babel) {
+      this.options.settings.babel = _.merge(
+        {
+          presets: ["@babel/preset-env"]
+        },
+        this.options.settings.babel || {}
+      );
+    }
 
-    const babelSettings = _.merge(
-      {
-        presets: ["@babel/preset-env"]
-      },
-      this.options.settings.babel || {}
-    );
+    if (false !== this.options.settings.browserify) {
+      this.options.settings.browserify = _.merge(
+        {
+          entries: this.options.src,
+          insertGlobals: true,
+          debug: this.options !== "production"
+        },
+        this.options.settings.browserify || {}
+      );
+    }
 
     let stream;
 
@@ -139,8 +144,8 @@ class JavaScript extends Task {
         sourcemaps: conf.options.sourcemaps && !minified
       });
     } else {
-      stream = browserify(browserifySettings)
-        .transform(babelify, babelSettings)
+      stream = browserify(this.options.settings.browserify)
+        .transform(babelify, this.options.settings.babel)
         .bundle()
         .pipe(source(this.options.filename))
         .pipe(buffer());
@@ -159,7 +164,7 @@ class JavaScript extends Task {
         )
         .pipe(
           gulpif(
-            false === this.options.settings.browserify && false !== this.options.settings.babel,
+            false !== this.options.settings.browserify && false !== this.options.settings.babel,
             babel(babelSettings)
           )
         )

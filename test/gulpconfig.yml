@@ -114,3 +114,13 @@ fonts:
         prefix: "font"
   settings:
     template: "foundation"
+# ------------------------------------------
+# SVG Store
+# ------------------------------------------
+svgstore:
+  tasks:
+    custom:
+      src:
+        - "assets/svg/*.svg"
+      dst: "build/images"
+      filename: "icons.svg"

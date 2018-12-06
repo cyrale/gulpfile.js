@@ -24,38 +24,25 @@ class Images extends Task {
 
     this.options.settings = _.merge(
       {
-        progressive: true,
-        svgoPlugins: [{ removeViewBox: false }]
+        jpegtran: {
+          progressive: true
+        },
+        optipng: {
+          optimizationLevel: 5
+        },
+        gifsicle: {
+          interlaced: true,
+          optimizationLevel: 3
+        },
+        svgo: {
+          plugins: [{ removeViewBox: true }, { cleanupIDs: false }]
+        }
       },
       this.options.settings || {}
     );
   }
 
   build() {
-    const settings = {
-      jpegtran: _.merge(
-        {
-          progressive: true
-        },
-        this.options.settings.jpegtran || {}
-      ),
-      optipng: _.merge(
-        {
-          optimizationLevel: 5
-        },
-        this.options.settings.optipng || {}
-      ),
-      gifsicle: _.merge(
-        {
-          interlaced: true,
-          optimizationLevel: 3
-        },
-        this.options.settings.gif || {}
-      ),
-      svgo: {
-        plugins: _.merge([{ removeViewBox: true }, { cleanupIDs: false }], this.options.settings.svgo || [])
-      }
-    };
     return gulp
       .src(this.options.src, { cwd: this.options.cwd })
       .pipe(newer(path.join(this.options.cwd, this.options.dst)))
@@ -67,10 +54,10 @@ class Images extends Task {
       .pipe(
         imagemin(
           [
-            imagemin.jpegtran(settings.jpegtran),
-            imagemin.optipng(settings.optipng),
-            imagemin.gifsicle(settings.gifsicle),
-            imagemin.svgo(settings.svgo)
+            imagemin.jpegtran(this.options.settings.jpegtran),
+            imagemin.optipng(this.options.settings.optipng),
+            imagemin.gifsicle(this.options.settings.gifsicle),
+            imagemin.svgo(this.options.settings.svgo)
           ],
           { verbose: true }
         )

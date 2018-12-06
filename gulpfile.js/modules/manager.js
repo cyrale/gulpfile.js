@@ -14,6 +14,7 @@ let runners = {
   pug: require("./tasks/pug"),
   images: require("./tasks/images"),
   sprites: require("./tasks/sprites"),
+  svgstore: require("./tasks/svgstore"),
   fonts: require("./tasks/fonts"),
   sass: require("./tasks/sass"),
   javascript: require("./tasks/javascript")
