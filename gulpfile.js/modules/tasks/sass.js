@@ -14,10 +14,10 @@ const sass         = require('gulp-sass');
 const sassLint     = require('gulp-sass-lint');
 const postcss      = require('gulp-postcss');
 const assets       = require('postcss-assets');
-const mqpacker     = require('css-mqpacker');
 const rucksack     = require('rucksack-css');
-const autoprefixer = require('gulp-autoprefixer');
-const cssnano      = require('gulp-cssnano');
+const autoprefixer = require('autoprefixer');
+const cssnano      = require('cssnano');
+const mqpacker     = require('css-mqpacker');
 const rename       = require('gulp-rename');
 
 const bsync = require('./browsersync');
@@ -114,8 +114,9 @@ class Sass extends Task {
         let taskSettings     = _.merge(appSettings.sass.settings || {}, this.options.settings || {}, {sass: {outputStyle: (minified ? 'compressed' : 'nested')}});
         let displayLintError = minified || _.indexOf(conf.options._, `${this.name}:${funcName}`) >= 0;
 
-        let processes = [assets(), rucksack({fallbacks: true})];
+        let processes = [assets(), rucksack({fallbacks: true}), autoprefixer(taskSettings.autoprefixer || {})];
         if (minified) {
+            processes.push(cssnano(this.options.cssnano || {core: minified}));
             processes.push(mqpacker());
         }
 
@@ -132,8 +133,6 @@ class Sass extends Task {
                 }))
                 .pipe(sass(taskSettings.sass))
                 .pipe(postcss(processes))
-                .pipe(autoprefixer(this.options.autoprefixer || {}))
-                .pipe(cssnano({core: minified}))
                 .pipe(rename({
                     suffix: (minified ? '.min' : '')
                 }))

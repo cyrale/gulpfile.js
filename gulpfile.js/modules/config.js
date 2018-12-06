@@ -37,10 +37,13 @@ class Config {
         this.settings = Config.loadYAML(this.options.config);
 
         if (undefined === this.settings.cwd) {
-            this.settings.cwd = process.env.PWD;
+            this.settings.cwd = path.dirname(this.options.config);
         } else if (!path.isAbsolute(this.settings.cwd)) {
-            this.settings.cwd = path.resolve(process.env.PWD, this.settings.cwd);
+            this.settings.cwd = path.resolve(path.dirname(this.options.config), this.settings.cwd);
         }
+
+        // Change working directory
+        process.chdir(this.settings.cwd);
 
         return this.settings;
     }

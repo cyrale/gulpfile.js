@@ -1,10 +1,6 @@
 # ------------------------------------------
 # BrowserSync (https://www.browsersync.io/)
 # ------------------------------------------
-# settings: override default settings.
-# watch   : watch external files and reload
-#           browser.
-# ------------------------------------------
 browsersync:
   settings:
     server:
@@ -17,50 +13,32 @@ browsersync:
 # ------------------------------------------
 # Pug (https://pugjs.org)
 # ------------------------------------------
-# Template:
-# ------------------------------------------
-#      public:
-#        src:
-#          - "public/views/**/*.pug"
-#        dst: "public/"
-# ------------------------------------------
 pug:
   tasks:
     public:
       src:
-        - "test/assets/views/**/*.pug"
-      dst: "test/build"
+        - "assets/views/**/*.pug"
+      dst: "build"
       settings:
-        data: "test/pugdata-task.yml"
+        data: "pugdata-task.yml"
     private:
       src:
-        - "test/assets/views/**/*.pug"
-      dst: "test/build"
+        - "assets/views/**/*.pug"
+      dst: "build"
       settings:
-        data: "test/pugdata-task.yml"
+        data: "pugdata-task.yml"
   settings:
-    data: "test/pugdata.yml"
+    data: "pugdata.yml"
 # ------------------------------------------
 # SASS
-# ------------------------------------------
-# Compile SASS files.
-# ------------------------------------------
-# Template:
-# ------------------------------------------
-#      public:
-#        src:
-#          - "public/scss/**/*.scss"
-#        dst: "public/css"
-# ------------------------------------------
-# settings: settings used by SASS during
-#           compilation.
 # ------------------------------------------
 sass:
   tasks:
     public:
       src:
-        - "test/assets/sass/**/*.scss"
-      dst: "test/build/css"
+        - "assets/sass/*.scss"
+        - "assets/sass/**/*.scss"
+      dst: "build/css"
   settings:
     sass:
       errLogToConsole: true
@@ -68,46 +46,29 @@ sass:
       browsers:
         - "> 1%"
         - "IE >= 9"
-      cascade: false
 # ------------------------------------------
 # JavaScript
-# ------------------------------------------
-# Check, concatenate and minify JavaScript
-# files.
-# ------------------------------------------
-# Template:
-# ------------------------------------------
-#      public:
-#        src:
-#          - "public/js/seva-designmailer-public.js"
-#        dst: "public/js"
-#        filename: "all.min.js"
-# ------------------------------------------
-# jshint_exclude: exclude some files to
-#                 jshint check.
 # ------------------------------------------
 javascript:
   tasks:
     public:
       src:
-        - "test/assets/js/*.js"
-      dst: "test/build/js"
+        - "assets/js/*.js"
+      dst: "build/js"
       filename: "all.js"
 # ------------------------------------------
 # Images
-# ------------------------------------------
-# Minify images
 # ------------------------------------------
 images:
   tasks:
     public:
       src:
-        - "test/assets/images/**/*.png"
-        - "test/assets/images/**/*.jpg"
-        - "test/assets/images/**/*.jpeg"
-        - "test/assets/images/**/*.gif"
-        - "test/assets/images/**/*.svg"
-      dst: "test/build/images"
+        - "assets/images/**/*.png"
+        - "assets/images/**/*.jpg"
+        - "assets/images/**/*.jpeg"
+        - "assets/images/**/*.gif"
+        - "assets/images/**/*.svg"
+      dst: "build/images"
       settings:
         optimizationLevel: 4
   settings:
@@ -115,43 +76,19 @@ images:
 # ------------------------------------------
 # Sprites (https://github.com/Ensighten/spritesmith)
 # ------------------------------------------
-# Build sprite sheets.
-# ------------------------------------------
-# 2 templates: non-retina and retina
-# ------------------------------------------
-#      icon:
-#        src:
-#          - "img/sprites/*.png"
-#          - "img/sprites/*.jpg"
-#        sass:
-#          dst: "scss"
-#          rel: "../img"
-# ------------------------------------------
-#      icon:
-#        src-1x:
-#          - "img/sprites/1x/*.png"
-#          - "img/sprites/1x/*.jpg"
-#        src-2x:
-#          - "img/sprites/2x/*.png"
-#          - "img/sprites/2x/*.jpg"
-#        dst: "img"
-#        sass:
-#          dst: "scss"
-#          rel: "../img"
-# ------------------------------------------
 sprites:
   tasks:
     icon:
       src-1x:
-        - "test/assets/sprites/*.png"
-        - "test/assets/sprites/*.jpg"
+        - "assets/sprites/*.png"
+        - "assets/sprites/*.jpg"
       src-2x:
-        - "test/assets/sprites/*@2x.png"
-        - "test/assets/sprites/*@2x.jpg"
-      dst: "test/build/images"
+        - "assets/sprites/*@2x.png"
+        - "assets/sprites/*@2x.jpg"
+      dst: "build/images"
       settings:
         sass:
-          dst: "test/assets/sass/helpers"
+          dst: "assets/sass/helpers"
           rel: "../images"
         prefix: "icon"
   settings:
@@ -160,27 +97,15 @@ sprites:
 # ------------------------------------------
 # Fonts (https://www.npmjs.com/package/gulp-iconfont)
 # ------------------------------------------
-# Build font files with SVG.
-# ------------------------------------------
-# Template:
-# ------------------------------------------
-#      custom:
-#        src:
-#          - "svg/*.svg"
-#        dst: "fonts"
-#        sass:
-#          dst: "scss"
-#          rel: "../fonts"
-# ------------------------------------------
 fonts:
   tasks:
     custom:
       src:
-        - "test/assets/svg/*.svg"
-      dst: "test/build/fonts"
+        - "assets/svg/*.svg"
+      dst: "build/fonts"
       settings:
         sass:
-          dst: "test/assets/sass/fonts"
+          dst: "assets/sass/fonts"
           rel: "../fonts"
         template: "fontawesome"
         name: "icon"

@@ -27,7 +27,8 @@ body {
 
 a {
   color: $black;
-  font-size: 1rem;
+  font-size: 2rem;
+  transform: rotate(46deg);
 
   &:hover {
     color: $white;
