@@ -1,0 +1,9 @@
+files:
+  ignore:
+    - "**/test/assets/sass/compass/**/*.scss"
+    - "**/test/assets/sass_private/compass/**/*.scss"
+rules:
+  indentation:
+    - 2
+    -
+      size: 2

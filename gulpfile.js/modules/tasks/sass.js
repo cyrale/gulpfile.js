@@ -1,0 +1,148 @@
+'use strict';
+
+const _ = require('lodash');
+
+const path    = require('path');
+const through = require('through2');
+const chalk   = require('chalk');
+
+const gulp    = require('gulp');
+const gutil   = require('gulp-util');
+const plumber = require('gulp-plumber');
+
+const sass         = require('gulp-sass');
+const sassLint     = require('gulp-sass-lint');
+const postcss      = require('gulp-postcss');
+const assets       = require('postcss-assets');
+const mqpacker     = require('css-mqpacker');
+const rucksack     = require('rucksack-css');
+const autoprefixer = require('gulp-autoprefixer');
+const cssnano      = require('gulp-cssnano');
+const rename       = require('gulp-rename');
+
+const bsync = require('./browsersync');
+
+const events  = require('events');
+const emitter = new events.EventEmitter();
+const notify  = require('../notify');
+
+const Config = require('../config');
+const conf   = new Config();
+
+const Task = require('../task');
+
+class Sass extends Task {
+    constructor(name, options) {
+        super(name, options);
+
+        this.build = undefined;
+    }
+
+    failOnError(funcName) {
+        let filesWithErrors = [];
+
+        return through({objectMode: true}, function (file, encoding, cb) {
+            if (file.isNull()) {
+                return cb();
+            }
+
+            if (file.isStream()) {
+                emitter.emit('error', new gutil.PluginError('sass-lint', 'Streams are not supported!'));
+                return cb();
+            }
+
+            if (file.sassLint[0].errorCount > 0) {
+                filesWithErrors.push(file);
+            }
+
+            this.push(file);
+            cb();
+        }, (cb) => {
+            let settings = conf.load() || {};
+            let errorMessage;
+
+            if (filesWithErrors.length > 0) {
+                this.lintError = true;
+
+                // Notify errors.
+                notify.notify(Task.formatForNotification(filesWithErrors, 'sassLint'), `${this.name}:${funcName}`);
+
+                // Prepare messages for the command line.
+                errorMessage = filesWithErrors.map((file) => {
+                    let messages = [];
+                    let sassLint = file.sassLint[0];
+                    let filename = path.relative(settings.cwd, sassLint.filePath);
+
+                    messages.push(Task.formatErrorInformation(sassLint.errorCount, sassLint.warningCount, filename));
+
+                    return messages;
+                }).join('\n');
+
+                // Emit or display errors.
+                if (this.isCurrentTask(funcName) || this.isParentTask(funcName)) {
+                    emitter.emit('error', new gutil.PluginError('sass-lint', `\n${errorMessage}\n`));
+                } else {
+                    gutil.log(chalk.red(`Error:\n${errorMessage}`));
+                }
+            }
+
+            cb();
+        });
+    }
+
+    lint(done, funcName) {
+        this.lintError = false;
+
+        return gulp.src(this.options.src, {cwd: this.options.cwd})
+            .pipe(sassLint({configFile: path.join(this.options.cwd, '.sass-lint.yml')}))
+            .pipe(sassLint.format())
+            .pipe(this.failOnError(funcName));
+    }
+
+    nest(done, funcName) {
+        return this.compile(false, funcName);
+    }
+
+    compress(done, funcName) {
+        return this.compile(true, funcName);
+    }
+
+    compile(minified, funcName) {
+        minified = minified || false;
+
+        let appSettings      = conf.load() || {};
+        let taskSettings     = _.merge(appSettings.sass.settings || {}, this.options.settings || {}, {sass: {outputStyle: (minified ? 'compressed' : 'nested')}});
+        let displayLintError = minified || _.indexOf(conf.options._, `${this.name}:${funcName}`) >= 0;
+
+        let processes = [assets(), rucksack({fallbacks: true})];
+        if (minified) {
+            processes.push(mqpacker());
+        }
+
+        let stream = gulp.src(this.options.src, {cwd: this.options.cwd, sourcemaps: conf.options.sourcemaps && !minified});
+
+        if (!this.lintError) {
+            stream
+                .pipe(plumber((error) => {
+                    if (displayLintError) {
+                        notify.onError(error, `${this.name}:${funcName}`);
+                    }
+
+                    emitter.emit('end');
+                }))
+                .pipe(sass(taskSettings.sass))
+                .pipe(postcss(processes))
+                .pipe(autoprefixer(this.options.autoprefixer || {}))
+                .pipe(cssnano({core: minified}))
+                .pipe(rename({
+                    suffix: (minified ? '.min' : '')
+                }))
+                .pipe(gulp.dest(this.options.dst, {cwd: this.options.cwd}))
+                .pipe(bsync.sync({match: '**/*.css'}));
+        }
+
+        return stream;
+    }
+}
+
+module.exports = Sass;

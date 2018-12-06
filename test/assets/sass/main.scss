@@ -1,0 +1,50 @@
+// Base
+@import 'helpers/wordpress';
+@import 'helpers/breakpoint';
+
+// Fonts
+//@import 'fonts/icon-custom';
+
+// Colors
+@import 'base/colors';
+
+// Sprites
+//@import 'helpers/sprites-icon';
+//@include retina-sprites($sprites-icon-retina);
+
+
+html {
+  font-size: 62.5%;
+}
+
+body {
+  background: $black;
+
+  @media screen and (min-width: 768px) {
+    background: $white;
+  }
+}
+
+a {
+  color: $black;
+  font-size: 1rem;
+
+  &:hover {
+    color: $white;
+  }
+
+  @media screen and (min-width: 768px) {
+    font-size: 2rem;
+  }
+}
+
+// sass-lint:disable force-element-nesting
+:fullscreen a {
+  display: flex;
+  width: width('../images/image01.jpg');
+}
+
+html {
+  font-size: 16px;
+  font-style: italic;
+}

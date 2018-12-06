@@ -1,0 +1,26 @@
+//
+//  _breakpoint.scss (20/10/14)
+//  breakpoints mixin for responsive website
+//  import with @import "utils/breakpoint";
+//
+//  usage :
+//    @include breakpoint(small) {
+//      display: block;
+//    }
+//
+
+@mixin breakpoint($name) {
+  @if $name == small {
+    @media screen and (max-width: 540px) {
+      @content;
+    }
+  } @else if $name == medium {
+    @media screen and (max-width: 960px) {
+      @content;
+    }
+  } @else if $name == large {
+    @media screen and (min-width: 1025px) {
+      @content;
+    }
+  }
+}
