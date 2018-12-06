@@ -51,8 +51,8 @@ class Sprites extends Task {
       undefined === this.options.settings.prefix
         ? "sprite-"
         : "" === this.options.settings.prefix
-          ? ""
-          : this.options.settings.prefix + "-";
+        ? ""
+        : this.options.settings.prefix + "-";
 
     let sanitizedTaskName = this.name.replace(":", "-").replace("sprites-", prefix);
 

@@ -5,6 +5,7 @@ const _ = require("lodash");
 const path = require("path");
 const through = require("through2");
 const chalk = require("chalk");
+const merge = require("merge-stream");
 
 const gulp = require("gulp");
 const plumber = require("gulp-plumber");
@@ -127,7 +128,7 @@ class Sass extends Task {
     let appSettings = conf.load() || {};
     let taskSettings = _.merge(
       {
-        sass: { outputStyle: minified ? "compressed" : "nested" },
+        sass: { outputStyle: "nested" },
         autoprefixer: { browsers: ["> 1%", "IE >= 9"], grid: true },
         rucksack: { fallbacks: true }
       },
@@ -201,14 +202,27 @@ class Sass extends Task {
           })
         )
         .pipe(sass(taskSettings.sass))
-        .pipe(gulpif(taskSettings.extractMQ, extractMQ()))
-        .pipe(gulpif(taskSettings.critical, criticalCSS()))
-        .pipe(postcss(processes))
+        .pipe(
+          rename((path, file) => {
+            path.basename += minified ? ".min" : "";
+
+            return path;
+          })
+        );
+
+      let streamExtractMQ = stream
         .pipe(
           rename(path => {
-            if (mainFilename === "") {
-              mainFilename = path.basename;
-            } else if (path.basename.indexOf(mainFilename) < 0) {
+            path.basename = path.basename.replace(/\.min$/, "");
+            mainFilename = path.basename;
+
+            return path;
+          })
+        )
+        .pipe(gulpif(taskSettings.extractMQ, extractMQ()))
+        .pipe(
+          rename(path => {
+            if (path.basename.indexOf(mainFilename) !== 0) {
               path.basename = `${mainFilename}.${path.basename}`;
             }
 
@@ -217,6 +231,32 @@ class Sass extends Task {
             return path;
           })
         )
+        .pipe(
+          postcss([
+            css => {
+              // Remove critical properties.
+              css.walkDecls(decl => {
+                if (decl.prop === "critical") {
+                  decl.remove();
+                }
+              });
+            }
+          ])
+        );
+
+      let streamCriticalCSS = stream
+        .pipe(gulpif(taskSettings.critical, criticalCSS()))
+        .pipe(
+          rename(path => {
+            path.basename = path.basename.replace(".min.critical", ".critical.min");
+
+            return path;
+          })
+        )
+        .pipe(gulp.dest(this.options.dst, { cwd: this.options.cwd }));
+
+      stream = merge(streamExtractMQ, streamCriticalCSS)
+        .pipe(postcss(processes))
         .pipe(gulp.dest(this.options.dst, { cwd: this.options.cwd }))
         .pipe(bsync.sync({ match: "**/*.css" }));
     }

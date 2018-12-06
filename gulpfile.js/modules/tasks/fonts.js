@@ -111,8 +111,8 @@ class Fonts extends Task {
       undefined === this.options.settings.prefix
         ? "font-"
         : "" === this.options.settings.prefix
-          ? ""
-          : this.options.settings.prefix + "-";
+        ? ""
+        : this.options.settings.prefix + "-";
 
     let sanitizedTaskName = prefix + (this.options.settings.name || this.name.replace(":", "-").replace("fonts-", ""));
 
