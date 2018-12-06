@@ -134,7 +134,21 @@ class Sass extends Task {
 
     let processes = [assets(), rucksack(taskSettings.rucksack), autoprefixer(taskSettings.autoprefixer)];
     if (minified) {
-      processes.push(cssnano(_.merge({ core: minified }, this.options.cssnano || {})));
+      processes.push(
+        cssnano(
+          _.merge(
+            {
+              preset: [
+                "default",
+                {
+                  cssDeclarationSorter: false
+                }
+              ]
+            },
+            this.options.cssnano || {}
+          )
+        )
+      );
 
       const mqpackerOptions = this.options.mqpacker || {};
       const sortOrder = mqpackerOptions.sort === "mobile" ? sortCSSmq : sortCSSmq.desktopFirst;
