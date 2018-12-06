@@ -53,13 +53,7 @@ class Images extends Task {
         this.options.settings.gif || {}
       ),
       svgo: {
-        plugins: _.merge(
-          {
-            removeViewBox: true,
-            cleanupIDs: false
-          },
-          this.options.settings.svgo || {}
-        )
+        plugins: _.merge([{ removeViewBox: true }, { cleanupIDs: false }], this.options.settings.svgo || [])
       }
     };
     return gulp
