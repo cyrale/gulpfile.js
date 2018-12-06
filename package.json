@@ -1,6 +1,6 @@
 {
   "name": "gulpfile.js",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Because I spent too much time redoing my gulp tasks.",
   "license": "MIT",
   "engines": {
@@ -89,7 +89,8 @@
     "eslint-plugin-prettier": "^2.6.2",
     "husky": "^0.14.3",
     "prettier": "^1.14.2",
-    "pretty-quick": "^1.6.0"
+    "pretty-quick": "^1.6.0",
+    "sort-css-media-queries": "^1.3.4"
   },
   "browserify": {
     "transform": [

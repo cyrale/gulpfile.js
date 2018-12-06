@@ -17,6 +17,7 @@ const rucksack = require("rucksack-css");
 const autoprefixer = require("autoprefixer");
 const cssnano = require("cssnano");
 const mqpacker = require("css-mqpacker");
+const sortCSSmq = require("sort-css-media-queries");
 const rename = require("gulp-rename");
 
 const bsync = require("./browsersync");
@@ -133,8 +134,11 @@ class Sass extends Task {
 
     let processes = [assets(), rucksack(taskSettings.rucksack), autoprefixer(taskSettings.autoprefixer)];
     if (minified) {
-      processes.push(cssnano(this.options.cssnano || { core: minified }));
-      processes.push(mqpacker(this.options.mqpacker || { sort: true }));
+      processes.push(cssnano(_.merge({ core: minified }, this.options.cssnano || {})));
+
+      const mqpackerOptions = this.options.mqpacker || {};
+      const sortOrder = mqpackerOptions.sort === "mobile" ? sortCSSmq : sortCSSmq.desktopFirst;
+      processes.push(mqpacker(_.merge({ sort: sortOrder }, mqpackerOptions)));
     }
 
     let stream = gulp.src(this.options.src, {
