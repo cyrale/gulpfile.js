@@ -1,5 +1,7 @@
 "use strict";
 
+const _ = require("lodash");
+
 const path = require("path");
 
 const gulp = require("gulp");
@@ -19,7 +21,39 @@ class SVGStore extends Task {
   constructor(name, options) {
     super(name, options);
 
-    this.options.settings = this.options.settings || {};
+    this.options.settings = _.merge(
+      {
+        plugins: [
+          {
+            inlineStyles: {
+              onlyMatchedOnce: false
+            }
+          },
+          {
+            removeDoctype: true
+          },
+          {
+            removeComments: true
+          },
+          {
+            removeMetadata: true
+          },
+          {
+            removeTitle: true
+          },
+          {
+            removeDesc: true
+          },
+          {
+            removeViewBox: false
+          },
+          {
+            removeDimensions: true
+          }
+        ]
+      },
+      this.options.settings || {}
+    );
   }
 
   build() {
@@ -32,16 +66,19 @@ class SVGStore extends Task {
         })
       )
       .pipe(
-        svgmin(file => ({
-          plugins: [
-            {
-              cleanupIDs: {
-                prefix: path.basename(file.relative, path.extname(file.relative)) + "-",
-                minify: true
+        svgmin(file => {
+          return _.merge(this.options.settings, {
+            plugins: [
+              {
+                cleanupIDs: {
+                  prefix: path.basename(file.relative, path.extname(file.relative)) + "-",
+                  minify: true,
+                  force: true
+                }
               }
-            }
-          ]
-        }))
+            ]
+          });
+        })
       )
       .pipe(svgstore())
       .pipe(
