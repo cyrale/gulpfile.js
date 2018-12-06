@@ -130,3 +130,5 @@ svgstore:
         - "assets/svg/*.svg"
       dst: "build/images"
       filename: "icons.svg"
+  settings:
+    prefix: "icon"

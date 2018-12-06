@@ -95,6 +95,10 @@ class SVGStore extends Task {
             $("symbol")
               .filter((index, symbol) => !!symbol.attribs.id && !!symbol.attribs.viewBox)
               .each((index, symbol) => {
+                if (this.options.settings.prefix) {
+                  symbol.attribs.id = `${this.options.settings.prefix}-${symbol.attribs.id}`;
+                }
+
                 const [originX, originY, width, height] = symbol.attribs.viewBox.split(" ").map(i => Number(i));
                 const name = `${symbol.attribs.id}-icon`;
 
