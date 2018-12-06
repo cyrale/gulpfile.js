@@ -35,9 +35,6 @@ class SVGStore extends Task {
         svgmin(file => ({
           plugins: [
             {
-              removeViewBox: true
-            },
-            {
               cleanupIDs: {
                 prefix: path.basename(file.relative, path.extname(file.relative)) + "-",
                 minify: true
