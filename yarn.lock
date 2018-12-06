@@ -3943,7 +3943,7 @@ gulp.spritesmith@^6.9.0:
     url2 "~1.0.4"
     vinyl "~2.1.0"
 
-gulp@^4.0.0:
+gulp@4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/gulp/-/gulp-4.0.0.tgz#95766c601dade4a77ed3e7b2b6dc03881b596366"
   dependencies:

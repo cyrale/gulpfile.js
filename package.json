@@ -1,6 +1,6 @@
 {
   "name": "gulpfile.js",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Because I spent too much time redoing my gulp tasks.",
   "license": "MIT",
   "engines": {
@@ -38,7 +38,7 @@
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-standard": "^3.0.1",
     "glob": "^7.1.2",
-    "gulp": "^4.0.0",
+    "gulp": "4.0.0",
     "gulp-autoprefixer": "^4.1.0",
     "gulp-babel": "^7.0.0",
     "gulp-browserify": "^0.5.1",
