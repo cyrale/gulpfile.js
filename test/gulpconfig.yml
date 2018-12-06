@@ -119,7 +119,7 @@ fonts:
 # ------------------------------------------
 svgstore:
   tasks:
-    custom:
+    icons:
       src:
         - "assets/svg/*.svg"
       dst: "build/images"
