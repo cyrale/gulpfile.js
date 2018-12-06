@@ -52,8 +52,10 @@ sass:
 javascript:
   tasks:
     public:
+      watch:
+        - "assets/vendor/**/*.js"
       src:
-        - "assets/js/*.js"
+        - "assets/js/main.js"
       dst: "build/js"
       filename: "all.js"
 # ------------------------------------------

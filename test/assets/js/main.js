@@ -1,7 +1,7 @@
 /* global window */
-'use strict';
+"use strict";
 
-// let jQuery = require('jquery');
+const jQuery = require("./vendor/jquery-2.2.3.min");
 
 // (function($) {
 //     /**
@@ -41,3 +41,5 @@
 //     });
 //
 // })(jQuery);
+
+alert("test");
