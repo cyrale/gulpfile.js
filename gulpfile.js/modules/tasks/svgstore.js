@@ -9,6 +9,7 @@ const plumber = require("gulp-plumber");
 const rename = require("gulp-rename");
 const svgstore = require("gulp-svgstore");
 const svgmin = require("gulp-svgmin");
+const cheerio = require("gulp-cheerio");
 const newer = require("gulp-newer");
 
 const bsync = require("./browsersync");
@@ -80,7 +81,50 @@ class SVGStore extends Task {
           });
         })
       )
-      .pipe(svgstore())
+      .pipe(svgstore({ inlineSvg: true }))
+      .pipe(
+        cheerio({
+          run: ($, file, done) => {
+            let offsetY = 0;
+            let maxWidth = 0;
+
+            const views = $("<views />");
+            const uses = $("<uses />");
+
+            $("symbol")
+              .filter((index, symbol) => !!symbol.attribs.id && !!symbol.attribs.viewBox)
+              .each((index, symbol) => {
+                const [originX, originY, width, height] = symbol.attribs.viewBox.split(" ").map(i => Number(i));
+                const name = `${symbol.attribs.id}-icon`;
+
+                views.append(`<view id="${name}" viewBox="${originX} ${offsetY} ${width} ${height}" />`);
+
+                uses.append(
+                  `<use
+                     xlink:href="#${symbol.attribs.id}"
+                     width="${width}"
+                     height="${height}"
+                     x="${originX}"
+                     y="${offsetY}" />`
+                );
+
+                offsetY += height;
+                maxWidth = Math.max(maxWidth, width);
+              });
+
+            $("svg")
+              .attr({
+                "xmlns:xlink": "http://www.w3.org/1999/xlink",
+                viewBox: `0 0 ${maxWidth} ${offsetY}`
+              })
+              .append(views[0].children)
+              .append(uses[0].children);
+
+            done();
+          },
+          parserOptions: { xmlMode: true }
+        })
+      )
       .pipe(
         rename({
           basename: path.basename(this.options.filename, path.extname(this.options.filename)),
