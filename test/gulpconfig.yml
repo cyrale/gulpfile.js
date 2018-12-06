@@ -46,6 +46,10 @@ sass:
       browsers:
         - "> 1%"
         - "IE >= 9"
+    mqpacker:
+      sort: "mobile"
+    inlineSVG:
+      path: "assets/"
     extractMQ: true
     critical: true
 # ------------------------------------------

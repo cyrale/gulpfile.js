@@ -9,8 +9,8 @@
 @import "base/colors";
 
 // Sprites
-//@import 'helpers/sprites-icon';
-//@include retina-sprites($sprites-icon-retina);
+//@import 'helpers/icon-icon';
+//@include retina-sprites($icon-icon-retina);
 
 html {
   critical: this;
@@ -28,13 +28,13 @@ body {
 }
 
 a {
-  critical: this;
   color: $black;
   font-size: 2rem;
   transform: rotate(46deg);
+  background: resolve("../images/image01.jpg");
+  background-size: size("../images/image01.jpg");
 
   &:hover {
-    critical: this;
     color: $white;
   }
 

@@ -138,7 +138,15 @@ class Sass extends Task {
     let displayLintError = minified || _.indexOf(conf.options._, `${this.name}:${funcName}`) >= 0;
 
     let processes = [
-      assets(),
+      assets(
+        _.merge(
+          {
+            cachebuster: true,
+            relative: true
+          },
+          taskSettings.assets || {}
+        )
+      ),
       rucksack(taskSettings.rucksack),
       autoprefixer(taskSettings.autoprefixer),
       inlineSVG(
