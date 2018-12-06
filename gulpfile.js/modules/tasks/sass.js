@@ -13,8 +13,10 @@ const sass = require("gulp-sass");
 const sassLint = require("gulp-sass-lint");
 const postcss = require("gulp-postcss");
 const assets = require("postcss-assets");
-const rucksack = require("rucksack-css");
 const autoprefixer = require("autoprefixer");
+const rucksack = require("rucksack-css");
+const inlineSVG = require("postcss-inline-svg");
+const SVGO = require("postcss-svgo");
 const cssnano = require("cssnano");
 const mqpacker = require("css-mqpacker");
 const sortCSSmq = require("sort-css-media-queries");
@@ -132,7 +134,21 @@ class Sass extends Task {
 
     let displayLintError = minified || _.indexOf(conf.options._, `${this.name}:${funcName}`) >= 0;
 
-    let processes = [assets(), rucksack(taskSettings.rucksack), autoprefixer(taskSettings.autoprefixer)];
+    let processes = [
+      assets(),
+      rucksack(taskSettings.rucksack),
+      autoprefixer(taskSettings.autoprefixer),
+      inlineSVG(
+        _.merge(
+          {
+            path: false
+          },
+          taskSettings.inlineSVG || {}
+        )
+      ),
+      SVGO()
+    ];
+
     if (minified) {
       processes.push(
         cssnano(
