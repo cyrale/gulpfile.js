@@ -34,6 +34,14 @@ class Task {
     done();
   }
 
+  isBuildTask() {
+    return (
+      _.indexOf(conf.options._, "build") >= 0 ||
+      _.indexOf(conf.options._, "compress") >= 0 ||
+      _.indexOf(conf.options._, "nest") >= 0
+    );
+  }
+
   isCurrentTask(funcName) {
     return _.indexOf(conf.options._, `${this.name}:${funcName}`) >= 0;
   }

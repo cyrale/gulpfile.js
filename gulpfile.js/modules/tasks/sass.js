@@ -8,9 +8,12 @@ const chalk = require("chalk");
 
 const gulp = require("gulp");
 const plumber = require("gulp-plumber");
+const gulpif = require("gulp-if");
 
 const sass = require("gulp-sass");
 const sassLint = require("gulp-sass-lint");
+const extractMQ = require("gulp-extract-media-queries");
+const criticalCSS = require("gulp-critical-css");
 const postcss = require("gulp-postcss");
 const assets = require("postcss-assets");
 const autoprefixer = require("autoprefixer");
@@ -176,8 +179,10 @@ class Sass extends Task {
       sourcemaps: conf.options.sourcemaps && !minified
     });
 
+    let mainFilename = "";
+
     if (!this.lintError) {
-      stream
+      stream = stream
         .pipe(
           plumber(error => {
             if (displayLintError) {
@@ -188,10 +193,20 @@ class Sass extends Task {
           })
         )
         .pipe(sass(taskSettings.sass))
+        .pipe(gulpif(taskSettings.extractMQ, extractMQ()))
+        .pipe(gulpif(taskSettings.critical, criticalCSS()))
         .pipe(postcss(processes))
         .pipe(
-          rename({
-            suffix: minified ? ".min" : ""
+          rename(path => {
+            if (mainFilename === "") {
+              mainFilename = path.basename;
+            } else if (path.basename.indexOf(mainFilename) < 0) {
+              path.basename = `${mainFilename}.${path.basename}`;
+            }
+
+            path.basename += minified ? ".min" : "";
+
+            return path;
           })
         )
         .pipe(gulp.dest(this.options.dst, { cwd: this.options.cwd }))

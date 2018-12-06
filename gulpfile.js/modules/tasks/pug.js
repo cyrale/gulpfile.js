@@ -101,8 +101,8 @@ class Pug extends Task {
       .src(this.options.src, { cwd: this.options.cwd })
       .pipe(pugLinter())
       .pipe(
-        pugLinter.reporter(errors => {
-          return this.failOnError(errors, funcName);
+        pugLinter({
+          reporter: errors => this.failOnError(errors, funcName)
         })
       );
   }

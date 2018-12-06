@@ -13,23 +13,28 @@
 //@include retina-sprites($sprites-icon-retina);
 
 html {
+  critical: this;
   font-size: 62.5%;
 }
 
 body {
+  critical: this;
   background: $black;
 
   @media screen and (min-width: 768px) {
+    critical: this;
     background: $white;
   }
 }
 
 a {
+  critical: this;
   color: $black;
   font-size: 2rem;
   transform: rotate(46deg);
 
   &:hover {
+    critical: this;
     color: $white;
   }
 
