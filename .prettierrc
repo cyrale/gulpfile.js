@@ -1,5 +1,5 @@
 {
-  "filepath": "gulpfile.js/**/*.js",
+  "filepath": "src/**/*.js",
   "printWidth": 120,
   "tabWidth": 2
 }

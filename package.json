@@ -1,109 +1,39 @@
 {
   "name": "gulpfile.js",
-  "version": "2.4.3",
+  "version": "3.0.0",
   "description": "Because I spent too much time redoing my gulp tasks.",
   "license": "MIT",
   "engines": {
-    "node": ">=8.1.0",
-    "npm": ">=5.5.0",
-    "yarn": ">=1.2.0"
+    "node": ">=10.14.8"
   },
-  "main": "gulpfile.js/index.js",
   "homepage": "https://github.com/cyrale/gulpfile.js",
   "repository": {
     "type": "git",
     "url": "git://github.com/cyrale/gulpfile.js.git"
   },
+  "main": "dist/app.js",
   "bin": {
-    "gulpfile": "bin/gulpfile.js"
+    "gulpfile": "src/gulpfile.js"
   },
   "scripts": {
-    "gulp": "gulp",
-    "start": "gulp",
-    "lint": "gulp lint",
-    "build": "gulp build",
-    "watch": "gulp watch"
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "node dist/app.js --configfile test/gulpconfig.yml"
   },
   "dependencies": {
-    "@babel/core": "7.2.0",
-    "@babel/preset-env": "7.2.0",
-    "autoprefixer": "9.4.2",
-    "babelify": "10.0.0",
-    "browser-sync": "2.26.3",
-    "browserify": "16.2.3",
-    "browserify-shim": "3.8.14",
-    "chalk": "2.4.1",
-    "css-mqpacker": "7.0.0",
-    "cssnano": "4.1.7",
-    "del": "3.0.0",
-    "eslint": "5.10.0",
-    "eslint-config-standard": "12.0.0",
-    "eslint-plugin-import": "2.14.0",
-    "eslint-plugin-node": "8.0.0",
-    "eslint-plugin-promise": "4.0.1",
-    "eslint-plugin-standard": "4.0.0",
-    "fancy-log": "1.3.3",
-    "glob": "7.1.3",
-    "gulp": "4.0.0",
-    "gulp-babel": "8.0.0",
-    "gulp-cached": "1.1.1",
-    "gulp-cheerio": "0.6.3",
-    "gulp-concat": "2.6.1",
-    "gulp-consolidate": "0.2.0",
-    "gulp-critical-css": "1.0.1",
-    "gulp-data": "1.3.1",
-    "gulp-eslint": "5.0.0",
-    "gulp-extract-media-queries": "1.1.0",
-    "gulp-file": "0.4.0",
-    "gulp-header": "2.0.7",
-    "gulp-iconfont": "10.0.2",
-    "gulp-if": "2.0.2",
-    "gulp-imagemin": "5.0.3",
-    "gulp-newer": "1.4.0",
-    "gulp-notify": "3.2.0",
-    "gulp-plumber": "1.2.1",
-    "gulp-postcss": "8.0.0",
-    "gulp-pug": "4.0.1",
-    "gulp-pug-linter": "1.1.0",
-    "gulp-remember": "1.0.1",
-    "gulp-rename": "1.4.0",
-    "gulp-sass": "4.0.2",
-    "gulp-sass-lint": "1.4.0",
-    "gulp-svgmin": "2.1.0",
-    "gulp-svgstore": "7.0.0",
-    "gulp-uglify": "3.0.1",
-    "gulp.spritesmith": "6.9.0",
-    "js-yaml": "3.12.0",
-    "lodash": "4.17.11",
-    "lodash-deep": "2.0.0",
-    "merge-stream": "1.0.1",
-    "minimatch": "3.0.4",
-    "minimist": "1.2.0",
-    "node-notifier": "5.3.0",
-    "plugin-error": "1.0.1",
-    "postcss-assets": "5.0.0",
-    "postcss-inline-svg": "3.1.1",
-    "postcss-svgo": "4.0.1",
-    "require-dir": "1.2.0",
-    "rucksack-css": "1.0.2",
-    "sort-css-media-queries": "1.4.3",
-    "through2": "3.0.0",
-    "vinyl-buffer": "1.0.1",
-    "vinyl-source-stream": "2.0.0"
+    "@types/js-yaml": "^3.12.1",
+    "@types/minimist": "^1.2.0",
+    "@types/node": "^10.14.8",
+    "js-yaml": "^3.13.1",
+    "minimist": "^1.2.0"
   },
   "devDependencies": {
-    "eslint-config-prettier": "3.3.0",
-    "eslint-plugin-prettier": "3.0.0",
-    "husky": "1.2.1",
-    "prettier": "1.15.3",
-    "pretty-quick": "1.8.0"
+    "husky": "^2.3.0",
+    "prettier": "^1.17.0",
+    "pretty-quick": "^1.11.0",
+    "tslint": "^5.17.0",
+    "typescript": "^3.5.1"
   },
-  "browserify": {
-    "transform": [
-      "browserify-shim"
-    ]
-  },
-  "browserify-shim": {},
   "husky": {
     "hooks": {
       "pre-commit": "pretty-quick --staged"
