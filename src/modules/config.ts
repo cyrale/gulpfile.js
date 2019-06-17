@@ -1,8 +1,10 @@
-import path from "path";
+import _ from "lodash";
 import fs from "fs";
 import minimist from "minimist";
+import path from "path";
 
 import * as yaml from "js-yaml";
+import TaskFactory from "./task-factory";
 
 /**
  * Get configuration of the application from command line and settings file.
@@ -13,6 +15,7 @@ export default class Config {
   private _options: any;
   private _settings: {
     cwd: string;
+    [index: string]: any;
   };
 
   /**
@@ -88,6 +91,24 @@ export default class Config {
       this._settings.cwd = path.resolve(path.dirname(this._options.configfile), this._settings.cwd);
     }
 
-    // TODO: import global settings in each tasks
+    // Merge global and local settings in each tasks.
+    const factory = new TaskFactory();
+    factory.availableTaskNames().forEach(name => {
+      if (!this._settings[name].tasks) {
+        return true;
+      }
+
+      let globalSettings = this._settings[name].settings || {};
+
+      Object.keys(this._settings[name].tasks).forEach(taskName => {
+        let task = this._settings[name].tasks[taskName];
+
+        task.settings = _.merge(globalSettings, task.settings || {});
+        this._settings[name][taskName] = task;
+      });
+
+      delete this._settings[name].tasks;
+      delete this._settings[name].settings;
+    });
   }
 }
