@@ -21,13 +21,16 @@
     "test": "node dist/app.js --configfile test/gulpconfig.yml"
   },
   "dependencies": {
-    "@types/js-yaml": "^3.12.1",
-    "@types/minimist": "^1.2.0",
-    "@types/node": "^10.14.8",
     "js-yaml": "^3.13.1",
+    "lodash": "^4.17.11",
+    "lodash-deep": "^2.0.0",
     "minimist": "^1.2.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "^3.12.1",
+    "@types/lodash": "^4.14.134",
+    "@types/minimist": "^1.2.0",
+    "@types/node": "^10.14.8",
     "husky": "^2.3.0",
     "prettier": "^1.17.0",
     "pretty-quick": "^1.11.0",

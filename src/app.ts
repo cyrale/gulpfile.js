@@ -1,3 +1,4 @@
-import { settings } from "./modules/config";
+import Config from "./modules/config";
 
-console.log(settings);
+const conf = Config.getInstance();
+console.log(conf.settings);
