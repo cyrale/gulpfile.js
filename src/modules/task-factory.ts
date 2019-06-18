@@ -2,7 +2,7 @@ import Javascript from "../tasks/javascript";
 import Sass from "../tasks/sass";
 
 export default class TaskFactory {
-  readonly availableTasks: {
+  private availableTasks: {
     [name: string]: any;
   };
 
@@ -18,7 +18,7 @@ export default class TaskFactory {
       throw new Error(`Unsupported task: ${task}.`);
     }
 
-    let instance = Object.create(this.availableTasks[task].prototype);
+    const instance = Object.create(this.availableTasks[task].prototype);
     instance.constructor.apply(instance, [name, settings]);
 
     return instance;

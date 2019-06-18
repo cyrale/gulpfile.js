@@ -1,7 +1,8 @@
-import _ from "lodash";
 import fs from "fs";
-import minimist from "minimist";
+import minimist, { ParsedArgs } from "minimist";
 import path from "path";
+
+import _ from "lodash";
 
 import * as yaml from "js-yaml";
 import TaskFactory from "./task-factory";
@@ -10,18 +11,34 @@ import TaskFactory from "./task-factory";
  * Get configuration of the application from command line and settings file.
  */
 export default class Config {
+  /**
+   * Get Config instance.
+   */
+  public static getInstance() {
+    if (!Config._instance) {
+      console.log("Loading configuration file...");
+
+      Config._instance = new Config();
+      Config._instance.refreshOptions();
+
+      Config._instance.refreshSettings();
+    }
+
+    return Config._instance;
+  }
+
   private static _instance: Config;
 
-  private _options: any;
+  private _options: ParsedArgs;
+
   private _settings: {
-    cwd: string;
     [index: string]: any;
   };
 
   /**
    * Get options.
    */
-  get options(): object {
+  get options(): ParsedArgs {
     return this._options;
   }
 
@@ -36,23 +53,11 @@ export default class Config {
    * Config constructor.
    */
   private constructor() {
-    this._settings = {
-      cwd: ""
+    this._options = {
+      _: []
     };
-  }
 
-  /**
-   * Get Config instance.
-   */
-  public static getInstance() {
-    if (!Config._instance) {
-      Config._instance = new Config();
-      Config._instance.refreshOptions();
-
-      Config._instance.refreshSettings();
-    }
-
-    return Config._instance;
+    this._settings = {};
   }
 
   /**
@@ -61,13 +66,14 @@ export default class Config {
   private refreshOptions() {
     // Merge default options with command line arguments
     this._options = minimist(process.argv.slice(2), {
-      string: ["env", "configfile"],
       boolean: ["sourcemaps"],
       default: {
-        env: process.env.NODE_ENV || "production",
         configfile: process.env.CONFIG_FILE || "gulpconfig.yml",
+        cwd: "",
+        env: process.env.NODE_ENV || "production",
         sourcemaps: process.env.SOURCEMAPS || false
-      }
+      },
+      string: ["env", "configfile", "cwd"]
     });
 
     if (!path.isAbsolute(this._options.configfile)) {
@@ -82,14 +88,18 @@ export default class Config {
     // Read configuration file.
     try {
       this._settings = yaml.safeLoad(fs.readFileSync(this._options.configfile, "utf8"));
-    } catch (e) {}
+    } catch (e) {
+      console.log(e.stack || String(e));
+    }
 
     // Normalize current working directory.
     if (!this._settings.cwd) {
-      this._settings.cwd = path.dirname(this._options.configfile);
+      this._options.cwd = path.dirname(this._options.configfile);
     } else if (!path.isAbsolute(this._settings.cwd)) {
-      this._settings.cwd = path.resolve(path.dirname(this._options.configfile), this._settings.cwd);
+      this._options.cwd = path.resolve(path.dirname(this._options.configfile), this._settings.cwd);
     }
+
+    delete this._settings.cwd;
 
     // Merge global and local settings in each tasks.
     const factory = new TaskFactory();
@@ -98,12 +108,16 @@ export default class Config {
         return true;
       }
 
-      let globalSettings = this._settings[name].settings || {};
+      const globalSettings = this._settings[name].settings || {};
 
       Object.keys(this._settings[name].tasks).forEach(taskName => {
-        let task = this._settings[name].tasks[taskName];
+        const task = this._settings[name].tasks[taskName];
 
         task.settings = _.merge(globalSettings, task.settings || {});
+        if (!task.cwd) {
+          task.cwd = this._options.cwd;
+        }
+
         this._settings[name][taskName] = task;
       });
 

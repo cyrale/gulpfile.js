@@ -18,27 +18,39 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "node dist/app.js --configfile test/gulpconfig.yml"
+    "test": "npx gulp --gulpfile dist/app.js --configfile test/gulpconfig.yml",
+    "lint": "tslint \"src/**/*.ts?(x)\"",
+    "pretty": "prettier --write \"src/**/*.ts?(x)\""
   },
   "dependencies": {
+    "gulp": "^4.0.2",
     "js-yaml": "^3.13.1",
     "lodash": "^4.17.11",
     "minimist": "^1.2.0"
   },
   "devDependencies": {
+    "@types/gulp": "^4.0.6",
     "@types/js-yaml": "^3.12.1",
     "@types/lodash": "^4.14.134",
     "@types/minimist": "^1.2.0",
     "@types/node": "^10.14.8",
     "husky": "^2.3.0",
+    "lint-staged": "^8.2.1",
     "prettier": "^1.17.0",
-    "pretty-quick": "^1.11.0",
     "tslint": "^5.17.0",
+    "tslint-config-prettier": "^1.18.0",
     "typescript": "^3.5.1"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "pretty-quick --staged"
+      "pre-commit": "lint-staged"
     }
+  },
+  "lint-staged": {
+    "src/**/*.ts?(x)": [
+      "tslint --fix",
+      "prettier --write",
+      "git add"
+    ]
   }
 }

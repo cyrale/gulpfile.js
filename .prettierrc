@@ -1,5 +1,5 @@
 {
-  "filepath": "src/**/*.js",
+  "filepath": "src/**/*.ts",
   "printWidth": 120,
   "tabWidth": 2
 }
