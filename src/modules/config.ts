@@ -1,5 +1,5 @@
 import fs from "fs";
-import minimist, { ParsedArgs } from "minimist";
+import minimist from "minimist";
 import path from "path";
 
 import _ from "lodash";
@@ -29,7 +29,9 @@ export default class Config {
 
   private static _instance: Config;
 
-  private _options: ParsedArgs;
+  private _options: {
+    [index: string]: any;
+  };
 
   private _settings: {
     [index: string]: any;
@@ -38,7 +40,7 @@ export default class Config {
   /**
    * Get options.
    */
-  get options(): ParsedArgs {
+  get options(): object {
     return this._options;
   }
 
@@ -53,10 +55,7 @@ export default class Config {
    * Config constructor.
    */
   private constructor() {
-    this._options = {
-      _: []
-    };
-
+    this._options = {};
     this._settings = {};
   }
 
@@ -74,7 +73,7 @@ export default class Config {
         sourcemaps: process.env.SOURCEMAPS || false
       },
       string: ["env", "configfile", "cwd"]
-    });
+    }) as object;
 
     if (!path.isAbsolute(this._options.configfile)) {
       this._options.configfile = path.resolve(process.env.PWD || "", this._options.configfile);
