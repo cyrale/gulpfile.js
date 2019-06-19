@@ -13,7 +13,7 @@
   },
   "main": "dist/app.js",
   "bin": {
-    "gulpfile": "src/gulpfile.js"
+    "gulpfile": "bin/gulpfile.js.js"
   },
   "scripts": {
     "build": "tsc",
