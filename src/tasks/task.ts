@@ -19,14 +19,20 @@ export default abstract class Task {
 
   public abstract build(): string;
 
-  public abstract lint(): string;
+  public abstract lint(): string | false;
 
   public watch(): string {
     const taskName = this.taskName("watch");
 
     gulpTask(taskName, () => {
       const src = this.settings.src.concat(this.settings.watch || []);
-      return watch(src, { cwd: this.settings.cwd }, series([]));
+      const tasks = [this.taskName("build")];
+
+      if (this.withLinter) {
+        tasks.unshift(this.taskName("lint"));
+      }
+
+      return watch(src, { cwd: this.settings.cwd }, series(tasks));
     });
 
     return taskName;

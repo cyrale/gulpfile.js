@@ -35,6 +35,7 @@ export default class TaskFactory {
     Object.keys(tasks).forEach((name: string) => {
       const taskInstance = this.createTask(task, name, tasks[name]);
 
+      this.stackTask(taskInstance.lint());
       this.stackTask(taskInstance.build());
       this.stackTask(taskInstance.watch());
     });
@@ -122,8 +123,11 @@ export default class TaskFactory {
     return this.availableTaskNames().indexOf(task) >= 0;
   }
 
-  protected stackTask(name: string): string[] {
-    this.tasks.push(name);
+  protected stackTask(name: string | false): string[] {
+    if (name !== false) {
+      this.tasks.push(name);
+    }
+
     return this.tasks;
   }
 

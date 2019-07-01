@@ -14,7 +14,11 @@ export default class Javascript extends Task {
     return taskName;
   }
 
-  public lint(): string {
+  public lint(): string | false {
+    if (!this.withLinter) {
+      return false;
+    }
+
     const taskName = this.taskName("lint");
 
     return taskName;

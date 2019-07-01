@@ -11,14 +11,6 @@ export default class Pug extends Task {
     this.task = "pug";
   }
 
-  public lint(): string {
-    const taskName = this.taskName("lint");
-
-    gulpTask(taskName, (done: TCallback) => done());
-
-    return taskName;
-  }
-
   public build(): string {
     const taskName = this.taskName("build");
 
@@ -27,6 +19,18 @@ export default class Pug extends Task {
         .pipe(GPug())
         .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
     });
+
+    return taskName;
+  }
+
+  public lint(): string | false {
+    if (!this.withLinter) {
+      return false;
+    }
+
+    const taskName = this.taskName("lint");
+
+    gulpTask(taskName, (done: TCallback) => done());
 
     return taskName;
   }
