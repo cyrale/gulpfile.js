@@ -1,30 +1,28 @@
---- # ------------------------------------------
 # ------------------------------------------
 # BrowserSync (https://www.browsersync.io/)
-browsersync:
-  settings:
-    server:
-      baseDir: "test/build/"
-  watch:
-    - "**/*.html"
-    - "**/*.php"
-    - "public/**/*.php"
-    - "public/**/*.twig"
+# ------------------------------------------
+#browsersync:
+#  settings:
+#    server:
+#      baseDir: "test/dist/"
+#  watch:
+#    - "test/**/*.html"
+#    - "test/**/*.php"
 # ------------------------------------------
 # Pug (https://pugjs.org)
 # ------------------------------------------
 pug:
   tasks:
-    public:
+    test1:
       src:
-        - "assets/views/**/*.pug"
-      dst: "build"
+        - "src/pug/test1/**/*.pug"
+      dst: "dist/pug"
       settings:
         data: "pugdata-task.yml"
-    private:
+    test2:
       src:
-        - "assets/views/**/*.pug"
-      dst: "build"
+        - "src/pug/test2/**/*.pug"
+      dst: "dist/pug"
       settings:
         data: "pugdata-task.yml"
   settings:
@@ -32,103 +30,103 @@ pug:
 # ------------------------------------------
 # SASS
 # ------------------------------------------
-sass:
-  tasks:
-    public:
-      src:
-        - "assets/sass/*.scss"
-        - "assets/sass/**/*.scss"
-      dst: "build/css"
-  settings:
-    sass:
-      errLogToConsole: true
-    autoprefixer:
-      browsers:
-        - "> 1%"
-        - "IE >= 9"
-    mqpacker:
-      sort: "mobile"
-    inlineSVG:
-      path: "assets/"
-    extractMQ: true
-    critical: true
+#sass:
+#  tasks:
+#    public:
+#      src:
+#        - "assets/sass/*.scss"
+#        - "assets/sass/**/*.scss"
+#      dst: "build/css"
+#  settings:
+#    sass:
+#      errLogToConsole: true
+#    autoprefixer:
+#      browsers:
+#        - "> 1%"
+#        - "IE >= 9"
+#    mqpacker:
+#      sort: "mobile"
+#    inlineSVG:
+#      path: "assets/"
+#    extractMQ: true
+#    critical: true
 # ------------------------------------------
 # JavaScript
 # ------------------------------------------
-javascript:
-  tasks:
-    public:
-      watch:
-        - "assets/vendor/**/*.js"
-      src:
-        - "assets/js/main.js"
-      dst: "build/js"
-      filename: "all.js"
+#javascript:
+#  tasks:
+#    public:
+#      watch:
+#        - "assets/vendor/**/*.js"
+#      src:
+#        - "assets/js/main.js"
+#      dst: "build/js"
+#      filename: "all.js"
 # ------------------------------------------
 # Images
 # ------------------------------------------
-images:
-  tasks:
-    public:
-      src:
-        - "assets/images/**/*.png"
-        - "assets/images/**/*.jpg"
-        - "assets/images/**/*.jpeg"
-        - "assets/images/**/*.gif"
-        - "assets/images/**/*.svg"
-      dst: "build/images"
-      settings:
-        optimizationLevel: 4
-  settings:
-    optimizationLevel: 3
+#images:
+#  tasks:
+#    public:
+#      src:
+#        - "assets/images/**/*.png"
+#        - "assets/images/**/*.jpg"
+#        - "assets/images/**/*.jpeg"
+#        - "assets/images/**/*.gif"
+#        - "assets/images/**/*.svg"
+#      dst: "build/images"
+#      settings:
+#        optimizationLevel: 4
+#  settings:
+#    optimizationLevel: 3
 # ------------------------------------------
 # Sprites (https://github.com/Ensighten/spritesmith)
 # ------------------------------------------
-sprites:
-  tasks:
-    icon:
-      src-1x:
-        - "assets/sprites/*.png"
-        - "assets/sprites/*.jpg"
-      src-2x:
-        - "assets/sprites/*@2x.png"
-        - "assets/sprites/*@2x.jpg"
-      dst: "build/images"
-      settings:
-        sass:
-          dst: "assets/sass/helpers"
-          rel: "../images"
-        prefix: "icon"
-  settings:
-    imagemin:
-      optimizationLevel: 3
+#sprites:
+#  tasks:
+#    icon:
+#      src-1x:
+#        - "assets/sprites/*.png"
+#        - "assets/sprites/*.jpg"
+#      src-2x:
+#        - "assets/sprites/*@2x.png"
+#        - "assets/sprites/*@2x.jpg"
+#      dst: "build/images"
+#      settings:
+#        sass:
+#          dst: "assets/sass/helpers"
+#          rel: "../images"
+#        prefix: "icon"
+#  settings:
+#    imagemin:
+#      optimizationLevel: 3
 # ------------------------------------------
 # Fonts (https://www.npmjs.com/package/gulp-iconfont)
 # ------------------------------------------
-fonts:
-  tasks:
-    custom:
-      src:
-        - "assets/svg/*.svg"
-      dst: "build/fonts"
-      settings:
-        sass:
-          dst: "assets/sass/fonts"
-          rel: "../fonts"
-        template: "fontawesome"
-        name: "icon"
-        prefix: "font"
-  settings:
-    template: "foundation"
+#fonts:
+#  tasks:
+#    custom:
+#      src:
+#        - "assets/svg/*.svg"
+#      dst: "build/fonts"
+#      settings:
+#        sass:
+#          dst: "assets/sass/fonts"
+#          rel: "../fonts"
+#        template: "fontawesome"
+#        name: "icon"
+#        prefix: "font"
+#  settings:
+#    template: "foundation"
 # ------------------------------------------
 # SVG Store
 # ------------------------------------------
-svgstore:
-  tasks:
-    icons:
-      src:
-        - "assets/svg/*.svg"
-      dst: "build/images"
-      filename: "icons.svg"
-  settings:
-    prefix: "icon"
+#svgstore:
+#  tasks:
+#    icons:
+#      src:
+#        - "assets/svg/*.svg"
+#      dst: "build/images"
+#      filename: "icons.svg"
+#  settings:
+#    prefix: "icon"

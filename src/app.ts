@@ -1,28 +1,37 @@
+import _ from "lodash";
+import path from "path";
+// const requireDir = require("require-dir");
+
+// Fallback for Windows backs out of node_modules folder to root of project
+process.env.PWD = process.env.PWD || path.resolve(process.cwd(), "../../");
+
+// Change working directory
+process.chdir(process.env.PWD as string);
+
+import { parallel, series } from "gulp";
+
 import Config from "./modules/config";
-// import TaskFactory from "./modules/task-factory";
+import TaskFactory from "./modules/task-factory";
 
 const conf = Config.getInstance();
-console.log(conf.settings);
+const factory = new TaskFactory();
 
-// const factory = new TaskFactory();
-// const task1 = factory.createTask("sass", "test", {});
-// const task2 = factory.createTask("javascript", "test", {});
-//
-// console.log(task1, task2);
+// TODO: initialize browserify first.
 
-import { parallel, task } from "gulp";
+let gulpTasks: string[] = [];
 
-type TCallback = () => void;
+Object.keys(conf.settings).forEach((task: string) => {
+  const tasks = conf.settings[task] as object;
 
-task("test1", (done: TCallback) => {
-  console.log("test1");
-  done();
+  if (factory.isValidTask(task)) {
+    gulpTasks = _.merge(gulpTasks, factory.createTasks(task, tasks));
+  }
 });
 
-task("test2", (done: TCallback) => {
-  console.log("test2");
-  done();
-});
+const globalTasks = factory.createGlobalTasks(gulpTasks);
 
-const defaultT = parallel(["test1", "test2"]);
-export default defaultT;
+export default series(
+  globalTasks.map((tasks: string[]) => {
+    return parallel(tasks);
+  })
+);

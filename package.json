@@ -13,7 +13,7 @@
   },
   "main": "dist/app.js",
   "bin": {
-    "gulpfile": "bin/gulpfile.js.js"
+    "gulpfile.js": "bin/gulpfile.js.js"
   },
   "scripts": {
     "build": "tsc",
@@ -24,12 +24,14 @@
   },
   "dependencies": {
     "gulp": "^4.0.2",
+    "gulp-pug": "^4.0.1",
     "js-yaml": "^3.13.1",
     "lodash": "^4.17.11",
     "minimist": "^1.2.0"
   },
   "devDependencies": {
     "@types/gulp": "^4.0.6",
+    "@types/gulp-pug": "^3.3.1",
     "@types/js-yaml": "^3.12.1",
     "@types/lodash": "^4.14.134",
     "@types/minimist": "^1.2.0",

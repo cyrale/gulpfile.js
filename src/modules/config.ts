@@ -7,6 +7,12 @@ import _ from "lodash";
 import * as yaml from "js-yaml";
 import TaskFactory from "./task-factory";
 
+export interface IGenericSettings {
+  [index: string]: any;
+}
+
+export type TCallback = () => void;
+
 /**
  * Get configuration of the application from command line and settings file.
  */
@@ -29,25 +35,21 @@ export default class Config {
 
   private static _instance: Config;
 
-  private _options: {
-    [index: string]: any;
-  };
+  private _options: IGenericSettings;
 
-  private _settings: {
-    [index: string]: any;
-  };
+  private _settings: IGenericSettings;
 
   /**
    * Get options.
    */
-  get options(): object {
+  get options(): IGenericSettings {
     return this._options;
   }
 
   /**
    * Get settings.
    */
-  get settings(): object {
+  get settings(): IGenericSettings {
     return this._settings;
   }
 
@@ -103,7 +105,7 @@ export default class Config {
     // Merge global and local settings in each tasks.
     const factory = new TaskFactory();
     factory.availableTaskNames().forEach(name => {
-      if (!this._settings[name].tasks) {
+      if (!this._settings[name] || !this._settings[name].tasks) {
         return true;
       }
 
