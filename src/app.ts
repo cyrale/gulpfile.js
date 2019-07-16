@@ -1,12 +1,18 @@
+import "source-map-support/register";
+
 import _ from "lodash";
 import path from "path";
-// const requireDir = require("require-dir");
+import process from "process";
 
-// Fallback for Windows backs out of node_modules folder to root of project
-process.env.PWD = process.env.PWD || path.resolve(process.cwd(), "../../");
+try {
+  // Fallback for Windows backs out of node_modules folder to root of project
+  process.env.PWD = process.env.PWD || path.resolve(process.cwd(), "../../");
 
-// Change working directory
-process.chdir(process.env.PWD as string);
+  // Change working directory
+  process.chdir(process.env.PWD as string);
+} catch (err) {
+  console.error(`chdir: ${err}`);
+}
 
 import { parallel, series } from "gulp";
 

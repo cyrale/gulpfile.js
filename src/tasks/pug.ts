@@ -1,7 +1,9 @@
 import { dest, src, task as gulpTask } from "gulp";
+import GPlumber from "gulp-plumber";
 import GPug from "gulp-pug";
+import GPugLinter from "gulp-pug-linter";
+import PugLintStylish from "puglint-stylish";
 
-import { TCallback } from "../modules/config";
 import Task from "./task";
 
 export default class Pug extends Task {
@@ -15,22 +17,44 @@ export default class Pug extends Task {
     const taskName = this.taskName("build");
 
     gulpTask(taskName, () => {
-      return src(this.settings.src, { cwd: this.settings.cwd })
-        .pipe(GPug())
-        .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
+      const task = src(this.settings.src, { cwd: this.settings.cwd });
+
+      this.chdir();
+
+      if (!this.lintError) {
+        task
+          .pipe(GPlumber())
+          .pipe(GPug())
+          .pipe(GPlumber.stop())
+          .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
+      }
+
+      return task;
     });
 
     return taskName;
   }
 
   public lint(): string | false {
-    if (!this.withLinter) {
-      return false;
-    }
-
     const taskName = this.taskName("lint");
 
-    gulpTask(taskName, (done: TCallback) => done());
+    this.lintError = false;
+
+    gulpTask(taskName, () => {
+      this.chdir();
+
+      return src(this.settings.src, { cwd: this.settings.cwd }).pipe(
+        GPugLinter({
+          reporter: (errors: any[]): void => {
+            this.lintError = true;
+
+            if (errors.length > 0) {
+              PugLintStylish(errors);
+            }
+          }
+        })
+      );
+    });
 
     return taskName;
   }

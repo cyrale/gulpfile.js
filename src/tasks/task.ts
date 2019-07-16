@@ -1,3 +1,5 @@
+import process from "process";
+
 import { series, task as gulpTask, watch } from "gulp";
 
 import { IGenericSettings } from "../modules/config";
@@ -36,6 +38,14 @@ export default abstract class Task {
     });
 
     return taskName;
+  }
+
+  protected chdir() {
+    try {
+      process.chdir(this.settings.cwd);
+    } catch (err) {
+      console.error(`chdir: ${err}`);
+    }
   }
 
   protected taskName(step: string): string {

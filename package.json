@@ -23,25 +23,30 @@
     "pretty": "prettier --write \"src/**/*.ts?(x)\""
   },
   "dependencies": {
-    "gulp": "^4.0.2",
-    "gulp-pug": "^4.0.1",
-    "js-yaml": "^3.13.1",
-    "lodash": "^4.17.11",
-    "minimist": "^1.2.0"
-  },
-  "devDependencies": {
     "@types/gulp": "^4.0.6",
+    "@types/gulp-plumber": "0.0.32",
     "@types/gulp-pug": "^3.3.1",
     "@types/js-yaml": "^3.12.1",
-    "@types/lodash": "^4.14.134",
+    "@types/lodash": "^4.14.136",
     "@types/minimist": "^1.2.0",
-    "@types/node": "^10.14.8",
-    "husky": "^2.3.0",
+    "@types/node": "^10.14.12",
+    "gulp": "^4.0.2",
+    "gulp-plumber": "^1.2.1",
+    "gulp-pug": "^4.0.1",
+    "gulp-pug-linter": "^1.2.0",
+    "js-yaml": "^3.13.1",
+    "lodash": "^4.17.14",
+    "minimist": "^1.2.0",
+    "puglint-stylish": "^1.0.1",
+    "source-map-support": "^0.5.12"
+  },
+  "devDependencies": {
+    "husky": "^2.7.0",
     "lint-staged": "^8.2.1",
-    "prettier": "^1.17.0",
-    "tslint": "^5.17.0",
+    "prettier": "^1.18.2",
+    "tslint": "^5.18.0",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^3.5.1"
+    "typescript": "^3.5.3"
   },
   "husky": {
     "hooks": {
