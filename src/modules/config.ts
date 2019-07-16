@@ -1,6 +1,7 @@
 import fs from "fs";
 import minimist from "minimist";
 import path from "path";
+import process from "process";
 
 import _ from "lodash";
 

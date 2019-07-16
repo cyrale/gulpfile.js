@@ -17,16 +17,15 @@ pug:
       src:
         - "src/pug/test1/**/*.pug"
       dst: "dist/pug/test1"
-      settings:
-        data: "pugdata-task.yml"
     test2:
       src:
         - "src/pug/test2/**/*.pug"
       dst: "dist/pug/test2"
       settings:
-        data: "pugdata-task.yml"
+        data:
+          - "src/pug/test2/pugdata-task.yml"
   settings:
-    data: "pugdata.yml"
+    data: "src/pug/pugdata.yml"
 # ------------------------------------------
 # SASS
 # ------------------------------------------
