@@ -1,15 +1,21 @@
+import process from "process";
+
 import { parallel, series, task as gulpTask } from "gulp";
 
+import * as Undertaker from "undertaker";
 import Javascript from "../tasks/javascript";
 import Pug from "../tasks/pug";
 import Sass from "../tasks/sass";
-import { IGenericSettings } from "./config";
+import Task, { TaskCallback } from "../tasks/task";
+import Config, { IGenericSettings } from "./config";
 
 interface ITaskNameElements {
   type: string;
   name: string;
   step: string;
 }
+
+type TaskErrorCallback = (done: TaskCallback) => void;
 
 export default class TaskFactory {
   private tasks: string[] = [];
@@ -79,17 +85,17 @@ export default class TaskFactory {
         return sortOrder.indexOf(stepA) - sortOrder.indexOf(stepB);
       });
 
-      gulpTask(taskName, series(this.tasksByName[taskName]));
+      this.defineTask(taskName, this.tasksByName[taskName]);
     });
 
     // Create tasks sorted by type and step.
     Object.keys(this.tasksByStep).forEach((taskName: string) => {
-      gulpTask(taskName, parallel(this.tasksByStep[taskName]));
+      this.defineTask(taskName, this.tasksByStep[taskName], "parallel");
     });
 
     // Create tasks sorted by type only.
     Object.keys(this.tasksByTypeOnly).forEach((taskName: string) => {
-      gulpTask(taskName, parallel(this.tasksByTypeOnly[taskName]));
+      this.defineTask(taskName, this.tasksByTypeOnly[taskName], "parallel");
     });
 
     // Sort and order global tasks.
@@ -129,6 +135,40 @@ export default class TaskFactory {
     }
 
     return this.tasks;
+  }
+
+  private defineTask(taskName: string, tasks: Undertaker.Task[], type: string = "series") {
+    const errorHandler = `${taskName}:error`;
+
+    if (Config.getInstance().isBuildRun() && Config.getInstance().isCurrentRun(taskName)) {
+      gulpTask(errorHandler, (done: TaskCallback): void => {
+        done();
+
+        if (Task.taskErrors.length > 0) {
+          process.exit(1);
+        }
+      });
+    }
+
+    let task: Undertaker.TaskFunction = (done: TaskCallback) => done();
+
+    if (type === "series" && Config.getInstance().isBuildRun() && Config.getInstance().isCurrentRun(taskName)) {
+      task = series([...tasks, errorHandler]);
+    } else if (type === "series") {
+      task = series(tasks);
+    } else if (
+      type === "parallel" &&
+      Config.getInstance().isBuildRun() &&
+      Config.getInstance().isCurrentRun(taskName)
+    ) {
+      task = series(parallel(tasks), errorHandler);
+    } else if (type === "parallel") {
+      task = parallel(tasks);
+    }
+
+    if (task.name === "series" || task.name === "parallel") {
+      gulpTask(taskName, task);
+    }
   }
 
   private explodeTaskName(task: string): ITaskNameElements {

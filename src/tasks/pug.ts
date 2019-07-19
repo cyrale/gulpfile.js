@@ -1,6 +1,6 @@
-import { dest, src, task as gulpTask } from "gulp";
+import fs from "fs";
 
-import _ from "lodash";
+import { dest, src, task as gulpTask } from "gulp";
 
 import GData from "gulp-data";
 import GPlumber from "gulp-plumber";
@@ -10,7 +10,6 @@ import PugLintStylish from "puglint-stylish";
 
 import * as yaml from "js-yaml";
 
-import fs from "fs";
 import Task from "./task";
 
 export default class Pug extends Task {
@@ -23,8 +22,12 @@ export default class Pug extends Task {
   public build(): string {
     const taskName = this.taskName("build");
 
-    gulpTask(taskName, () => {
-      const task = src(this.settings.src, { cwd: this.settings.cwd });
+    gulpTask(taskName, done => {
+      const task = src(this.settings.src, { cwd: this.settings.cwd }).pipe(
+        GPlumber(error => {
+          this.exitOnError(taskName, error, done);
+        })
+      );
 
       this.chdir();
 
@@ -34,18 +37,20 @@ export default class Pug extends Task {
         if (typeof this.settings.settings.data === "string") {
           data = yaml.safeLoad(fs.readFileSync(this.settings.settings.data, "utf8"));
         } else if (typeof this.settings.settings.data === "object") {
-          (this.settings.settings.data as string[]).forEach((filename: string) => [
-            (data = _.merge(data, yaml.safeLoad(fs.readFileSync(filename, "utf8"))))
-          ]);
+          (this.settings.settings.data as string[]).forEach((filename: string): void => {
+            data = [...data, ...yaml.safeLoad(fs.readFileSync(filename, "utf8"))];
+          });
         }
 
         task
-          .pipe(GPlumber())
           .pipe(GData(data))
           .pipe(GPug())
-          .pipe(GPlumber.stop())
-          .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
+          .pipe(GPlumber.stop());
       }
+
+      task.pipe(dest(this.settings.dst, { cwd: this.settings.cwd })).on("finish", () => {
+        console.log(`FINISH ${taskName}`);
+      });
 
       return task;
     });
@@ -74,5 +79,9 @@ export default class Pug extends Task {
     });
 
     return taskName;
+  }
+
+  protected displayError(error: any): void {
+    PugLintStylish([error]);
   }
 }

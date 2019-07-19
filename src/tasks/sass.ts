@@ -23,4 +23,8 @@ export default class Sass extends Task {
 
     return taskName;
   }
+
+  protected displayError(error: any): void {
+    console.log(error);
+  }
 }

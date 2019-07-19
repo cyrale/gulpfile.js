@@ -1,6 +1,5 @@
 import "source-map-support/register";
 
-import _ from "lodash";
 import path from "path";
 import process from "process";
 
@@ -30,7 +29,7 @@ Object.keys(conf.settings).forEach((task: string) => {
   const tasks = conf.settings[task] as object;
 
   if (factory.isValidTask(task)) {
-    gulpTasks = _.merge(gulpTasks, factory.createTasks(task, tasks));
+    gulpTasks = [...gulpTasks, ...factory.createTasks(task, tasks)];
   }
 });
 

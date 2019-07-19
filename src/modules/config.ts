@@ -3,8 +3,6 @@ import minimist from "minimist";
 import path from "path";
 import process from "process";
 
-import _ from "lodash";
-
 import * as yaml from "js-yaml";
 import TaskFactory from "./task-factory";
 
@@ -12,12 +10,35 @@ export interface IGenericSettings {
   [index: string]: any;
 }
 
-export type TCallback = () => void;
+export type DefaultCallback = () => void;
 
 /**
  * Get configuration of the application from command line and settings file.
  */
 export default class Config {
+  get currentRun(): string {
+    const options = this.options;
+
+    if (options._.length === 0) {
+      return "default";
+    }
+
+    return options._[0];
+  }
+
+  /**
+   * Get options.
+   */
+  get options(): IGenericSettings {
+    return this._options;
+  }
+
+  /**
+   * Get settings.
+   */
+  get settings(): IGenericSettings {
+    return this._settings;
+  }
   /**
    * Get Config instance.
    */
@@ -41,25 +62,23 @@ export default class Config {
   private _settings: IGenericSettings;
 
   /**
-   * Get options.
-   */
-  get options(): IGenericSettings {
-    return this._options;
-  }
-
-  /**
-   * Get settings.
-   */
-  get settings(): IGenericSettings {
-    return this._settings;
-  }
-
-  /**
    * Config constructor.
    */
   private constructor() {
     this._options = {};
     this._settings = {};
+  }
+
+  public isBuildRun(): boolean {
+    const search = "build";
+
+    return (
+      this.currentRun !== "default" && this.currentRun.lastIndexOf(search) === this.currentRun.length - search.length
+    );
+  }
+
+  public isCurrentRun(task: string): boolean {
+    return this.currentRun === task;
   }
 
   /**
@@ -115,7 +134,7 @@ export default class Config {
       Object.keys(this._settings[name].tasks).forEach(taskName => {
         const task = this._settings[name].tasks[taskName];
 
-        task.settings = _.merge(globalSettings, task.settings || {});
+        task.settings = Object.assign({}, globalSettings, task.settings || {});
         if (!task.cwd) {
           task.cwd = this._options.cwd;
         }
