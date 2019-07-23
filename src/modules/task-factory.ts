@@ -15,14 +15,25 @@ interface ITaskNameElements {
   step: string;
 }
 
+interface ITaskList {
+  [name: string]: string[];
+}
+
+interface IGlobalTaskList {
+  [name: string]: ITaskList;
+}
+
 type TaskErrorCallback = (done: TaskCallback) => void;
 
 export default class TaskFactory {
   private tasks: string[] = [];
 
-  private tasksByName: IGenericSettings = {};
-  private tasksByStep: IGenericSettings = {};
-  private tasksByTypeOnly: IGenericSettings = {};
+  private superGlobalTasks: ITaskList = {};
+  private orderedSuperGlobalTasks: {
+    [name: string]: string[][];
+  } = {};
+
+  private globalTasks: IGlobalTaskList = {};
 
   private availableTasks: IGenericSettings = {
     javascript: Javascript,
@@ -30,12 +41,98 @@ export default class TaskFactory {
     sass: Sass
   };
 
-  private tasksGroupAndOrder = [
+  private tasksGroupAndOrder: string[][] = [
     ["fonts", "sprites", "svgstore"],
     ["images"],
     ["sass", "javascript", "pug"],
     ["browsersync"]
   ];
+
+  public createAllTasks(): void {
+    // TODO: create all tasks here
+  }
+
+  public createGlobalTasks(tasks: string[]): string[][] {
+    // Sort tasks.
+    tasks.forEach((task: string) => {
+      const { type, name, step } = this.explodeTaskName(task);
+
+      // Sort tasks by name.
+      const sortedByName = `${type}:${name}`;
+      this.pushGlobalTask("byName", sortedByName, task);
+
+      // Sort tasks by step.
+      const sortedByStep = `${type}:${step}`;
+      this.pushGlobalTask("byStep", sortedByStep, task);
+
+      // Sort tasks by type only.
+      this.pushGlobalTask("byTypeOnly", type, sortedByName);
+    });
+
+    // Create tasks sorted by type and name.
+    Object.keys(this.globalTasks.byName).forEach((taskName: string) => {
+      this.globalTasks.byName[taskName].sort((itemA: string, itemB: string) => {
+        const sortOrder = ["lint", "build", "watch"];
+        const { step: stepA } = this.explodeTaskName(itemA);
+        const { step: stepB } = this.explodeTaskName(itemB);
+
+        return sortOrder.indexOf(stepA) - sortOrder.indexOf(stepB);
+      });
+
+      this.defineTask(taskName, this.globalTasks.byName[taskName]);
+    });
+
+    // Create tasks sorted by type and step.
+    Object.keys(this.globalTasks.byStep).forEach((taskName: string) => {
+      this.defineTask(taskName, this.globalTasks.byStep[taskName], "parallel");
+    });
+
+    // Create tasks sorted by type only.
+    Object.keys(this.globalTasks.byTypeOnly).forEach((taskName: string) => {
+      this.defineTask(taskName, this.globalTasks.byTypeOnly[taskName], "parallel");
+    });
+
+    // Sort and order global tasks.
+    return this.tasksGroupAndOrder
+      .map((taskNames: string[]) =>
+        taskNames.filter((taskName: string) => typeof this.globalTasks.byTypeOnly[taskName] !== "undefined")
+      )
+      .filter(this.removeEmptyArrays);
+  }
+
+  public createSuperGlobalTasks(tasks: string[]): void {
+    // const flattenTasksGroupAndOrder:string[] = this.tasksGroupAndOrder.reduce((acc: string[] = [], tasks: string[]): string[] => [...acc, ...tasks]);
+    //
+    // console.log(flattenTasksGroupAndOrder);
+    tasks.forEach((task: string) => {
+      const { step } = this.explodeTaskName(task);
+
+      this.pushTask(this.superGlobalTasks, step, task);
+    });
+
+    // Sort and order global tasks.
+    Object.keys(this.superGlobalTasks).forEach((step: string): void => {
+      this.orderedSuperGlobalTasks[step] = this.tasksGroupAndOrder
+        .map((taskNames: string[]): string[] => {
+          return taskNames
+            .map(taskName => {
+              return this.superGlobalTasks[step].filter((task: string): boolean => {
+                const { type } = this.explodeTaskName(task);
+                return type === taskName;
+              });
+            })
+            .reduce(this.mergeArrays);
+        })
+        .filter(this.removeEmptyArrays);
+
+      this.defineTask(
+        step,
+        this.orderedSuperGlobalTasks[step].map((taskNames: string[]) => {
+          return parallel(taskNames);
+        })
+      );
+    });
+  }
 
   public createTasks(task: string, tasks: IGenericSettings): string[] {
     Object.keys(tasks).forEach((name: string) => {
@@ -47,67 +144,6 @@ export default class TaskFactory {
     });
 
     return this.tasks;
-  }
-
-  public createGlobalTasks(tasks: string[]) {
-    // Sort tasks.
-    tasks.forEach((task: string) => {
-      const { type, name, step } = this.explodeTaskName(task);
-
-      // Sort tasks by name.
-      const sortedByName = `${type}:${name}`;
-      this.tasksByName[sortedByName] = this.tasksByName[sortedByName] || [];
-      if (this.tasksByName[sortedByName].indexOf(task) < 0) {
-        this.tasksByName[sortedByName].push(task);
-      }
-
-      // Sort tasks by step.
-      const sortedByStep = `${type}:${step}`;
-      this.tasksByStep[sortedByStep] = this.tasksByStep[sortedByStep] || [];
-      if (this.tasksByStep[sortedByStep].indexOf(task) < 0) {
-        this.tasksByStep[sortedByStep].push(task);
-      }
-
-      // Sort tasks by type only.
-      this.tasksByTypeOnly[type] = this.tasksByTypeOnly[type] || [];
-      if (this.tasksByTypeOnly[type].indexOf(sortedByName) < 0) {
-        this.tasksByTypeOnly[type].push(sortedByName);
-      }
-    });
-
-    // Create tasks sorted by type and name.
-    Object.keys(this.tasksByName).forEach((taskName: string) => {
-      this.tasksByName[taskName].sort((itemA: string, itemB: string) => {
-        const sortOrder = ["lint", "build", "watch"];
-        const { step: stepA } = this.explodeTaskName(itemA);
-        const { step: stepB } = this.explodeTaskName(itemB);
-
-        return sortOrder.indexOf(stepA) - sortOrder.indexOf(stepB);
-      });
-
-      this.defineTask(taskName, this.tasksByName[taskName]);
-    });
-
-    // Create tasks sorted by type and step.
-    Object.keys(this.tasksByStep).forEach((taskName: string) => {
-      this.defineTask(taskName, this.tasksByStep[taskName], "parallel");
-    });
-
-    // Create tasks sorted by type only.
-    Object.keys(this.tasksByTypeOnly).forEach((taskName: string) => {
-      this.defineTask(taskName, this.tasksByTypeOnly[taskName], "parallel");
-    });
-
-    // Sort and order global tasks.
-    return this.tasksGroupAndOrder
-      .map((taskNames: string[]) => {
-        return taskNames
-          .filter((taskName: string) => this.tasksByTypeOnly[taskName])
-          .map((taskName: string) => {
-            return taskName;
-          });
-      })
-      .filter((taskNames: string[]) => taskNames.length > 0);
   }
 
   public createTask(task: string, name: string, settings: object): Sass | Pug | Javascript {
@@ -179,5 +215,29 @@ export default class TaskFactory {
       step,
       type
     };
+  }
+
+  private mergeArrays(acc: string[] = [], tasks: string[]): string[] {
+    return [...acc, ...tasks];
+  }
+
+  private pushGlobalTask(sort: string, key: string, task: string): IGlobalTaskList {
+    this.globalTasks[sort] = this.globalTasks[sort] || {};
+    this.pushTask(this.globalTasks[sort], key, task);
+
+    return this.globalTasks;
+  }
+
+  private pushTask(list: ITaskList, key: string, task: string): ITaskList {
+    list[key] = list[key] || [];
+    if (list[key].indexOf(task) < 0) {
+      list[key].push(task);
+    }
+
+    return list;
+  }
+
+  private removeEmptyArrays(tasks: string[]): boolean {
+    return tasks.length > 0;
   }
 }

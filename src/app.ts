@@ -34,6 +34,9 @@ Object.keys(conf.settings).forEach((task: string) => {
 });
 
 const globalTasks = factory.createGlobalTasks(gulpTasks);
+factory.createSuperGlobalTasks(gulpTasks);
+
+// console.log(globalTasks);
 
 export default series(
   globalTasks.map((tasks: string[]) => {
