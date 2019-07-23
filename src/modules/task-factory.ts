@@ -23,8 +23,6 @@ interface IGlobalTaskList {
   [name: string]: ITaskList;
 }
 
-type TaskErrorCallback = (done: TaskCallback) => void;
-
 export default class TaskFactory {
   private tasks: string[] = [];
 
@@ -34,6 +32,7 @@ export default class TaskFactory {
   } = {};
 
   private globalTasks: IGlobalTaskList = {};
+  private orderedGlobalTasks: string[][] = [];
 
   private availableTasks: IGenericSettings = {
     javascript: Javascript,
@@ -49,12 +48,53 @@ export default class TaskFactory {
   ];
 
   public createAllTasks(): void {
-    // TODO: create all tasks here
+    const conf = Config.getInstance();
+
+    Object.keys(conf.settings).forEach((task: string) => {
+      const confTasks = conf.settings[task] as object;
+
+      if (this.isValidTask(task)) {
+        this.createTasks(task, confTasks);
+      }
+    });
+
+    // TODO: initialize browserify first.
+
+    this.createGlobalTasks();
+    this.createSuperGlobalTasks();
+
+    gulpTask(
+      "default",
+      series(
+        this.orderedGlobalTasks.map((tasks: string[]) => {
+          return parallel(tasks);
+        })
+      )
+    );
   }
 
-  public createGlobalTasks(tasks: string[]): string[][] {
+  public createTask(task: string, name: string, settings: object): Sass | Pug | Javascript {
+    if (this.availableTaskNames().indexOf(task) < 0) {
+      throw new Error(`Unsupported task: ${task}.`);
+    }
+
+    const instance = Object.create(this.availableTasks[task].prototype);
+    instance.constructor.apply(instance, [name, settings]);
+
+    return instance;
+  }
+
+  public availableTaskNames() {
+    return Object.keys(this.availableTasks);
+  }
+
+  public isValidTask(task: string) {
+    return this.availableTaskNames().indexOf(task) >= 0;
+  }
+
+  private createGlobalTasks(): void {
     // Sort tasks.
-    tasks.forEach((task: string) => {
+    this.tasks.forEach((task: string) => {
       const { type, name, step } = this.explodeTaskName(task);
 
       // Sort tasks by name.
@@ -93,36 +133,33 @@ export default class TaskFactory {
     });
 
     // Sort and order global tasks.
-    return this.tasksGroupAndOrder
+    this.orderedGlobalTasks = this.tasksGroupAndOrder
       .map((taskNames: string[]) =>
         taskNames.filter((taskName: string) => typeof this.globalTasks.byTypeOnly[taskName] !== "undefined")
       )
       .filter(this.removeEmptyArrays);
   }
 
-  public createSuperGlobalTasks(tasks: string[]): void {
-    // const flattenTasksGroupAndOrder:string[] = this.tasksGroupAndOrder.reduce((acc: string[] = [], tasks: string[]): string[] => [...acc, ...tasks]);
-    //
-    // console.log(flattenTasksGroupAndOrder);
-    tasks.forEach((task: string) => {
+  private createSuperGlobalTasks(): void {
+    this.tasks.forEach((task: string) => {
       const { step } = this.explodeTaskName(task);
 
       this.pushTask(this.superGlobalTasks, step, task);
     });
 
-    // Sort and order global tasks.
+    // Sort and order super global tasks.
     Object.keys(this.superGlobalTasks).forEach((step: string): void => {
       this.orderedSuperGlobalTasks[step] = this.tasksGroupAndOrder
-        .map((taskNames: string[]): string[] => {
-          return taskNames
-            .map(taskName => {
-              return this.superGlobalTasks[step].filter((task: string): boolean => {
+        .map((taskNames: string[]): string[] =>
+          taskNames
+            .map(taskName =>
+              this.superGlobalTasks[step].filter((task: string): boolean => {
                 const { type } = this.explodeTaskName(task);
                 return type === taskName;
-              });
-            })
-            .reduce(this.mergeArrays);
-        })
+              })
+            )
+            .reduce(this.mergeArrays)
+        )
         .filter(this.removeEmptyArrays);
 
       this.defineTask(
@@ -134,7 +171,7 @@ export default class TaskFactory {
     });
   }
 
-  public createTasks(task: string, tasks: IGenericSettings): string[] {
+  private createTasks(task: string, tasks: IGenericSettings): void {
     Object.keys(tasks).forEach((name: string) => {
       const taskInstance = this.createTask(task, name, tasks[name]);
 
@@ -142,35 +179,6 @@ export default class TaskFactory {
       this.stackTask(taskInstance.build());
       this.stackTask(taskInstance.watch());
     });
-
-    return this.tasks;
-  }
-
-  public createTask(task: string, name: string, settings: object): Sass | Pug | Javascript {
-    if (this.availableTaskNames().indexOf(task) < 0) {
-      throw new Error(`Unsupported task: ${task}.`);
-    }
-
-    const instance = Object.create(this.availableTasks[task].prototype);
-    instance.constructor.apply(instance, [name, settings]);
-
-    return instance;
-  }
-
-  public availableTaskNames() {
-    return Object.keys(this.availableTasks);
-  }
-
-  public isValidTask(task: string) {
-    return this.availableTaskNames().indexOf(task) >= 0;
-  }
-
-  protected stackTask(name: string | false): string[] {
-    if (name !== false) {
-      this.tasks.push(name);
-    }
-
-    return this.tasks;
   }
 
   private defineTask(taskName: string, tasks: Undertaker.Task[], type: string = "series") {
@@ -239,5 +247,13 @@ export default class TaskFactory {
 
   private removeEmptyArrays(tasks: string[]): boolean {
     return tasks.length > 0;
+  }
+
+  private stackTask(name: string | false): string[] {
+    if (name !== false) {
+      this.tasks.push(name);
+    }
+
+    return this.tasks;
   }
 }
