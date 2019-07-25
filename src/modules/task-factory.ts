@@ -68,19 +68,12 @@ export default class TaskFactory {
       }
     });
 
-    // TODO: initialize browserify first.
+    if (this.tasks.length > 0) {
+      this.createGlobalTasks();
+      this.createSuperGlobalTasks();
 
-    this.createGlobalTasks();
-    this.createSuperGlobalTasks();
-
-    gulpTask(
-      "default",
-      series(
-        this.orderedGlobalTasks.map((tasks: string[]) => {
-          return parallel(tasks);
-        })
-      )
-    );
+      gulpTask("default", series(this.orderedGlobalTasks.map((tasks: string[]) => parallel(tasks))));
+    }
   }
 
   public createTask(task: string, name: string, settings: object): Sass | Pug | Javascript {
