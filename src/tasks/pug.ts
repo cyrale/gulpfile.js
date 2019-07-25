@@ -2,10 +2,10 @@ import fs from "fs";
 
 import { dest, src, task as gulpTask } from "gulp";
 
-import GData from "gulp-data";
-import GPlumber from "gulp-plumber";
-import GPug from "gulp-pug";
-import GPugLinter from "gulp-pug-linter";
+import GulpData from "gulp-data";
+import GulpPlumber from "gulp-plumber";
+import GulpPug from "gulp-pug";
+import GulpPugLinter from "gulp-pug-linter";
 import PugLintStylish from "puglint-stylish";
 
 import * as yaml from "js-yaml";
@@ -24,7 +24,7 @@ export default class Pug extends Task {
 
     gulpTask(taskName, done => {
       const task = src(this.settings.src, { cwd: this.settings.cwd }).pipe(
-        GPlumber(error => {
+        GulpPlumber(error => {
           this.exitOnError(taskName, error, done);
         })
       );
@@ -38,14 +38,14 @@ export default class Pug extends Task {
           data = yaml.safeLoad(fs.readFileSync(this.settings.settings.data, "utf8"));
         } else if (typeof this.settings.settings.data === "object") {
           (this.settings.settings.data as string[]).forEach((filename: string): void => {
-            data = [...data, ...yaml.safeLoad(fs.readFileSync(filename, "utf8"))];
+            data = Object.assign({}, data, yaml.safeLoad(fs.readFileSync(filename, "utf8")));
           });
         }
 
         task
-          .pipe(GData(data))
-          .pipe(GPug())
-          .pipe(GPlumber.stop());
+          .pipe(GulpData(data))
+          .pipe(GulpPug())
+          .pipe(GulpPlumber.stop());
       }
 
       task.pipe(dest(this.settings.dst, { cwd: this.settings.cwd })).on("finish", () => {
@@ -67,7 +67,7 @@ export default class Pug extends Task {
       this.chdir();
 
       return src(this.settings.src, { cwd: this.settings.cwd }).pipe(
-        GPugLinter({
+        GulpPugLinter({
           reporter: (errors: any[]): void => {
             if (errors.length > 0) {
               this.lintError = true;
