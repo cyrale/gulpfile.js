@@ -14,6 +14,7 @@ export type TaskCallback = (error?: any) => void;
 
 export default abstract class Task {
   public static taskErrors: ITaskErrorDefinition[] = [];
+
   protected task: string = "";
   protected name: string = "";
   protected settings: IGenericSettings = {};
@@ -47,7 +48,9 @@ export default abstract class Task {
     return taskName;
   }
 
-  protected abstract displayError(error: any): void;
+  protected displayError(error: any): void {
+    console.log(error);
+  }
 
   protected chdir(): void {
     try {
