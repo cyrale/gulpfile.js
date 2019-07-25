@@ -3,6 +3,7 @@ import process from "process";
 import { series, task as gulpTask, watch } from "gulp";
 
 import Config, { IGenericSettings } from "../modules/config";
+import Browsersync from "./browsersync";
 
 interface ITaskErrorDefinition {
   taskName: string;
@@ -19,12 +20,16 @@ export default abstract class Task {
   protected name: string = "";
   protected settings: IGenericSettings = {};
 
+  protected browserSync: Browsersync;
+
   protected withLinter: boolean = true;
   protected lintError: boolean = false;
 
-  protected constructor(name: string, settings: object) {
+  protected constructor(name: string, settings: object, browserSync: Browsersync) {
     this.name = name;
     this.settings = settings;
+
+    this.browserSync = browserSync;
   }
 
   public abstract build(): string;
@@ -34,7 +39,7 @@ export default abstract class Task {
   public watch(): string {
     const taskName = this.taskName("watch");
 
-    gulpTask(taskName, () => {
+    gulpTask(taskName, (done: TaskCallback): void => {
       const src = this.settings.src.concat(this.settings.watch || []);
       const tasks = [this.taskName("build")];
 
@@ -42,7 +47,9 @@ export default abstract class Task {
         tasks.unshift(this.taskName("lint"));
       }
 
-      return watch(src, { cwd: this.settings.cwd }, series(tasks));
+      watch(src, { cwd: this.settings.cwd }, series(tasks));
+
+      done();
     });
 
     return taskName;

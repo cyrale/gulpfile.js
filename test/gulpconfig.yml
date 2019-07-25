@@ -4,7 +4,7 @@
 browsersync:
   settings:
     server:
-      baseDir: "test/dist/"
+      baseDir: "dist/"
   watch:
     - "test/**/*.html"
     - "test/**/*.php"
@@ -13,6 +13,10 @@ browsersync:
 # ------------------------------------------
 pug:
   tasks:
+    public:
+      src:
+        - "src/pug/*.pug"
+      dst: "dist"
     test1:
       src:
         - "src/pug/test1/**/*.pug"
@@ -29,26 +33,26 @@ pug:
 # ------------------------------------------
 # SASS
 # ------------------------------------------
-#sass:
-#  tasks:
-#    public:
-#      src:
-#        - "assets/sass/*.scss"
-#        - "assets/sass/**/*.scss"
-#      dst: "build/css"
-#  settings:
-#    sass:
-#      errLogToConsole: true
-#    autoprefixer:
-#      browsers:
-#        - "> 1%"
-#        - "IE >= 9"
-#    mqpacker:
-#      sort: "mobile"
-#    inlineSVG:
-#      path: "assets/"
-#    extractMQ: true
-#    critical: true
+sass:
+  tasks:
+    public:
+      src:
+        - "src/sass/*.scss"
+        - "src/sass/**/*.scss"
+      dst: "dist/css"
+  settings:
+    sass:
+      errLogToConsole: true
+    autoprefixer:
+      browsers:
+        - "> 1%"
+        - "IE >= 9"
+    mqpacker:
+      sort: "mobile"
+    inlineSVG:
+      path: "assets/"
+    extractMQ: true
+    critical: true
 # ------------------------------------------
 # JavaScript
 # ------------------------------------------

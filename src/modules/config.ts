@@ -4,13 +4,12 @@ import path from "path";
 import process from "process";
 
 import * as yaml from "js-yaml";
+import Browsersync from "../tasks/browsersync";
 import TaskFactory from "./task-factory";
 
 export interface IGenericSettings {
   [index: string]: any;
 }
-
-export type DefaultCallback = () => void;
 
 /**
  * Get configuration of the application from command line and settings file.
@@ -123,8 +122,12 @@ export default class Config {
     delete this._settings.cwd;
 
     // Merge global and local settings in each tasks.
+    if (this._settings[Browsersync.taskName]) {
+      this._settings[Browsersync.taskName].cwd = this._options.cwd;
+    }
+
     const factory = new TaskFactory();
-    factory.availableTaskNames().forEach(name => {
+    factory.availableTaskNames().forEach((name: string): void | true => {
       if (!this._settings[name] || !this._settings[name].tasks) {
         return true;
       }

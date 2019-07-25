@@ -1,9 +1,11 @@
 import { task as gulpTask } from "gulp";
+
+import Browsersync from "./browsersync";
 import Task from "./task";
 
 export default class Javascript extends Task {
-  constructor(name: string, settings: object) {
-    super(name, settings);
+  constructor(name: string, settings: object, browserSync: Browsersync) {
+    super(name, settings, browserSync);
 
     this.task = "javascript";
   }
@@ -22,9 +24,5 @@ export default class Javascript extends Task {
     const taskName = this.taskName("lint");
 
     return taskName;
-  }
-
-  protected displayError(error: any): void {
-    console.log(error);
   }
 }
