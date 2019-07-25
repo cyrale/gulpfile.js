@@ -1,13 +1,13 @@
 # ------------------------------------------
 # BrowserSync (https://www.browsersync.io/)
 # ------------------------------------------
-#browsersync:
-#  settings:
-#    server:
-#      baseDir: "test/dist/"
-#  watch:
-#    - "test/**/*.html"
-#    - "test/**/*.php"
+browsersync:
+  settings:
+    server:
+      baseDir: "test/dist/"
+  watch:
+    - "test/**/*.html"
+    - "test/**/*.php"
 # ------------------------------------------
 # Pug (https://pugjs.org)
 # ------------------------------------------

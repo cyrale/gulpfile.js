@@ -1,8 +1,9 @@
 import process from "process";
-
-import { parallel, series, task as gulpTask } from "gulp";
-
 import * as Undertaker from "undertaker";
+
+import { parallel, series, task as gulpTask, watch } from "gulp";
+
+import Browsersync from "../tasks/browsersync";
 import Javascript from "../tasks/javascript";
 import Pug from "../tasks/pug";
 import Sass from "../tasks/sass";
@@ -24,6 +25,7 @@ interface IGlobalTaskList {
 }
 
 export default class TaskFactory {
+  private browserSync: Browsersync | undefined;
   private tasks: string[] = [];
 
   private superGlobalTasks: ITaskList = {};
@@ -49,6 +51,14 @@ export default class TaskFactory {
 
   public createAllTasks(): void {
     const conf = Config.getInstance();
+
+    // Initialize BrowserSync
+    if (conf.settings.browsersync) {
+      this.browserSync = new Browsersync(conf.settings.browsersync);
+
+      this.stackTask(this.browserSync.start());
+      this.stackTask(this.browserSync.watch());
+    }
 
     Object.keys(conf.settings).forEach((task: string) => {
       const confTasks = conf.settings[task] as object;
