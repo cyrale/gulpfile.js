@@ -88,10 +88,7 @@ export default class TaskFactory {
       throw new Error(`Unsupported task: ${task}.`);
     }
 
-    const instance = Object.create(this.availableTasks[task].prototype);
-    instance.constructor.apply(instance, [name, settings]);
-
-    return instance;
+    return new this.availableTasks[task](name, settings);
   }
 
   public availableTaskNames() {
