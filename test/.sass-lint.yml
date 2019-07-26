@@ -11,4 +11,4 @@ rules:
   no-misspelled-properties:
     - 1
     - extra-properties:
-        - critical
+      - critical
