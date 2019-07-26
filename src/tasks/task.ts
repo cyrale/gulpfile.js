@@ -1,6 +1,7 @@
 import process from "process";
 
-import { series, task as gulpTask, watch } from "gulp";
+import { dest, series, src, task as gulpTask, watch } from "gulp";
+import GulpPlumber from "gulp-plumber";
 
 import Config, { IGenericSettings } from "../modules/config";
 import Browsersync from "./browsersync";
@@ -20,7 +21,10 @@ export default abstract class Task {
   protected name: string = "";
   protected settings: IGenericSettings = {};
 
+  protected watchingFiles: string[] = [];
+
   protected browserSync: Browsersync;
+  protected browserSyncSettings: {} = {};
 
   protected withLinter: boolean = true;
   protected lintError: boolean = false;
@@ -32,22 +36,74 @@ export default abstract class Task {
     this.browserSync = browserSync;
   }
 
-  public abstract build(): string;
+  public build(): string {
+    const taskName = this.taskName("build");
 
-  public abstract lint(): string | false;
+    gulpTask(
+      taskName,
+      (done: TaskCallback): NodeJS.ReadWriteStream => {
+        this.chdir();
+
+        const stream = src(this.settings.src, { cwd: this.settings.cwd }).pipe(
+          GulpPlumber(error => this.exitOnError(taskName, error, done))
+        );
+
+        if (!this.withLinter || !this.lintError) {
+          this.buildSpecific(stream);
+
+          stream
+            .pipe(GulpPlumber.stop())
+            .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
+            .pipe(this.browserSync.sync(this.browserSyncSettings));
+        }
+
+        return stream;
+      }
+    );
+
+    return taskName;
+  }
+
+  public abstract buildSpecific(stream: NodeJS.ReadWriteStream): void;
+
+  public lint(): string | false {
+    const taskName = this.taskName("lint");
+
+    if (!this.withLinter) {
+      return false;
+    }
+
+    this.lintError = false;
+
+    gulpTask(
+      taskName,
+      (): NodeJS.ReadWriteStream => {
+        this.chdir();
+
+        const stream = src(this.settings.src, { cwd: this.settings.cwd });
+        this.lintSpecific(stream);
+
+        return stream;
+      }
+    );
+
+    return taskName;
+  }
+
+  public abstract lintSpecific(stream: NodeJS.ReadWriteStream): void;
 
   public watch(): string {
     const taskName = this.taskName("watch");
 
     gulpTask(taskName, (done: TaskCallback): void => {
-      const src = this.settings.src.concat(this.settings.watch || []);
+      const srcWatch = [...this.settings.src, ...(this.settings.watch || []), ...this.watchingFiles];
       const tasks = [this.taskName("build")];
 
       if (this.withLinter) {
         tasks.unshift(this.taskName("lint"));
       }
 
-      watch(src, { cwd: this.settings.cwd }, series(tasks));
+      watch(srcWatch, { cwd: this.settings.cwd }, series(tasks));
 
       done();
     });

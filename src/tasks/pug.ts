@@ -3,8 +3,6 @@ import fs from "fs";
 import { dest, src, task as gulpTask } from "gulp";
 
 import GulpData from "gulp-data";
-import GulpIf from "gulp-if";
-import GulpPlumber from "gulp-plumber";
 import GulpPug from "gulp-pug";
 import GulpPugLinter from "gulp-pug-linter";
 import PugLintStylish from "puglint-stylish";
@@ -19,70 +17,39 @@ export default class Pug extends Task {
     super(name, settings, browserSync);
 
     this.task = "pug";
+
+    if (typeof this.settings.settings.data === "string") {
+      this.watchingFiles = [this.settings.settings.data];
+    } else if (typeof this.settings.settings.data === "object") {
+      this.watchingFiles = this.settings.settings.data as string[];
+    }
   }
 
-  public build(): string {
-    const taskName = this.taskName("build");
+  public buildSpecific(stream: NodeJS.ReadWriteStream): void {
+    let data: any[] = [];
 
-    gulpTask(
-      taskName,
-      (done: TaskCallback): NodeJS.ReadWriteStream => {
-        const task = src(this.settings.src, { cwd: this.settings.cwd }).pipe(
-          GulpPlumber(error => {
-            this.exitOnError(taskName, error, done);
-          })
-        );
+    if (typeof this.settings.settings.data === "string") {
+      data = yaml.safeLoad(fs.readFileSync(this.settings.settings.data, "utf8"));
+    } else if (typeof this.settings.settings.data === "object") {
+      (this.settings.settings.data as string[]).forEach((filename: string): void => {
+        data = Object.assign({}, data, yaml.safeLoad(fs.readFileSync(filename, "utf8")));
+      });
+    }
 
-        this.chdir();
+    stream.pipe(GulpData(data)).pipe(GulpPug());
+  }
 
-        if (!this.lintError) {
-          let data: any[] = [];
-
-          if (typeof this.settings.settings.data === "string") {
-            data = yaml.safeLoad(fs.readFileSync(this.settings.settings.data, "utf8"));
-          } else if (typeof this.settings.settings.data === "object") {
-            (this.settings.settings.data as string[]).forEach((filename: string): void => {
-              data = Object.assign({}, data, yaml.safeLoad(fs.readFileSync(filename, "utf8")));
-            });
+  public lintSpecific(stream: NodeJS.ReadWriteStream): void {
+    stream.pipe(
+      GulpPugLinter({
+        reporter: (errors: any[]): void => {
+          if (errors.length > 0) {
+            this.lintError = true;
+            PugLintStylish(errors);
           }
-
-          task
-            .pipe(GulpData(data))
-            .pipe(GulpPug())
-            .pipe(GulpPlumber.stop())
-            .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
-            // .pipe(this.browserSync ? this.browserSync.sync() : (done: TaskCallback): void => done());
-            .pipe(this.browserSync.sync());
         }
-
-        return task;
-      }
+      })
     );
-
-    return taskName;
-  }
-
-  public lint(): string | false {
-    const taskName = this.taskName("lint");
-
-    this.lintError = false;
-
-    gulpTask(taskName, () => {
-      this.chdir();
-
-      return src(this.settings.src, { cwd: this.settings.cwd }).pipe(
-        GulpPugLinter({
-          reporter: (errors: any[]): void => {
-            if (errors.length > 0) {
-              this.lintError = true;
-              PugLintStylish(errors);
-            }
-          }
-        })
-      );
-    });
-
-    return taskName;
   }
 
   protected displayError(error: any): void {

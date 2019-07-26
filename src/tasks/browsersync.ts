@@ -4,23 +4,38 @@ import BrowserSync, { BrowserSyncInstance } from "browser-sync";
 import { task as gulpTask, watch } from "gulp";
 import GulpIf from "gulp-if";
 
-import { IGenericSettings } from "../modules/config";
+import Config, { IGenericSettings } from "../modules/config";
 import { TaskCallback } from "./task";
 
 export default class Browsersync {
   public static readonly taskName = "browsersync";
 
-  public readonly _task: string;
-  public readonly _settings: IGenericSettings;
+  public static getInstance() {
+    if (!Browsersync._instance) {
+      const conf = Config.getInstance();
+      Browsersync._instance = new Browsersync(conf.settings.browsersync);
+    }
 
-  private browserSync: BrowserSyncInstance = BrowserSync.create();
-  private started: boolean = false;
+    return Browsersync._instance;
+  }
+
+  private static _instance: Browsersync;
+
+  private readonly _task: string;
+  private readonly _settings: IGenericSettings;
+
+  private _browserSync: BrowserSyncInstance = BrowserSync.create();
+  private _started: boolean = false;
+
+  public get browserSync(): BrowserSyncInstance {
+    return this._browserSync;
+  }
 
   public get task(): string {
     return this._task;
   }
 
-  constructor(settings: {}) {
+  private constructor(settings: {}) {
     this._task = Browsersync.taskName;
     this._settings = settings;
   }
@@ -31,7 +46,7 @@ export default class Browsersync {
     gulpTask(taskName, (done: TaskCallback): void => {
       this.chdir();
 
-      this.browserSync.init(
+      this._browserSync.init(
         Object.assign(
           {
             open: false,
@@ -40,7 +55,7 @@ export default class Browsersync {
           this._settings.settings || {}
         ),
         (): void => {
-          this.started = true;
+          this._started = true;
         }
       );
     });
@@ -48,17 +63,22 @@ export default class Browsersync {
     return taskName;
   }
 
-  public sync(settings?: {}): NodeJS.ReadWriteStream {
+  public sync(settings?: {}): NodeJS.WritableStream {
     const reloadSettings = Object.assign({ stream: true }, settings || {});
-    return GulpIf(this.started, this.browserSync.reload(reloadSettings));
+    return GulpIf(this._started, this._browserSync.reload(reloadSettings));
   }
 
   public watch(): string | false {
     const taskName = `${this._task}:watch`;
 
     if (this._settings.watch) {
-      gulpTask(taskName, () => {
-        watch(this._settings.watch, this.sync);
+      gulpTask(taskName, (done: TaskCallback): void => {
+        watch(this._settings.watch).on("change", () => {
+          if (this._started) {
+            this._browserSync.reload();
+          }
+        });
+        done();
       });
 
       return taskName;

@@ -54,14 +54,15 @@ export default class TaskFactory {
   public createAllTasks(): void {
     const conf = Config.getInstance();
 
-    // Initialize BrowserSync
-    this.browserSync = new Browsersync(conf.settings.browsersync);
+    // Initialize BrowserSync.
+    this.browserSync = Browsersync.getInstance();
 
     if (conf.settings.browsersync) {
       this.stackTask(this.browserSync.start());
       this.stackTask(this.browserSync.watch());
     }
 
+    // Initialize other tasks.
     Object.keys(conf.settings).forEach((task: string) => {
       const confTasks = conf.settings[task] as object;
 

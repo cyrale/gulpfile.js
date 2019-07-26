@@ -38,6 +38,7 @@ export default class Config {
   get settings(): IGenericSettings {
     return this._settings;
   }
+
   /**
    * Get Config instance.
    */

@@ -6,8 +6,7 @@ browsersync:
     server:
       baseDir: "dist/"
   watch:
-    - "test/**/*.html"
-    - "test/**/*.php"
+    - "src/**/*.html"
 # ------------------------------------------
 # Pug (https://pugjs.org)
 # ------------------------------------------
