@@ -73,7 +73,9 @@ export default class Config {
     const search = "build";
 
     return (
-      this.currentRun !== "default" && this.currentRun.lastIndexOf(search) === this.currentRun.length - search.length
+      this.currentRun !== "default" &&
+      this.currentRun.lastIndexOf(search) >= 0 &&
+      this.currentRun.lastIndexOf(search) === this.currentRun.length - search.length
     );
   }
 
