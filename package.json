@@ -59,6 +59,7 @@
     "minimist": "^1.2.0",
     "postcss-assets": "^5.0.0",
     "puglint-stylish": "^1.0.1",
+    "rucksack-css": "^1.0.2",
     "sass-lint": "^1.13.1",
     "source-map-support": "^0.5.12",
     "through2": "^3.0.1"

@@ -11,6 +11,7 @@ import GulpRename from "gulp-rename";
 import GulpSass from "gulp-sass";
 import GulpSassLint from "gulp-sass-lint";
 import PostCSSAssets from "postcss-assets";
+import RucksackCSS from "rucksack-css";
 import SassLint from "sass-lint";
 
 import Task from "./task";
@@ -56,7 +57,13 @@ export default class Sass extends Task {
 
     stream
       .pipe(GulpSass(settings.sass))
-      .pipe(GulpPostCSS([PostCSSAssets(settings.assets), Autoprefixer(settings.autoprefixer)]))
+      .pipe(
+        GulpPostCSS([
+          PostCSSAssets(settings.assets),
+          RucksackCSS(settings.rucksack),
+          Autoprefixer(settings.autoprefixer)
+        ])
+      )
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
       .pipe(GulpPostCSS([CSSNano(settings.cssnano)]))
       .pipe(GulpRename({ suffix: ".min" }))
