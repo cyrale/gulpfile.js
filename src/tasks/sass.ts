@@ -11,6 +11,8 @@ import GulpRename from "gulp-rename";
 import GulpSass from "gulp-sass";
 import GulpSassLint from "gulp-sass-lint";
 import PostCSSAssets from "postcss-assets";
+import PostCSSInlineSVG from "postcss-inline-svg";
+import PostCSSSVGO from "postcss-svgo";
 import RucksackCSS from "rucksack-css";
 import SassLint from "sass-lint";
 
@@ -27,45 +29,48 @@ export default class Sass extends Task {
   }
 
   public buildSpecific(stream: NodeJS.ReadWriteStream): void {
-    const settings = Object.assign(
-      {
-        assets: {
-          cachebuster: true,
-          relative: true
-        },
-        autoprefixer: {
-          grid: true,
-          overrideBrowserslist: ["defaults"]
-        },
-        cssnano: {
-          preset: [
-            "default",
-            {
-              cssDeclarationSorter: false
-            }
-          ]
-        },
-        rucksack: {
-          fallbacks: true
-        },
-        sass: {
-          outputStyle: "nested"
-        }
+    const defaultSettings = {
+      SVGO: {},
+      assets: {
+        cachebuster: true,
+        relative: true
       },
-      this.settings.settings || {}
-    );
+      autoprefixer: {
+        grid: true,
+        overrideBrowserslist: ["defaults"]
+      },
+      cssnano: {
+        preset: [
+          "default",
+          {
+            cssDeclarationSorter: false
+          }
+        ]
+      },
+      inlineSVG: {
+        path: false
+      },
+      rucksack: {
+        fallbacks: true
+      },
+      sass: {
+        outputStyle: "nested"
+      }
+    };
 
     stream
-      .pipe(GulpSass(settings.sass))
+      .pipe(GulpSass({ ...defaultSettings.sass, ...(this.settings.sass || {}) }))
       .pipe(
         GulpPostCSS([
-          PostCSSAssets(settings.assets),
-          RucksackCSS(settings.rucksack),
-          Autoprefixer(settings.autoprefixer)
+          PostCSSAssets({ ...defaultSettings.assets, ...(this.settings.assets || {}) }),
+          RucksackCSS({ ...defaultSettings.rucksack, ...(this.settings.rucksack || {}) }),
+          Autoprefixer({ ...defaultSettings.autoprefixer, ...(this.settings.autoprefixer || {}) }),
+          PostCSSInlineSVG({ ...defaultSettings.inlineSVG, ...(this.settings.inlineSVG || {}) }),
+          PostCSSSVGO({ ...defaultSettings.SVGO, ...(this.settings.SVGO || {}) })
         ])
       )
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
-      .pipe(GulpPostCSS([CSSNano(settings.cssnano)]))
+      .pipe(GulpPostCSS([CSSNano({ ...defaultSettings.cssnano, ...(this.settings.cssnano || {}) })]))
       .pipe(GulpRename({ suffix: ".min" }))
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
   }
