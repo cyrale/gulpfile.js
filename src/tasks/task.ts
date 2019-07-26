@@ -45,7 +45,7 @@ export default abstract class Task {
         this.chdir();
 
         const stream = src(this.settings.src, { cwd: this.settings.cwd }).pipe(
-          GulpPlumber(error => this.exitOnError(taskName, error, done))
+          GulpPlumber(error => this.displayOrExitOnError(taskName, error, done))
         );
 
         if (!this.withLinter || !this.lintError) {
@@ -118,15 +118,7 @@ export default abstract class Task {
     console.log(error);
   }
 
-  protected chdir(): void {
-    try {
-      process.chdir(this.settings.cwd);
-    } catch (err) {
-      console.error(`chdir: ${err}`);
-    }
-  }
-
-  protected exitOnError(taskName: string, error: any, done: TaskCallback): void {
+  protected displayOrExitOnError(taskName: string, error: any, done: TaskCallback): void {
     this.displayError(error);
 
     Task.taskErrors.push({
@@ -138,6 +130,14 @@ export default abstract class Task {
     if (this.isBuildRun() && this.isCurrentRun(taskName)) {
       done();
       process.exit(1);
+    }
+  }
+
+  protected chdir(): void {
+    try {
+      process.chdir(this.settings.cwd);
+    } catch (err) {
+      console.error(`chdir: ${err}`);
     }
   }
 

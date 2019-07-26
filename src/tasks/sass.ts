@@ -9,6 +9,7 @@ import GulpPostCSS from "gulp-postcss";
 import GulpRename from "gulp-rename";
 import GulpSass from "gulp-sass";
 import GulpSassLint from "gulp-sass-lint";
+import SassLint from "sass-lint";
 
 import Task from "./task";
 
@@ -60,6 +61,31 @@ export default class Sass extends Task {
       .pipe(GulpSassLint({ configFile: path.join(this.settings.cwd, ".sass-lint.yml") }))
       .pipe(GulpSassLint.format())
       .pipe(this.lintNotifier());
+  }
+
+  protected displayError(error: any): void {
+    console.log(
+      SassLint.format([
+        {
+          errorCount: 1,
+          filePath: error.relativePath,
+          messages: [
+            {
+              column: error.column,
+              line: error.line,
+              message: error.messageOriginal,
+              severity: 2
+            }
+          ],
+          warningCount: 0
+        }
+      ])
+    );
+
+    // Particular exit due to the comportment of Sass.
+    if (this.isBuildRun()) {
+      process.exit(1);
+    }
   }
 
   private lintNotifier(): Transform {
