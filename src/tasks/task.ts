@@ -22,6 +22,8 @@ export default abstract class Task {
   protected name: string = "";
   protected settings: IGenericSettings = {};
 
+  protected defaultDest: boolean = true;
+
   protected watchingFiles: string[] = [];
 
   protected browserSyncSettings: {} = {};
@@ -42,27 +44,30 @@ export default abstract class Task {
       (done: TaskCallback): NodeJS.ReadWriteStream => {
         this.chdir();
 
-        const stream = src(this.settings.src, { cwd: this.settings.cwd }).pipe(
+        const taskStream = src(this.settings.src, { cwd: this.settings.cwd }).pipe(
           GulpPlumber(error => this.exitOnError(taskName, error, done))
         );
 
         if (!this.withLinter || !this.lintError) {
-          this.buildSpecific(stream);
+          this.buildSpecific(taskStream);
 
-          stream
-            .pipe(GulpPlumber.stop())
-            .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
-            .pipe(Browsersync.getInstance().sync(this.browserSyncSettings));
+          taskStream.pipe(GulpPlumber.stop());
+
+          if (this.defaultDest) {
+            taskStream.pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
+          }
+
+          taskStream.pipe(Browsersync.getInstance().sync(this.browserSyncSettings));
         }
 
-        return stream;
+        return taskStream;
       }
     );
 
     return taskName;
   }
 
-  public abstract buildSpecific(stream: NodeJS.ReadWriteStream): void;
+  public abstract buildSpecific(taskStream: NodeJS.ReadWriteStream): void;
 
   public lint(): string | false {
     const taskName = this.taskName("lint");
@@ -78,17 +83,17 @@ export default abstract class Task {
       (): NodeJS.ReadWriteStream => {
         this.chdir();
 
-        const stream = src(this.settings.src, { cwd: this.settings.cwd });
-        this.lintSpecific(stream);
+        const taskStream = src(this.settings.src, { cwd: this.settings.cwd });
+        this.lintSpecific(taskStream);
 
-        return stream;
+        return taskStream;
       }
     );
 
     return taskName;
   }
 
-  public abstract lintSpecific(stream: NodeJS.ReadWriteStream): void;
+  public abstract lintSpecific(taskStream: NodeJS.ReadWriteStream): void;
 
   public watch(): string {
     const taskName = this.taskName("watch");
