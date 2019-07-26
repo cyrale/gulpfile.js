@@ -23,25 +23,7 @@ export default class Sass extends Task {
   }
 
   public buildSpecific(stream: NodeJS.ReadWriteStream): void {
-    const settings = this.getSettings();
-
-    stream
-      .pipe(GulpSass(settings.sass))
-      .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
-      .pipe(GulpPostCSS([CSSNano(settings.cssnano)]))
-      .pipe(GulpRename({ suffix: ".min" }))
-      .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
-  }
-
-  public lintSpecific(stream: NodeJS.ReadWriteStream): void {
-    stream
-      .pipe(GulpSassLint({ configFile: path.join(this.settings.cwd, ".sass-lint.yml") }))
-      .pipe(GulpSassLint.format())
-      .pipe(this.lintNotifier());
-  }
-
-  private getSettings() {
-    return Object.assign(
+    const settings = Object.assign(
       {
         autoprefixer: {
           browsers: ["> 1%", "IE >= 9"],
@@ -64,6 +46,20 @@ export default class Sass extends Task {
       },
       this.settings.settings || {}
     );
+
+    stream
+      .pipe(GulpSass(settings.sass))
+      .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
+      .pipe(GulpPostCSS([CSSNano(settings.cssnano)]))
+      .pipe(GulpRename({ suffix: ".min" }))
+      .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
+  }
+
+  public lintSpecific(stream: NodeJS.ReadWriteStream): void {
+    stream
+      .pipe(GulpSassLint({ configFile: path.join(this.settings.cwd, ".sass-lint.yml") }))
+      .pipe(GulpSassLint.format())
+      .pipe(this.lintNotifier());
   }
 
   private lintNotifier(): Transform {
