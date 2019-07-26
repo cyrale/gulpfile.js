@@ -16,7 +16,7 @@
     "gulpfile.js": "bin/gulpfile.js.js"
   },
   "scripts": {
-    "prepublish": "npm run build",
+    "prepare": "npm run build",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "npx gulp --gulpfile dist/app.js --configfile test/gulpconfig.yml",
@@ -57,6 +57,7 @@
     "lodash": "^4.17.14",
     "merge-stream": "^2.0.0",
     "minimist": "^1.2.0",
+    "postcss-assets": "^5.0.0",
     "puglint-stylish": "^1.0.1",
     "sass-lint": "^1.13.1",
     "source-map-support": "^0.5.12",
