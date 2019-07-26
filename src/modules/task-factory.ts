@@ -27,7 +27,6 @@ interface IGlobalTaskList {
 export default class TaskFactory {
   private static sortOrder = ["lint", "build", "watch"];
 
-  private browserSync: Browsersync | undefined;
   private tasks: string[] = [];
 
   private superGlobalTasks: ITaskList = {};
@@ -45,9 +44,9 @@ export default class TaskFactory {
   };
 
   private tasksGroupAndOrder: string[][] = [
-    ["fonts", "sprites", "svgstore"],
-    ["images"],
-    ["sass", "javascript", "pug"],
+    // ["fonts", "sprites", "svgstore"],
+    // ["images"],
+    [Sass.taskName, Javascript.taskName, Pug.taskName],
     [Browsersync.taskName]
   ];
 
@@ -55,11 +54,11 @@ export default class TaskFactory {
     const conf = Config.getInstance();
 
     // Initialize BrowserSync.
-    this.browserSync = Browsersync.getInstance();
+    const browserSync = Browsersync.getInstance();
 
     if (conf.settings.browsersync) {
-      this.stackTask(this.browserSync.start());
-      this.stackTask(this.browserSync.watch());
+      this.stackTask(browserSync.start());
+      this.stackTask(browserSync.watch());
     }
 
     // Initialize other tasks.
@@ -87,7 +86,7 @@ export default class TaskFactory {
       throw new Error(`Unsupported task: ${task}.`);
     }
 
-    return new this.availableTasks[task](name, settings, this.browserSync);
+    return new this.availableTasks[task](name, settings);
   }
 
   public availableTaskNames(): string[] {
@@ -103,7 +102,7 @@ export default class TaskFactory {
     this.tasks.forEach((task: string): void => {
       const { type, name, step } = this.explodeTaskName(task);
 
-      if (this.browserSync && type === this.browserSync.task) {
+      if (type === Browsersync.taskName) {
         this.pushGlobalTask("byTypeOnly", type, task);
       } else {
         // Sort tasks by name.

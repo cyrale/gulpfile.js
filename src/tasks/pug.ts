@@ -1,7 +1,5 @@
 import fs from "fs";
 
-import { dest, src, task as gulpTask } from "gulp";
-
 import GulpData from "gulp-data";
 import GulpPug from "gulp-pug";
 import GulpPugLinter from "gulp-pug-linter";
@@ -9,14 +7,13 @@ import PugLintStylish from "puglint-stylish";
 
 import * as yaml from "js-yaml";
 
-import Browsersync from "./browsersync";
-import Task, { TaskCallback } from "./task";
+import Task from "./task";
 
 export default class Pug extends Task {
-  constructor(name: string, settings: object, browserSync: Browsersync) {
-    super(name, settings, browserSync);
+  public static readonly taskName: string = "pug";
 
-    this.task = "pug";
+  constructor(name: string, settings: object) {
+    super(name, settings);
 
     if (typeof this.settings.settings.data === "string") {
       this.watchingFiles = [this.settings.settings.data];

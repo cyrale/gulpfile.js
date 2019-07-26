@@ -15,6 +15,7 @@ interface ITaskErrorDefinition {
 export type TaskCallback = (error?: any) => void;
 
 export default abstract class Task {
+  public static readonly taskName: string = "";
   public static taskErrors: ITaskErrorDefinition[] = [];
 
   protected task: string = "";
@@ -23,17 +24,14 @@ export default abstract class Task {
 
   protected watchingFiles: string[] = [];
 
-  protected browserSync: Browsersync;
   protected browserSyncSettings: {} = {};
 
   protected withLinter: boolean = true;
   protected lintError: boolean = false;
 
-  protected constructor(name: string, settings: object, browserSync: Browsersync) {
+  protected constructor(name: string, settings: object) {
     this.name = name;
     this.settings = settings;
-
-    this.browserSync = browserSync;
   }
 
   public build(): string {
@@ -54,7 +52,7 @@ export default abstract class Task {
           stream
             .pipe(GulpPlumber.stop())
             .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
-            .pipe(this.browserSync.sync(this.browserSyncSettings));
+            .pipe(Browsersync.getInstance().sync(this.browserSyncSettings));
         }
 
         return stream;
@@ -147,6 +145,6 @@ export default abstract class Task {
   }
 
   protected taskName(step: string): string {
-    return `${this.task}:${this.name}:${step}`;
+    return `${(this.constructor as any).taskName}:${this.name}:${step}`;
   }
 }

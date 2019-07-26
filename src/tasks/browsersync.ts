@@ -8,7 +8,7 @@ import Config, { IGenericSettings } from "../modules/config";
 import { TaskCallback } from "./task";
 
 export default class Browsersync {
-  public static readonly taskName = "browsersync";
+  public static readonly taskName: string = "browsersync";
 
   public static getInstance() {
     if (!Browsersync._instance) {
