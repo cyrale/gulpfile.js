@@ -4,3 +4,9 @@ $black: #000;
 body {
   background-color: $white;
 }
+
+@media (min-resolution: 2dppx) {
+  body {
+    background-color: $black;
+  }
+}

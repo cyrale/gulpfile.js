@@ -43,7 +43,7 @@ sass:
     sass:
       errLogToConsole: true
     autoprefixer:
-      browsers:
+      overrideBrowserslist:
         - "> 1%"
         - "IE >= 9"
     mqpacker:

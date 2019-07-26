@@ -4,6 +4,7 @@ import through from "through2";
 
 import { dest } from "gulp";
 
+import Autoprefixer from "autoprefixer";
 import CSSNano from "cssnano";
 import GulpPostCSS from "gulp-postcss";
 import GulpRename from "gulp-rename";
@@ -27,8 +28,8 @@ export default class Sass extends Task {
     const settings = Object.assign(
       {
         autoprefixer: {
-          browsers: ["> 1%", "IE >= 9"],
-          grid: true
+          grid: true,
+          overrideBrowserslist: ["defaults"]
         },
         cssnano: {
           preset: [
@@ -50,6 +51,7 @@ export default class Sass extends Task {
 
     stream
       .pipe(GulpSass(settings.sass))
+      .pipe(GulpPostCSS([Autoprefixer(settings.autoprefixer)]))
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
       .pipe(GulpPostCSS([CSSNano(settings.cssnano)]))
       .pipe(GulpRename({ suffix: ".min" }))
