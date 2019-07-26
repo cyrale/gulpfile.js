@@ -1,5 +1,5 @@
 import path from "path";
-import stream from "stream";
+import { Transform } from "stream";
 import through from "through2";
 
 import { dest } from "gulp";
@@ -22,10 +22,10 @@ export default class Sass extends Task {
     this.browserSyncSettings = { match: "**/*.css" };
   }
 
-  public buildSpecific(taskStream: NodeJS.ReadWriteStream): void {
+  public buildSpecific(stream: NodeJS.ReadWriteStream): void {
     const settings = this.getSettings();
 
-    taskStream
+    stream
       .pipe(GulpSass(settings.sass))
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
       .pipe(GulpPostCSS([CSSNano(settings.cssnano)]))
@@ -33,8 +33,8 @@ export default class Sass extends Task {
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
   }
 
-  public lintSpecific(taskStream: NodeJS.ReadWriteStream): void {
-    taskStream
+  public lintSpecific(stream: NodeJS.ReadWriteStream): void {
+    stream
       .pipe(GulpSassLint({ configFile: path.join(this.settings.cwd, ".sass-lint.yml") }))
       .pipe(GulpSassLint.format())
       .pipe(this.lintNotifier());
@@ -66,7 +66,7 @@ export default class Sass extends Task {
     );
   }
 
-  private lintNotifier(): stream.Transform {
+  private lintNotifier(): Transform {
     return through(
       { objectMode: true },
       (file, encoding, cb): void => {

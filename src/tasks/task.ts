@@ -44,30 +44,30 @@ export default abstract class Task {
       (done: TaskCallback): NodeJS.ReadWriteStream => {
         this.chdir();
 
-        const taskStream = src(this.settings.src, { cwd: this.settings.cwd }).pipe(
+        const stream = src(this.settings.src, { cwd: this.settings.cwd }).pipe(
           GulpPlumber(error => this.exitOnError(taskName, error, done))
         );
 
         if (!this.withLinter || !this.lintError) {
-          this.buildSpecific(taskStream);
+          this.buildSpecific(stream);
 
-          taskStream.pipe(GulpPlumber.stop());
+          stream.pipe(GulpPlumber.stop());
 
           if (this.defaultDest) {
-            taskStream.pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
+            stream.pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
           }
 
-          taskStream.pipe(Browsersync.getInstance().sync(this.browserSyncSettings));
+          stream.pipe(Browsersync.getInstance().sync(this.browserSyncSettings));
         }
 
-        return taskStream;
+        return stream;
       }
     );
 
     return taskName;
   }
 
-  public abstract buildSpecific(taskStream: NodeJS.ReadWriteStream): void;
+  public abstract buildSpecific(stream: NodeJS.ReadWriteStream): void;
 
   public lint(): string | false {
     const taskName = this.taskName("lint");
@@ -83,17 +83,17 @@ export default abstract class Task {
       (): NodeJS.ReadWriteStream => {
         this.chdir();
 
-        const taskStream = src(this.settings.src, { cwd: this.settings.cwd });
-        this.lintSpecific(taskStream);
+        const stream = src(this.settings.src, { cwd: this.settings.cwd });
+        this.lintSpecific(stream);
 
-        return taskStream;
+        return stream;
       }
     );
 
     return taskName;
   }
 
-  public abstract lintSpecific(taskStream: NodeJS.ReadWriteStream): void;
+  public abstract lintSpecific(stream: NodeJS.ReadWriteStream): void;
 
   public watch(): string {
     const taskName = this.taskName("watch");
