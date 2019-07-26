@@ -5,6 +5,7 @@ import through from "through2";
 import { dest } from "gulp";
 
 import Autoprefixer from "autoprefixer";
+import CSSMQPacker from "css-mqpacker";
 import CSSNano from "cssnano";
 import GulpPostCSS from "gulp-postcss";
 import GulpRename from "gulp-rename";
@@ -15,6 +16,7 @@ import PostCSSInlineSVG from "postcss-inline-svg";
 import PostCSSSVGO from "postcss-svgo";
 import RucksackCSS from "rucksack-css";
 import SassLint from "sass-lint";
+import SortCSSMediaQueries from "sort-css-media-queries";
 
 import Task from "./task";
 
@@ -50,6 +52,9 @@ export default class Sass extends Task {
       inlineSVG: {
         path: false
       },
+      mqpacker: {
+        sort: "mobile"
+      },
       rucksack: {
         fallbacks: true
       },
@@ -57,6 +62,11 @@ export default class Sass extends Task {
         outputStyle: "nested"
       }
     };
+
+    const mqPackerSettings: {
+      sort: any;
+    } = { ...defaultSettings.mqpacker, ...(this.settings.mqpacker || {}) };
+    mqPackerSettings.sort = mqPackerSettings.sort === "mobile" ? SortCSSMediaQueries : SortCSSMediaQueries.desktopFirst;
 
     stream
       .pipe(GulpSass({ ...defaultSettings.sass, ...(this.settings.sass || {}) }))
@@ -70,7 +80,12 @@ export default class Sass extends Task {
         ])
       )
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
-      .pipe(GulpPostCSS([CSSNano({ ...defaultSettings.cssnano, ...(this.settings.cssnano || {}) })]))
+      .pipe(
+        GulpPostCSS([
+          CSSNano({ ...defaultSettings.cssnano, ...(this.settings.cssnano || {}) }),
+          CSSMQPacker(mqPackerSettings)
+        ])
+      )
       .pipe(GulpRename({ suffix: ".min" }))
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
   }
