@@ -50,6 +50,7 @@ export default class Sass extends Task {
           "default",
           {
             cssDeclarationSorter: false,
+            svgo: false,
           },
         ],
       },
@@ -163,7 +164,7 @@ export default class Sass extends Task {
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
       .pipe(
         GulpPostCSS([
-          CSSNano({ ...defaultSettings.cssnano, ...(this.settings.cssnano || {}) }),
+          CSSNano({ ...defaultSettings.cssnano, ...(settings.cssnano || {}) } as {}),
           CSSMQPacker(mqPackerSettings),
         ])
       )
