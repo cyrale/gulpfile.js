@@ -21,7 +21,8 @@ import RucksackCSS from "rucksack-css";
 import SassLint from "sass-lint";
 import SortCSSMediaQueries from "sort-css-media-queries";
 
-import Task from "./task";
+import Browsersync from "./browsersync";
+import Task, { IGulpOptions } from "./task";
 
 export default class Sass extends Task {
   public static readonly taskName: string = "sass";
@@ -29,11 +30,13 @@ export default class Sass extends Task {
   constructor(name: string, settings: object) {
     super(name, settings);
 
+    this.withSourcemaps = true;
+
     this.defaultDest = false;
     this.browserSyncSettings = { match: "**/*.css" };
   }
 
-  public buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  public buildSpecific(stream: NodeJS.ReadWriteStream, options: IGulpOptions): NodeJS.ReadWriteStream {
     const defaultSettings = {
       SVGO: {},
       assets: {
@@ -161,7 +164,8 @@ export default class Sass extends Task {
     }
 
     stream = merge(streams)
-      .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
+      .pipe(dest(this.settings.dst, options))
+      .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
       .pipe(
         GulpPostCSS([
           CSSNano({ ...defaultSettings.cssnano, ...(settings.cssnano || {}) } as {}),
@@ -169,7 +173,7 @@ export default class Sass extends Task {
         ])
       )
       .pipe(GulpRename({ suffix: ".min" }))
-      .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
+      .pipe(dest(this.settings.dst, options));
 
     return stream;
   }

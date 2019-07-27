@@ -12,6 +12,11 @@ interface ITaskErrorDefinition {
   done: TaskCallback;
 }
 
+export interface IGulpOptions {
+  cwd: string;
+  sourcemaps?: true | string;
+}
+
 export type TaskCallback = (error?: any) => void;
 
 export default abstract class Task {
@@ -31,6 +36,8 @@ export default abstract class Task {
   protected withLinter: boolean = true;
   protected lintError: boolean = false;
 
+  protected withSourcemaps: boolean = false;
+
   protected constructor(name: string, settings: object) {
     this.name = name;
     this.settings = settings;
@@ -44,20 +51,28 @@ export default abstract class Task {
       (done: TaskCallback): NodeJS.ReadWriteStream => {
         this.chdir();
 
-        let stream = src(this.settings.src, { cwd: this.settings.cwd }).pipe(
+        const options: IGulpOptions = {
+          cwd: this.settings.cwd,
+        };
+
+        if (this.withSourcemaps && this.settings.settings.sourcemaps) {
+          options.sourcemaps = true;
+        }
+
+        let stream = src(this.settings.src, options as {}).pipe(
           GulpPlumber(error => this.displayOrExitOnError(taskName, error, done))
         );
 
         if (!this.withLinter || !this.lintError) {
-          stream = this.buildSpecific(stream);
+          stream = this.buildSpecific(stream, options);
 
           stream.pipe(GulpPlumber.stop());
 
           if (this.defaultDest) {
-            stream.pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
+            stream.pipe(dest(this.settings.dst, options));
           }
 
-          stream.pipe(Browsersync.getInstance().sync(this.browserSyncSettings));
+          stream.pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream);
         }
 
         return stream;
@@ -67,7 +82,7 @@ export default abstract class Task {
     return taskName;
   }
 
-  public abstract buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream;
+  public abstract buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream;
 
   public lint(): string | false {
     const taskName = this.taskName("lint");
