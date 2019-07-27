@@ -27,10 +27,6 @@ export default class Browsersync {
   private _browserSync: BrowserSyncInstance = BrowserSync.create();
   private _started: boolean = false;
 
-  public get browserSync(): BrowserSyncInstance {
-    return this._browserSync;
-  }
-
   public get task(): string {
     return this._task;
   }
