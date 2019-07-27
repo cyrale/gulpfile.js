@@ -50,7 +50,7 @@ export default class Browsersync {
         Object.assign(
           {
             open: false,
-            ui: false
+            ui: false,
           },
           this._settings.settings || {}
         ),

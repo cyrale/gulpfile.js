@@ -40,14 +40,14 @@ export default class TaskFactory {
   private availableTasks: IGenericSettings = {
     javascript: Javascript,
     pug: Pug,
-    sass: Sass
+    sass: Sass,
   };
 
   private tasksGroupAndOrder: string[][] = [
     // ["fonts", "sprites", "svgstore"],
     // ["images"],
     [Sass.taskName, Javascript.taskName, Pug.taskName],
-    [Browsersync.taskName]
+    [Browsersync.taskName],
   ];
 
   public createAllTasks(): void {
@@ -249,7 +249,7 @@ export default class TaskFactory {
     return {
       name,
       step,
-      type
+      type,
     };
   }
 

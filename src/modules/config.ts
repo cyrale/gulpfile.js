@@ -94,9 +94,9 @@ export default class Config {
         configfile: process.env.CONFIG_FILE || "gulpconfig.yml",
         cwd: "",
         env: process.env.NODE_ENV || "production",
-        sourcemaps: process.env.SOURCEMAPS || false
+        sourcemaps: process.env.SOURCEMAPS || false,
       },
-      string: ["env", "configfile", "cwd"]
+      string: ["env", "configfile", "cwd"],
     }) as object;
 
     if (!path.isAbsolute(this._options.configfile)) {
