@@ -3,9 +3,11 @@ import Task from "./task";
 export default class Javascript extends Task {
   public static readonly taskName: string = "javascript";
 
-  // tslint:disable-next-line:no-empty
-  public buildSpecific(stream: NodeJS.ReadWriteStream): void {}
+  public buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+    return stream;
+  }
 
-  // tslint:disable-next-line:no-empty
-  public lintSpecific(stream: NodeJS.ReadWriteStream): void {}
+  public lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+    return stream;
+  }
 }

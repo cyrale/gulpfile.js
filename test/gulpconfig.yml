@@ -50,8 +50,8 @@ sass:
       sort: "mobile"
     inlineSVG:
       path: "assets/"
-    extractMQ: true
     critical: true
+    extractMQ: true
 # ------------------------------------------
 # JavaScript
 # ------------------------------------------

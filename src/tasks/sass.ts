@@ -1,3 +1,4 @@
+import merge from "merge-stream";
 import path from "path";
 import { Transform } from "stream";
 import through from "through2";
@@ -7,6 +8,8 @@ import { dest } from "gulp";
 import Autoprefixer from "autoprefixer";
 import CSSMQPacker from "css-mqpacker";
 import CSSNano from "cssnano";
+import GulpCriticalCSS from "gulp-critical-css";
+import GulpExtractMediaQueries from "gulp-extract-media-queries";
 import GulpPostCSS from "gulp-postcss";
 import GulpRename from "gulp-rename";
 import GulpSass from "gulp-sass";
@@ -30,71 +33,153 @@ export default class Sass extends Task {
     this.browserSyncSettings = { match: "**/*.css" };
   }
 
-  public buildSpecific(stream: NodeJS.ReadWriteStream): void {
+  public buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     const defaultSettings = {
       SVGO: {},
       assets: {
         cachebuster: true,
-        relative: true
+        relative: true,
       },
       autoprefixer: {
         grid: true,
-        overrideBrowserslist: ["defaults"]
+        overrideBrowserslist: ["defaults"],
       },
+      critical: false,
       cssnano: {
         preset: [
           "default",
           {
-            cssDeclarationSorter: false
-          }
-        ]
+            cssDeclarationSorter: false,
+          },
+        ],
       },
+      extractMQ: false,
       inlineSVG: {
-        path: false
+        path: false,
       },
       mqpacker: {
-        sort: "mobile"
+        sort: "mobile",
       },
       rucksack: {
-        fallbacks: true
+        fallbacks: true,
       },
       sass: {
-        outputStyle: "nested"
-      }
+        outputStyle: "nested",
+      },
     };
+
+    const settings: {
+      SVGO?: {};
+      assets?: {};
+      autoprefixer?: {};
+      critical?: boolean | {};
+      cssnano?: {};
+      extractMQ?: boolean;
+      inlineSVG?: {};
+      mqpacker?: {};
+      rucksack?: {};
+      sass?: {};
+    } = this.settings.settings || {};
 
     const mqPackerSettings: {
       sort: any;
     } = { ...defaultSettings.mqpacker, ...(this.settings.mqpacker || {}) };
     mqPackerSettings.sort = mqPackerSettings.sort === "mobile" ? SortCSSMediaQueries : SortCSSMediaQueries.desktopFirst;
 
-    stream
+    stream = stream
       .pipe(GulpSass({ ...defaultSettings.sass, ...(this.settings.sass || {}) }))
       .pipe(
         GulpPostCSS([
-          PostCSSAssets({ ...defaultSettings.assets, ...(this.settings.assets || {}) }),
-          RucksackCSS({ ...defaultSettings.rucksack, ...(this.settings.rucksack || {}) }),
-          Autoprefixer({ ...defaultSettings.autoprefixer, ...(this.settings.autoprefixer || {}) }),
-          PostCSSInlineSVG({ ...defaultSettings.inlineSVG, ...(this.settings.inlineSVG || {}) }),
-          PostCSSSVGO({ ...defaultSettings.SVGO, ...(this.settings.SVGO || {}) })
+          PostCSSAssets({ ...defaultSettings.assets, ...(settings.assets || {}) }),
+          RucksackCSS({ ...defaultSettings.rucksack, ...(settings.rucksack || {}) }),
+          Autoprefixer({ ...defaultSettings.autoprefixer, ...(settings.autoprefixer || {}) } as {}),
+          PostCSSInlineSVG({ ...defaultSettings.inlineSVG, ...(settings.inlineSVG || {}) }),
+          PostCSSSVGO({ ...defaultSettings.SVGO, ...(settings.SVGO || {}) }),
         ])
-      )
+      );
+
+    const criticalCSSActive =
+      typeof settings.critical === "object" ||
+      (typeof settings.critical === "boolean" && (settings.critical || defaultSettings.critical));
+    const criticalCSSSettings: string[] = typeof settings.critical === "object" ? (settings.critical as string[]) : [];
+
+    const streams: NodeJS.ReadWriteStream[] = [];
+
+    if (settings.extractMQ || defaultSettings.extractMQ) {
+      let mainFilename: string = "";
+
+      let streamExtractMQ = stream
+        .pipe(
+          GulpRename(
+            (pPath: GulpRename.ParsedPath): GulpRename.ParsedPath => {
+              mainFilename = pPath.basename as string;
+
+              return pPath;
+            }
+          )
+        )
+        .pipe(GulpExtractMediaQueries())
+        .pipe(
+          GulpRename(
+            (pPath: GulpRename.ParsedPath): GulpRename.ParsedPath => {
+              if (pPath.basename !== mainFilename) {
+                pPath.basename = `${mainFilename}.${pPath.basename}`;
+              }
+
+              return pPath;
+            }
+          )
+        );
+
+      if (criticalCSSActive) {
+        streamExtractMQ = streamExtractMQ.pipe(
+          GulpPostCSS([
+            (css: any): void => {
+              // Remove critical properties.
+              css.walkDecls((decl: any): void => {
+                if (decl.prop === "critical") {
+                  decl.remove();
+                }
+              });
+            },
+          ])
+        );
+      }
+
+      streams.push(streamExtractMQ);
+    }
+
+    if (criticalCSSActive) {
+      const streamCriticalCSS = stream.pipe(GulpCriticalCSS(criticalCSSSettings));
+
+      streams.push(streamCriticalCSS);
+    }
+
+    if (streams.length === 0) {
+      streams.push(stream);
+    }
+
+    stream = merge(streams)
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }))
       .pipe(
         GulpPostCSS([
           CSSNano({ ...defaultSettings.cssnano, ...(this.settings.cssnano || {}) }),
-          CSSMQPacker(mqPackerSettings)
+          CSSMQPacker(mqPackerSettings),
         ])
       )
       .pipe(GulpRename({ suffix: ".min" }))
       .pipe(dest(this.settings.dst, { cwd: this.settings.cwd }));
+
+    return stream;
   }
 
-  public lintSpecific(stream: NodeJS.ReadWriteStream): void {
+  public lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream
       .pipe(GulpSassLint({ configFile: path.join(this.settings.cwd, ".sass-lint.yml") }))
       .pipe(GulpSassLint.format())
       .pipe(this.lintNotifier());
+
+    return stream;
   }
 
   protected displayError(error: any): void {
@@ -102,17 +187,17 @@ export default class Sass extends Task {
       SassLint.format([
         {
           errorCount: 1,
-          filePath: error.relativePath,
+          filePath: error.relativePath || error.file,
           messages: [
             {
               column: error.column,
               line: error.line,
-              message: error.messageOriginal,
-              severity: 2
-            }
+              message: error.messageOriginal || error.message,
+              severity: 2,
+            },
           ],
-          warningCount: 0
-        }
+          warningCount: 0,
+        },
       ])
     );
 

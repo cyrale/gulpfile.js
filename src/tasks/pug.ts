@@ -22,7 +22,7 @@ export default class Pug extends Task {
     }
   }
 
-  public buildSpecific(stream: NodeJS.ReadWriteStream): void {
+  public buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     let data: any[] = [];
 
     if (typeof this.settings.settings.data === "string") {
@@ -34,9 +34,11 @@ export default class Pug extends Task {
     }
 
     stream.pipe(GulpData(data)).pipe(GulpPug());
+
+    return stream;
   }
 
-  public lintSpecific(stream: NodeJS.ReadWriteStream): void {
+  public lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream.pipe(
       GulpPugLinter({
         reporter: (errors: any[]): void => {
@@ -44,9 +46,11 @@ export default class Pug extends Task {
             this.lintError = true;
             PugLintStylish(errors);
           }
-        }
+        },
       })
     );
+
+    return stream;
   }
 
   protected displayError(error: any): void {

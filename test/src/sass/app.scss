@@ -13,16 +13,16 @@
 //@include retina-sprites($icon-icon-retina);
 
 html {
-  critical: this;
+  //critical: this;
   font-size: 62.5%;
 }
 
 body {
-  critical: this;
+  //critical: this;
   background: $black;
 
   @media screen and (min-width: 768px) {
-    critical: this;
+    //critical: this;
     background: $white;
   }
 }
