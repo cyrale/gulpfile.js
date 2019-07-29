@@ -42,10 +42,6 @@ sass:
   settings:
     sass:
       errLogToConsole: true
-    autoprefixer:
-      overrideBrowserslist:
-        - "> 1%"
-        - "IE >= 9"
     mqpacker:
       sort: "mobile"
     inlineSVG:

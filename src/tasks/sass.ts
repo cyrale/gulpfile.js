@@ -45,7 +45,6 @@ export default class Sass extends Task {
       },
       autoprefixer: {
         grid: true,
-        overrideBrowserslist: ["defaults"],
       },
       critical: false,
       cssnano: {
