@@ -24,6 +24,7 @@
     "pretty": "prettier --write \"src/**/*.ts?(x)\""
   },
   "dependencies": {
+    "@fullhuman/postcss-purgecss": "^1.2.0",
     "@types/autoprefixer": "^9.5.0",
     "@types/browser-sync": "^2.26.0",
     "@types/cssnano": "^4.0.0",
@@ -64,6 +65,7 @@
     "postcss-inline-svg": "^4.1.0",
     "postcss-svgo": "^4.0.2",
     "puglint-stylish": "^1.0.1",
+    "purgecss-with-wordpress": "^1.0.0",
     "rucksack-css": "^1.0.2",
     "sass-lint": "^1.13.1",
     "sort-css-media-queries": "^1.4.3",

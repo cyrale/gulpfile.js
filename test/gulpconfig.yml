@@ -48,6 +48,7 @@ sass:
       path: "assets/"
     critical: true
     extractMQ: true
+    purgeCSS: true
 # ------------------------------------------
 # JavaScript
 # ------------------------------------------

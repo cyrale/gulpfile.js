@@ -5,6 +5,7 @@ import through from "through2";
 
 import { dest } from "gulp";
 
+import PostCSSPurgeCSS from "@fullhuman/postcss-purgecss";
 import Autoprefixer from "autoprefixer";
 import CSSMQPacker from "css-mqpacker";
 import CSSNano from "cssnano";
@@ -17,12 +18,27 @@ import GulpSassLint from "gulp-sass-lint";
 import PostCSSAssets from "postcss-assets";
 import PostCSSInlineSVG from "postcss-inline-svg";
 import PostCSSSVGO from "postcss-svgo";
+import PurgeCSSWithWordPress from "purgecss-with-wordpress";
 import RucksackCSS from "rucksack-css";
 import SassLint from "sass-lint";
 import SortCSSMediaQueries from "sort-css-media-queries";
 
 import Browsersync from "./browsersync";
 import Task, { IGulpOptions } from "./task";
+
+type TPurgeCSSOptions = any[] | boolean;
+
+interface IPurgeCSSOptions {
+  content: TPurgeCSSOptions;
+  css: TPurgeCSSOptions;
+  extractors?: TPurgeCSSOptions;
+  whitelist?: TPurgeCSSOptions;
+  whitelistPatterns?: TPurgeCSSOptions;
+  whitelistPatternsChildren?: TPurgeCSSOptions;
+  keyframes?: TPurgeCSSOptions;
+  fontFace?: TPurgeCSSOptions;
+  rejected?: TPurgeCSSOptions;
+}
 
 export default class Sass extends Task {
   public static readonly taskName: string = "sass";
@@ -63,6 +79,7 @@ export default class Sass extends Task {
       mqpacker: {
         sort: "mobile",
       },
+      purgeCSS: false,
       rucksack: {
         fallbacks: true,
       },
@@ -80,33 +97,88 @@ export default class Sass extends Task {
       extractMQ?: boolean;
       inlineSVG?: {};
       mqpacker?: {};
+      purgeCSS?: boolean | string | {};
       rucksack?: {};
       sass?: {};
     } = this.settings.settings || {};
+
+    const criticalCSSActive: boolean =
+      typeof settings.critical === "object" ||
+      (typeof settings.critical === "boolean" && (settings.critical || defaultSettings.critical));
+    const criticalCSSSettings: string[] = typeof settings.critical === "object" ? (settings.critical as string[]) : [];
 
     const mqPackerSettings: {
       sort: any;
     } = { ...defaultSettings.mqpacker, ...(this.settings.mqpacker || {}) };
     mqPackerSettings.sort = mqPackerSettings.sort === "mobile" ? SortCSSMediaQueries : SortCSSMediaQueries.desktopFirst;
 
-    stream = stream
-      .pipe(GulpSass({ ...defaultSettings.sass, ...(this.settings.sass || {}) }))
-      .pipe(
-        GulpPostCSS([
-          PostCSSAssets({ ...defaultSettings.assets, ...(settings.assets || {}) }),
-          RucksackCSS({ ...defaultSettings.rucksack, ...(settings.rucksack || {}) }),
-          Autoprefixer({ ...defaultSettings.autoprefixer, ...(settings.autoprefixer || {}) } as {}),
-          PostCSSInlineSVG({ ...defaultSettings.inlineSVG, ...(settings.inlineSVG || {}) }),
-          PostCSSSVGO({ ...defaultSettings.SVGO, ...(settings.SVGO || {}) }),
-        ])
-      );
+    const purgeCSSActive: boolean =
+      typeof settings.purgeCSS === "object" ||
+      typeof settings.purgeCSS === "string" ||
+      (typeof settings.purgeCSS === "boolean" && (settings.purgeCSS || defaultSettings.purgeCSS));
+    const purgeCSSDefaultSettings: IPurgeCSSOptions = {
+      content: ["**/*.html", "**/*.php", "**/*.twig"],
+      css: ["**/*.css"],
+      extractors: [],
+      fontFace: true,
+      keyframes: true,
+      rejected: false,
+      whitelist: PurgeCSSWithWordPress.whitelist,
+      whitelistPatterns: PurgeCSSWithWordPress.whitelistPatterns,
+      whitelistPatternsChildren: [],
+    };
+    let purgeCSSSettings: string | IPurgeCSSOptions | undefined;
 
-    const criticalCSSActive =
-      typeof settings.critical === "object" ||
-      (typeof settings.critical === "boolean" && (settings.critical || defaultSettings.critical));
-    const criticalCSSSettings: string[] = typeof settings.critical === "object" ? (settings.critical as string[]) : [];
+    if (purgeCSSActive) {
+      if (typeof settings.purgeCSS === "object") {
+        purgeCSSSettings = {
+          content: purgeCSSDefaultSettings.content,
+          css: purgeCSSDefaultSettings.css,
+        };
+
+        Object.keys(purgeCSSDefaultSettings).forEach((key: string): void => {
+          const value: TPurgeCSSOptions = (settings.purgeCSS as any)[key];
+          const defaultValue: TPurgeCSSOptions = (purgeCSSDefaultSettings as any)[key];
+
+          let currentValue: TPurgeCSSOptions;
+
+          if (Array.isArray(defaultValue) || Array.isArray(typeof value)) {
+            currentValue = [...((defaultValue as any[]) || []), ...((value as any[]) || [])];
+          } else {
+            currentValue = typeof value !== "undefined" ? value : defaultValue;
+          }
+
+          (purgeCSSSettings as any)[key] = currentValue;
+        });
+      } else if (typeof settings.purgeCSS === "string") {
+        purgeCSSSettings = path.resolve(this.settings.cwd, settings.purgeCSS);
+      } else {
+        purgeCSSSettings = purgeCSSDefaultSettings;
+      }
+    }
 
     const streams: NodeJS.ReadWriteStream[] = [];
+
+    const postCSSPluginsBefore: any[] = [
+      PostCSSAssets({ ...defaultSettings.assets, ...(settings.assets || {}) }),
+      RucksackCSS({ ...defaultSettings.rucksack, ...(settings.rucksack || {}) }),
+      Autoprefixer({ ...defaultSettings.autoprefixer, ...(settings.autoprefixer || {}) } as {}),
+      PostCSSInlineSVG({ ...defaultSettings.inlineSVG, ...(settings.inlineSVG || {}) }),
+      PostCSSSVGO({ ...defaultSettings.SVGO, ...(settings.SVGO || {}) }),
+    ];
+
+    if (purgeCSSActive) {
+      postCSSPluginsBefore.push(PostCSSPurgeCSS(purgeCSSSettings));
+    }
+
+    const postCSSPluginsAfter: any[] = [
+      CSSNano({ ...defaultSettings.cssnano, ...(settings.cssnano || {}) } as {}),
+      CSSMQPacker(mqPackerSettings),
+    ];
+
+    stream = stream
+      .pipe(GulpSass({ ...defaultSettings.sass, ...(this.settings.sass || {}) }))
+      .pipe(GulpPostCSS(postCSSPluginsBefore));
 
     if (settings.extractMQ || defaultSettings.extractMQ) {
       let mainFilename: string = "";
@@ -165,12 +237,7 @@ export default class Sass extends Task {
     stream = merge(streams)
       .pipe(dest(this.settings.dst, options))
       .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
-      .pipe(
-        GulpPostCSS([
-          CSSNano({ ...defaultSettings.cssnano, ...(settings.cssnano || {}) } as {}),
-          CSSMQPacker(mqPackerSettings),
-        ])
-      )
+      .pipe(GulpPostCSS(postCSSPluginsAfter))
       .pipe(GulpRename({ suffix: ".min" }))
       .pipe(dest(this.settings.dst, options));
 
