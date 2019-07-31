@@ -59,6 +59,8 @@ javascript:
         - "src/js/**/*.js"
       dst: "dist/js"
       filename: "all.js"
+      settings:
+        babel: true
 # ------------------------------------------
 # Images
 # ------------------------------------------
