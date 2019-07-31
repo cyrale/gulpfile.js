@@ -258,7 +258,7 @@ export default class Sass extends Task {
       SassLint.format([
         {
           errorCount: 1,
-          filePath: error.relativePath || error.file,
+          filePath: error.relativePath || path.relative(this.settings.cwd, error.file),
           messages: [
             {
               column: error.column,
