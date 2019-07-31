@@ -1,4 +1,7 @@
-import Task from "./task";
+import GulpESLint from "gulp-eslint";
+
+import Browsersync from "./browsersync";
+import Task, { IGulpOptions } from "./task";
 
 export default class Javascript extends Task {
   public static readonly taskName: string = "javascript";
@@ -17,6 +20,15 @@ export default class Javascript extends Task {
   }
 
   public lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+    stream
+      .pipe(GulpESLint())
+      .pipe(GulpESLint.format())
+      .pipe(
+        GulpESLint.results((filesWithErrors: any[]): void => {
+          this.lintError = filesWithErrors.errorCount > 0;
+        })
+      );
+
     return stream;
   }
 }
