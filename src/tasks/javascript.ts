@@ -2,6 +2,10 @@ import path from "path";
 
 import { dest } from "gulp";
 
+import { CLIEngine, Linter } from "eslint";
+import Severity = Linter.Severity;
+import LintResult = CLIEngine.LintResult;
+
 import GulpBabel from "gulp-babel";
 import GulpConcat from "gulp-concat";
 import GulpESLint from "gulp-eslint";
@@ -9,10 +13,8 @@ import GulpIf from "gulp-if";
 import GulpRename from "gulp-rename";
 import GulpUglify from "gulp-uglify";
 
-import { CLIEngine, Linter } from "eslint";
 import Browsersync from "./browsersync";
 import Task, { IGulpOptions } from "./task";
-import Severity = Linter.Severity;
 
 export const babelDefaultSettings: {
   [name: string]: any;
@@ -70,8 +72,39 @@ export default class Javascript extends Task {
     const formatter = cliEngine.getFormatter("stylish");
     const relativeFile = path.relative(this.settings.cwd, error.fileName);
 
-    console.log(
-      formatter([
+    let formattedMessage: LintResult[] = [];
+
+    if (error.cause) {
+      // Message send by gulp-babel
+      formattedMessage = [
+        {
+          errorCount: 1,
+          filePath: relativeFile,
+          fixableErrorCount: 0,
+          fixableWarningCount: 0,
+          messages: [
+            {
+              column: error.cause.col,
+              line: error.cause.line,
+              message: error.cause.message,
+              nodeType: "",
+              ruleId: null,
+              severity: 2 as Severity,
+              source: null,
+            },
+          ],
+          warningCount: 0,
+        },
+      ];
+
+      // Particular exit due to the comportment of gulp-babel.
+      if (this.isBuildRun()) {
+        console.log(formatter(formattedMessage));
+        process.exit(1);
+      }
+    } else {
+      // Message send by gulp-uglify
+      formattedMessage = [
         {
           errorCount: 1,
           filePath: relativeFile,
@@ -90,7 +123,9 @@ export default class Javascript extends Task {
           ],
           warningCount: 0,
         },
-      ])
-    );
+      ];
+    }
+
+    console.log(formatter(formattedMessage));
   }
 }
