@@ -4,5 +4,6 @@
   ],
   "ignore": [
     "**/src/js/vendor/**/*.js"
-  ]
+  ],
+  "sourceType": "script"
 }

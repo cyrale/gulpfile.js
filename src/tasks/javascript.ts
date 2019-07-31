@@ -103,7 +103,7 @@ export default class Javascript extends Task {
         process.exit(1);
       }
     } else {
-      // Message send by gulp-uglify
+      // Message send by gulp-uglify or other
       formattedMessage = [
         {
           errorCount: 1,
@@ -112,8 +112,8 @@ export default class Javascript extends Task {
           fixableWarningCount: 0,
           messages: [
             {
-              column: error.loc.column,
-              line: error.loc.line,
+              column: error.loc ? error.loc.column : 0,
+              line: error.loc ? error.loc.line : 0,
               message: error.message.replace(error.fileName, relativeFile),
               nodeType: "",
               ruleId: null,
