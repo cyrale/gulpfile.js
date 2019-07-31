@@ -60,7 +60,7 @@ export default class Javascript extends Task {
       .pipe(GulpESLint.format())
       .pipe(
         GulpESLint.results((filesWithErrors: { errorCount: number }): void => {
-          // this.lintError = filesWithErrors.errorCount > 0;
+          this.lintError = filesWithErrors.errorCount > 0;
         })
       );
 
