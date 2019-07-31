@@ -52,15 +52,13 @@ sass:
 # ------------------------------------------
 # JavaScript
 # ------------------------------------------
-#javascript:
-#  tasks:
-#    public:
-#      watch:
-#        - "assets/vendor/**/*.js"
-#      src:
-#        - "assets/js/main.js"
-#      dst: "build/js"
-#      filename: "all.js"
+javascript:
+  tasks:
+    public:
+      src:
+        - "src/js/**/*.js"
+      dst: "dist/js"
+      filename: "all.js"
 # ------------------------------------------
 # Images
 # ------------------------------------------
