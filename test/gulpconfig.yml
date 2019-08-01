@@ -73,20 +73,16 @@ browserify:
 # ------------------------------------------
 # Images
 # ------------------------------------------
-#images:
-#  tasks:
-#    public:
-#      src:
-#        - "assets/images/**/*.png"
-#        - "assets/images/**/*.jpg"
-#        - "assets/images/**/*.jpeg"
-#        - "assets/images/**/*.gif"
-#        - "assets/images/**/*.svg"
-#      dst: "build/images"
-#      settings:
-#        optimizationLevel: 4
-#  settings:
-#    optimizationLevel: 3
+images:
+  tasks:
+    public:
+      src:
+        - "src/images/**/*.png"
+        - "src/images/**/*.jpg"
+        - "src/images/**/*.jpeg"
+        - "src/images/**/*.gif"
+        - "src/images/**/*.svg"
+      dst: "dist/images"
 # ------------------------------------------
 # Sprites (https://github.com/Ensighten/spritesmith)
 # ------------------------------------------

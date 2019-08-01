@@ -5,6 +5,7 @@ import { parallel, series, task as gulpTask, watch } from "gulp";
 
 import Browserify from "../tasks/browserify";
 import Browsersync from "../tasks/browsersync";
+import Images from "../tasks/images";
 import Javascript from "../tasks/javascript";
 import Pug from "../tasks/pug";
 import Sass from "../tasks/sass";
@@ -41,13 +42,14 @@ export default class TaskFactory {
   private availableTasks: IGenericSettings = {
     [Browserify.taskName]: Browserify,
     [Javascript.taskName]: Javascript,
+    [Images.taskName]: Images,
     [Pug.taskName]: Pug,
     [Sass.taskName]: Sass,
   };
 
   private tasksGroupAndOrder: string[][] = [
     // ["fonts", "sprites", "svgstore"],
-    // ["images"],
+    [Images.taskName],
     [Browserify.taskName],
     [Sass.taskName, Javascript.taskName, Pug.taskName],
     [Browsersync.taskName],

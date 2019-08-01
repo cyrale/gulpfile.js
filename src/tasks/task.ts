@@ -3,6 +3,7 @@ import process from "process";
 import { dest, series, src, task as gulpTask, watch } from "gulp";
 import GulpPlumber from "gulp-plumber";
 
+import * as fs from "fs";
 import Config, { IGenericSettings } from "../modules/config";
 import Browsersync from "./browsersync";
 
@@ -108,7 +109,9 @@ export default abstract class Task {
     return taskName;
   }
 
-  public abstract lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream;
+  public lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+    return stream;
+  }
 
   public watch(): string {
     const taskName = this.taskName("watch");
@@ -121,13 +124,17 @@ export default abstract class Task {
         tasks.unshift(this.taskName("lint"));
       }
 
-      watch(srcWatch, { cwd: this.settings.cwd }, series(tasks));
+      const watcher: fs.FSWatcher = watch(srcWatch, { cwd: this.settings.cwd }, series(tasks));
+      this.bindEventsToWatcher(watcher);
 
       done();
     });
 
     return taskName;
   }
+
+  // tslint:disable-next-line:no-empty
+  protected bindEventsToWatcher(watcher: fs.FSWatcher): void {}
 
   protected displayError(error: any): void {
     console.log(error);
