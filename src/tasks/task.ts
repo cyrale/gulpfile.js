@@ -25,6 +25,14 @@ export default abstract class Task {
   public static readonly taskName: string = "";
   public static taskErrors: ITaskErrorDefinition[] = [];
 
+  protected static isBuildRun(): boolean {
+    return Config.getInstance().isBuildRun();
+  }
+
+  protected static isCurrentRun(task: string): boolean {
+    return Config.getInstance().isCurrentRun(task);
+  }
+
   protected task: string = "";
   protected name: string = "";
   protected settings: IGenericSettings = {};
@@ -83,8 +91,6 @@ export default abstract class Task {
     return taskName;
   }
 
-  public abstract buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream;
-
   public lint(): string | false {
     const taskName = this.taskName("lint");
 
@@ -107,10 +113,6 @@ export default abstract class Task {
     );
 
     return taskName;
-  }
-
-  public lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
-    return stream;
   }
 
   public watch(): string {
@@ -136,6 +138,16 @@ export default abstract class Task {
   // tslint:disable-next-line:no-empty
   protected bindEventsToWatcher(watcher: fs.FSWatcher): void {}
 
+  protected abstract buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream;
+
+  protected chdir(): void {
+    try {
+      process.chdir(this.settings.cwd);
+    } catch (err) {
+      console.error(`chdir: ${err}`);
+    }
+  }
+
   protected displayError(error: any): void {
     console.log(error);
   }
@@ -149,26 +161,14 @@ export default abstract class Task {
       taskName,
     });
 
-    if (this.isBuildRun() && this.isCurrentRun(taskName)) {
+    if (Task.isBuildRun() && Task.isCurrentRun(taskName)) {
       done();
       process.exit(1);
     }
   }
 
-  protected chdir(): void {
-    try {
-      process.chdir(this.settings.cwd);
-    } catch (err) {
-      console.error(`chdir: ${err}`);
-    }
-  }
-
-  protected isBuildRun(): boolean {
-    return Config.getInstance().isBuildRun();
-  }
-
-  protected isCurrentRun(task: string): boolean {
-    return Config.getInstance().isCurrentRun(task);
+  protected lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+    return stream;
   }
 
   protected taskName(step: string): string {

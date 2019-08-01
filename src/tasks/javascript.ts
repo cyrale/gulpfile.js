@@ -34,7 +34,7 @@ export default class Javascript extends Task {
     this.browserSyncSettings = { match: "**/*.js" };
   }
 
-  public buildSpecific(stream: NodeJS.ReadWriteStream, options: IGulpOptions): NodeJS.ReadWriteStream {
+  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     const babelActive = typeof this.settings.settings.babel === "object" || this.settings.settings.babel !== false;
 
     let babelSettings: {} = {};
@@ -55,7 +55,7 @@ export default class Javascript extends Task {
     return stream;
   }
 
-  public lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream
       .pipe(GulpESLint())
       .pipe(GulpESLint.format())
@@ -101,7 +101,7 @@ export default class Javascript extends Task {
       ];
 
       // Particular exit due to the comportment of gulp-babel.
-      if (this.isBuildRun()) {
+      if (Task.isBuildRun()) {
         console.log(formatter(formattedMessage));
         process.exit(1);
       }

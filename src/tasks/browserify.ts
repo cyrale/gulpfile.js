@@ -21,7 +21,7 @@ export default class Browserify extends Javascript {
     this.gulpRead = false;
   }
 
-  public buildSpecific(stream: NodeJS.ReadWriteStream, options: IGulpOptions): NodeJS.ReadWriteStream {
+  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     const babelSettings: {} =
       typeof this.settings.settings.babel === "object"
         ? { ...Browserify.babelDefaultSettings, ...this.settings.settings.babel }

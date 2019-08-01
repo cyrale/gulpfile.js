@@ -19,7 +19,7 @@ export default class Images extends Task {
     this.withLinter = false;
   }
 
-  public buildSpecific(stream: NodeJS.ReadWriteStream, options: IGulpOptions): NodeJS.ReadWriteStream {
+  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     const defaultSettings: {
       gifsicle: {};
       jpegtran: {};

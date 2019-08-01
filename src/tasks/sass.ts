@@ -52,7 +52,7 @@ export default class Sass extends Task {
     this.browserSyncSettings = { match: "**/*.css" };
   }
 
-  public buildSpecific(stream: NodeJS.ReadWriteStream, options: IGulpOptions): NodeJS.ReadWriteStream {
+  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     const defaultSettings = {
       SVGO: {},
       assets: {
@@ -244,7 +244,7 @@ export default class Sass extends Task {
     return stream;
   }
 
-  public lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream
       .pipe(GulpSassLint({ configFile: path.join(this.settings.cwd, ".sass-lint.yml") }))
       .pipe(GulpSassLint.format())
@@ -273,7 +273,7 @@ export default class Sass extends Task {
     );
 
     // Particular exit due to the comportment of Sass.
-    if (this.isBuildRun()) {
+    if (Task.isBuildRun()) {
       process.exit(1);
     }
   }
