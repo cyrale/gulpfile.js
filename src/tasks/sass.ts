@@ -46,7 +46,7 @@ export default class Sass extends Task {
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    this.withSourcemaps = true;
+    this.gulpSourcemaps = true;
 
     this.defaultDest = false;
     this.browserSyncSettings = { match: "**/*.css" };

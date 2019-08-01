@@ -16,19 +16,19 @@ import GulpUglify from "gulp-uglify";
 import Browsersync from "./browsersync";
 import Task, { IGulpOptions } from "./task";
 
-export const babelDefaultSettings: {
-  [name: string]: any;
-} = {
-  presets: ["@babel/preset-env"],
-};
-
 export default class Javascript extends Task {
   public static readonly taskName: string = "javascript";
+
+  protected static readonly babelDefaultSettings: {
+    [name: string]: any;
+  } = {
+    presets: ["@babel/preset-env"],
+  };
 
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    this.withSourcemaps = true;
+    this.gulpSourcemaps = true;
 
     this.defaultDest = false;
     this.browserSyncSettings = { match: "**/*.js" };
@@ -39,7 +39,7 @@ export default class Javascript extends Task {
 
     let babelSettings: {} = {};
     if (babelActive && typeof this.settings.settings.babel === "object") {
-      babelSettings = { ...babelDefaultSettings, ...this.settings.settings.babel };
+      babelSettings = { ...Javascript.babelDefaultSettings, ...this.settings.settings.babel };
     }
 
     stream
@@ -47,9 +47,10 @@ export default class Javascript extends Task {
       .pipe(GulpConcat(this.settings.filename))
       .pipe(dest(this.settings.dst, options))
       .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
-      .pipe(GulpUglify({ mangle: false }))
+      .pipe(GulpUglify())
       .pipe(GulpRename({ suffix: ".min" }))
-      .pipe(dest(this.settings.dst, options));
+      .pipe(dest(this.settings.dst, options))
+      .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream);
 
     return stream;
   }
@@ -73,6 +74,8 @@ export default class Javascript extends Task {
     const relativeFile = path.relative(this.settings.cwd, error.fileName);
 
     let formattedMessage: LintResult[] = [];
+
+    console.log(error);
 
     if (error.cause) {
       // Message send by gulp-babel

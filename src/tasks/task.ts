@@ -14,6 +14,7 @@ interface ITaskErrorDefinition {
 
 export interface IGulpOptions {
   cwd: string;
+  read?: boolean;
   sourcemaps?: true | string;
 }
 
@@ -36,7 +37,8 @@ export default abstract class Task {
   protected withLinter: boolean = true;
   protected lintError: boolean = false;
 
-  protected withSourcemaps: boolean = false;
+  protected gulpRead: boolean = true;
+  protected gulpSourcemaps: boolean = false;
 
   protected constructor(name: string, settings: object) {
     this.name = name;
@@ -53,11 +55,9 @@ export default abstract class Task {
 
         const options: IGulpOptions = {
           cwd: this.settings.cwd,
+          read: this.gulpRead,
+          sourcemaps: this.gulpSourcemaps && this.settings.settings.sourcemaps,
         };
-
-        if (this.withSourcemaps && this.settings.settings.sourcemaps) {
-          options.sourcemaps = true;
-        }
 
         let stream = src(this.settings.src, options as {}).pipe(
           GulpPlumber(error => this.displayOrExitOnError(taskName, error, done))

@@ -3,6 +3,7 @@ import * as Undertaker from "undertaker";
 
 import { parallel, series, task as gulpTask, watch } from "gulp";
 
+import Browserify from "../tasks/browserify";
 import Browsersync from "../tasks/browsersync";
 import Javascript from "../tasks/javascript";
 import Pug from "../tasks/pug";
@@ -38,14 +39,16 @@ export default class TaskFactory {
   private orderedGlobalTasks: string[][] = [];
 
   private availableTasks: IGenericSettings = {
-    javascript: Javascript,
-    pug: Pug,
-    sass: Sass,
+    [Browserify.taskName]: Browserify,
+    [Javascript.taskName]: Javascript,
+    [Pug.taskName]: Pug,
+    [Sass.taskName]: Sass,
   };
 
   private tasksGroupAndOrder: string[][] = [
     // ["fonts", "sprites", "svgstore"],
     // ["images"],
+    [Browserify.taskName],
     [Sass.taskName, Javascript.taskName, Pug.taskName],
     [Browsersync.taskName],
   ];

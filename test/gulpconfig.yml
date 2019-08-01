@@ -56,11 +56,20 @@ javascript:
   tasks:
     public:
       src:
+        - "dist/js/modules.min.js"
         - "src/js/concat/**/*.js"
       dst: "dist/js"
       filename: "all.js"
-      settings:
-        babel: true
+# ------------------------------------------
+# Browserify
+# ------------------------------------------
+browserify:
+  tasks:
+    public:
+      src:
+        - "src/js/modules/app.js"
+      dst: "dist/js"
+      filename: "modules.js"
 # ------------------------------------------
 # Images
 # ------------------------------------------

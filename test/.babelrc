@@ -3,7 +3,8 @@
     "@babel/preset-env"
   ],
   "ignore": [
-    "**/src/js/vendor/**/*.js"
+    "**/src/js/concat/vendor/**/*.js",
+    "**/dist/**/*.js"
   ],
   "sourceType": "script"
 }
