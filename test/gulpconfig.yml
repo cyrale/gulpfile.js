@@ -114,20 +114,19 @@ fonts:
         sass:
           dst: "src/sass/helpers"
           rel: "../fonts"
-        template: "foundation"
-#        name: "icon"
+        template: "fontawesome"
         prefix: "font"
   settings:
     template: "foundation"
 # ------------------------------------------
 # SVG Store
 # ------------------------------------------
-#svgstore:
-#  tasks:
-#    icons:
-#      src:
-#        - "assets/svg/*.svg"
-#      dst: "build/images"
-#      filename: "icons.svg"
-#  settings:
-#    prefix: "icon"
+svgstore:
+  tasks:
+    icons:
+      src:
+        - "assets/svg/*.svg"
+      dst: "build/images"
+      filename: "icons.svg"
+  settings:
+    prefix: "icon"
