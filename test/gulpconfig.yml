@@ -101,27 +101,24 @@ sprites:
           dst: "src/sass/helpers"
           rel: "../images"
         prefix: "icon"
-#  settings:
-#    imagemin:
-#      optimizationLevel: 3
 # ------------------------------------------
 # Fonts (https://www.npmjs.com/package/gulp-iconfont)
 # ------------------------------------------
-#fonts:
-#  tasks:
-#    custom:
-#      src:
-#        - "assets/svg/*.svg"
-#      dst: "build/fonts"
-#      settings:
-#        sass:
-#          dst: "assets/sass/fonts"
-#          rel: "../fonts"
-#        template: "fontawesome"
+fonts:
+  tasks:
+    custom:
+      src:
+        - "src/svg/*.svg"
+      dst: "dist/fonts"
+      settings:
+        sass:
+          dst: "src/sass/helpers"
+          rel: "../fonts"
+        template: "foundation"
 #        name: "icon"
-#        prefix: "font"
-#  settings:
-#    template: "foundation"
+        prefix: "font"
+  settings:
+    template: "foundation"
 # ------------------------------------------
 # SVG Store
 # ------------------------------------------
