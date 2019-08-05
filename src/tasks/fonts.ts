@@ -50,20 +50,19 @@ export default class Fonts extends Task {
         })
       )
       .on("glyphs", (glyphs: any[]): void => {
-        const templateVars = {
-          className: sanitizedTaskName,
-          fontName: sanitizedTaskName,
-          fontPath: (sassSettings.rel + "/").replace("//", "/"),
-          glyphs: glyphs.map((glyph: any): any => ({ codepoint: glyph.unicode[0].charCodeAt(0), name: glyph.name })),
-        };
-
         const file = path.resolve(__dirname, `../../src/templates/${settings.template}.lodash`);
 
-        // tslint:disable-next-line:no-bitwise
         fs.readFile(file, (err: NodeJS.ErrnoException | null, data: Buffer): void => {
           if (err) {
             throw err;
           }
+
+          const templateVars = {
+            className: sanitizedTaskName,
+            fontName: sanitizedTaskName,
+            fontPath: path.normalize(`${sassSettings.rel}/`),
+            glyphs: glyphs.map((glyph: any): any => ({ codepoint: glyph.unicode[0].charCodeAt(0), name: glyph.name })),
+          };
 
           consolidate.lodash.render(data.toString(), templateVars).then((stylesheet: string): void => {
             stylesheet = `// sass-lint:disable-all\n\n${stylesheet}`;
