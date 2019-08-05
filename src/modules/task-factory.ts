@@ -9,6 +9,7 @@ import Images from "../tasks/images";
 import Javascript from "../tasks/javascript";
 import Pug from "../tasks/pug";
 import Sass from "../tasks/sass";
+import Sprites from "../tasks/sprites";
 import Task, { TaskCallback } from "../tasks/task";
 import Config, { IGenericSettings } from "./config";
 
@@ -45,10 +46,12 @@ export default class TaskFactory {
     [Images.taskName]: Images,
     [Pug.taskName]: Pug,
     [Sass.taskName]: Sass,
+    [Sprites.taskName]: Sprites,
   };
 
   private tasksGroupAndOrder: string[][] = [
     // ["fonts", "sprites", "svgstore"],
+    [Sprites.taskName],
     [Images.taskName],
     [Browserify.taskName],
     [Sass.taskName, Javascript.taskName, Pug.taskName],

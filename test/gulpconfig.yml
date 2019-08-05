@@ -86,21 +86,21 @@ images:
 # ------------------------------------------
 # Sprites (https://github.com/Ensighten/spritesmith)
 # ------------------------------------------
-#sprites:
-#  tasks:
-#    icon:
-#      src-1x:
-#        - "assets/sprites/*.png"
-#        - "assets/sprites/*.jpg"
-#      src-2x:
-#        - "assets/sprites/*@2x.png"
-#        - "assets/sprites/*@2x.jpg"
-#      dst: "build/images"
-#      settings:
-#        sass:
-#          dst: "assets/sass/helpers"
-#          rel: "../images"
-#        prefix: "icon"
+sprites:
+  tasks:
+    icon:
+      src-1x:
+        - "src/sprites/*.png"
+        - "src/sprites/*.jpg"
+      src-2x:
+        - "src/sprites/*@2x.png"
+        - "src/sprites/*@2x.jpg"
+      dst: "dist/images"
+      settings:
+        sass:
+          dst: "src/sass/helpers"
+          rel: "../images"
+        prefix: "icon"
 #  settings:
 #    imagemin:
 #      optimizationLevel: 3

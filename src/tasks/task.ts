@@ -1,9 +1,9 @@
+import fs from "fs";
 import process from "process";
 
 import { dest, series, src, task as gulpTask, watch } from "gulp";
 import GulpPlumber from "gulp-plumber";
 
-import * as fs from "fs";
 import Config, { IGenericSettings } from "../modules/config";
 import Browsersync from "./browsersync";
 
@@ -171,7 +171,11 @@ export default abstract class Task {
     return stream;
   }
 
-  protected taskName(step: string): string {
+  protected taskName(step?: string): string {
+    if (!step) {
+      return `${(this.constructor as any).taskName}:${this.name}`;
+    }
+
     return `${(this.constructor as any).taskName}:${this.name}:${step}`;
   }
 }
