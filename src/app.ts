@@ -1,5 +1,6 @@
 import "source-map-support/register";
 
+import log from "fancy-log";
 import path from "path";
 import process from "process";
 
@@ -10,7 +11,7 @@ try {
   // Change working directory
   process.chdir(process.env.PWD as string);
 } catch (err) {
-  console.error(`chdir: ${err}`);
+  log.error(`chdir: ${err}`);
 }
 
 import TaskFactory from "./modules/task-factory";
