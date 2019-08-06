@@ -22,26 +22,26 @@ export default class Sprites extends Task {
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    this.withLinter = false;
-    this.defaultDest = false;
+    this._withLinter = false;
+    this._defaultDest = false;
 
-    this.settings.src = this._srcGlobs();
+    this._settings.src = this._srcGlobs();
 
     const defaultSettings: {} = {
       prefix: "sprite",
     };
 
-    this.settings.settings = merge(defaultSettings, this.settings.settings || {});
+    this._settings.settings = merge(defaultSettings, this._settings.settings || {});
   }
 
-  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    const prefix: string = this.settings.settings.prefix === "" ? "" : `${this.settings.settings.prefix}-`;
-    const sanitizedTaskName: string = changeCase.paramCase(this.taskName().replace("sprites:", prefix));
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+    const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
+    const sanitizedTaskName: string = changeCase.paramCase(this._taskName().replace("sprites:", prefix));
 
     const imgName: string = sanitizedTaskName + ".png";
     const imgNameRetina: string = sanitizedTaskName + "@2x.png";
-    const imgNameAbs: string = path.join(this.settings.dst, imgName);
-    const imgNameAbsRetina: string = path.join(this.settings.dst, imgNameRetina);
+    const imgNameAbs: string = path.join(this._settings.dst, imgName);
+    const imgNameAbsRetina: string = path.join(this._settings.dst, imgNameRetina);
 
     const spritesmithDefaultSettings: {} = {
       cssName: "_" + sanitizedTaskName + ".scss",
@@ -49,10 +49,10 @@ export default class Sprites extends Task {
       cssVarMap: (spriteImg: any): void => {
         spriteImg.name = `${sanitizedTaskName}-${spriteImg.name}`;
 
-        if (this.settings["src-2x"]) {
+        if (this._settings["src-2x"]) {
           let match: boolean = false;
 
-          this.settings["src-2x"].map(Sprites._mapMatchPatterns).forEach((pattern: string): void => {
+          this._settings["src-2x"].map(Sprites._mapMatchPatterns).forEach((pattern: string): void => {
             match = match || minimatch(spriteImg.source_image, pattern);
           });
 
@@ -62,26 +62,26 @@ export default class Sprites extends Task {
         }
       },
       imgName: imgNameAbs,
-      imgPath: path.join(this.settings.settings.sass.rel, imgName),
+      imgPath: path.join(this._settings.settings.sass.rel, imgName),
       padding: 4,
     };
 
-    let spritesmithSettings: {} = merge(spritesmithDefaultSettings, omit(this.settings.settings, ["prefix", "sass"]));
+    let spritesmithSettings: {} = merge(spritesmithDefaultSettings, omit(this._settings.settings, ["prefix", "sass"]));
 
-    if (this.settings["src-1x"] && this.settings["src-2x"]) {
+    if (this._settings["src-1x"] && this._settings["src-2x"]) {
       spritesmithSettings = merge(spritesmithSettings, {
         cssRetinaGroupsName: `${sanitizedTaskName}-retina`,
         cssRetinaSpritesheetName: `spritesheet-${sanitizedTaskName}-retina`,
         retinaImgName: imgNameAbsRetina,
-        retinaImgPath: path.join(this.settings.settings.sass.rel, imgNameRetina),
-        retinaSrcFilter: this.settings["src-2x"],
+        retinaImgPath: path.join(this._settings.settings.sass.rel, imgNameRetina),
+        retinaSrcFilter: this._settings["src-2x"],
       });
     }
 
     const sortFiles: boolean =
-      (typeof this.settings.algorithm === "undefined" || this.settings.algorithm !== "binary-tree") &&
-      typeof this.settings.algorithmOpts !== "undefined" &&
-      this.settings.algorithmOpts.sort !== false;
+      (typeof this._settings.algorithm === "undefined" || this._settings.algorithm !== "binary-tree") &&
+      typeof this._settings.algorithmOpts !== "undefined" &&
+      this._settings.algorithmOpts.sort !== false;
 
     const sprite: {
       css: NodeJS.ReadWriteStream;
@@ -92,15 +92,15 @@ export default class Sprites extends Task {
       sprite.img.pipe(dest(".", options)),
       sprite.css
         .pipe(header("// sass-lint:disable-all\n\n"))
-        .pipe(dest(this.settings.settings.sass.dst, options) as NodeJS.WritableStream)
+        .pipe(dest(this._settings.settings.sass.dst, options) as NodeJS.WritableStream)
     );
   }
 
   private _srcGlobs(): string[] {
-    if (this.settings["src-1x"] && this.settings["src-2x"]) {
-      return [...this.settings["src-1x"], ...this.settings["src-2x"]];
+    if (this._settings["src-1x"] && this._settings["src-2x"]) {
+      return [...this._settings["src-1x"], ...this._settings["src-2x"]];
     }
 
-    return this.settings.src;
+    return this._settings.src;
   }
 }

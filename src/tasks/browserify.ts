@@ -18,32 +18,32 @@ export default class Browserify extends Javascript {
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    this.gulpRead = false;
+    this._gulpRead = false;
 
     const defaultSettings: {} = {
       debug: false,
-      entries: this.settings.src,
+      entries: this._settings.src,
       insertGlobals: true,
     };
 
-    this.settings.settings = merge(watchify.args, defaultSettings, this.settings.settings || {});
-    this.settings.settings.babel =
-      typeof this.settings.settings.babel === "object"
-        ? merge(Browserify.babelDefaultSettings, this.settings.settings.babel)
+    this._settings.settings = merge(watchify.args, defaultSettings, this._settings.settings || {});
+    this._settings.settings.babel =
+      typeof this._settings.settings.babel === "object"
+        ? merge(Browserify._babelDefaultSettings, this._settings.settings.babel)
         : {};
   }
 
-  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    stream = watchify(browserify(omit(this.settings.settings, ["babel"])))
-      .transform("babelify", this.settings.settings.babel)
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+    stream = watchify(browserify(omit(this._settings.settings, ["babel"])))
+      .transform("babelify", this._settings.settings.babel)
       .bundle()
-      .pipe(Source(this.settings.filename))
+      .pipe(Source(this._settings.filename))
       .pipe(Buffer())
-      .pipe(dest(this.settings.dst, options))
-      .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
+      .pipe(dest(this._settings.dst, options))
+      .pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream)
       .pipe(uglify())
       .pipe(rename({ suffix: ".min" }))
-      .pipe(dest(this.settings.dst, options));
+      .pipe(dest(this._settings.dst, options));
 
     return stream;
   }

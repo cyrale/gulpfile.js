@@ -15,19 +15,19 @@ export default class Fonts extends Task {
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    this.withLinter = false;
+    this._withLinter = false;
 
     const defaultSettings: {} = {
       prefix: "font",
       template: "fontawesome",
     };
 
-    this.settings.settings = merge(defaultSettings, this.settings.settings || {});
+    this._settings.settings = merge(defaultSettings, this._settings.settings || {});
   }
 
-  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    const prefix: string = this.settings.settings.prefix === "" ? "" : `${this.settings.settings.prefix}-`;
-    const sanitizedTaskName: string = changeCase.paramCase(this.taskName().replace("fonts:", prefix));
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+    const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
+    const sanitizedTaskName: string = changeCase.paramCase(this._taskName().replace("fonts:", prefix));
 
     stream = stream
       .pipe(
@@ -40,7 +40,7 @@ export default class Fonts extends Task {
         })
       )
       .on("glyphs", (glyphs: any[]): void => {
-        const file: string = path.resolve(__dirname, `../../src/templates/${this.settings.settings.template}.lodash`);
+        const file: string = path.resolve(__dirname, `../../src/templates/${this._settings.settings.template}.lodash`);
 
         fs.readFile(file, (err: NodeJS.ErrnoException | null, data: Buffer): void => {
           if (err) {
@@ -50,7 +50,7 @@ export default class Fonts extends Task {
           const templateVars: {} = {
             className: sanitizedTaskName,
             fontName: sanitizedTaskName,
-            fontPath: path.normalize(`${this.settings.settings.sass.rel}/`),
+            fontPath: path.normalize(`${this._settings.settings.sass.rel}/`),
             glyphs: glyphs.map((glyph: any): any => ({ codepoint: glyph.unicode[0].charCodeAt(0), name: glyph.name })),
           };
 
@@ -58,7 +58,7 @@ export default class Fonts extends Task {
             stylesheet = `// sass-lint:disable-all\n\n${stylesheet}`;
 
             gulpFile(`_${sanitizedTaskName}.scss`, stylesheet, { src: true }).pipe(dest(
-              this.settings.settings.sass.dst,
+              this._settings.settings.sass.dst,
               options
             ) as NodeJS.WritableStream);
           });

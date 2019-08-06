@@ -16,7 +16,7 @@ import Task, { IGulpOptions } from "./task";
 export default class Javascript extends Task {
   public static readonly taskName: string = "javascript";
 
-  protected static readonly babelDefaultSettings: {
+  protected static readonly _babelDefaultSettings: {
     [name: string]: any;
   } = {
     presets: ["@babel/preset-env"],
@@ -27,50 +27,50 @@ export default class Javascript extends Task {
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    this.gulpSourcemaps = true;
+    this._gulpSourcemaps = true;
 
-    this.defaultDest = false;
-    this.browserSyncSettings = { match: "**/*.js" };
+    this._defaultDest = false;
+    this._browserSyncSettings = { match: "**/*.js" };
 
     const defaultSettings: {} = {
-      babel: Javascript.babelDefaultSettings,
+      babel: Javascript._babelDefaultSettings,
     };
-    this.settings.settings = merge(defaultSettings, this.settings.settings || {});
+    this._settings.settings = merge(defaultSettings, this._settings.settings || {});
 
-    this._babelActive = typeof this.settings.settings.babel === "object" || this.settings.settings.babel !== false;
+    this._babelActive = typeof this._settings.settings.babel === "object" || this._settings.settings.babel !== false;
   }
 
-  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     stream
-      .pipe(gulpIf(this._babelActive, babel(omit(this.settings.settings.babel, ["_flags"]))))
-      .pipe(concat(this.settings.filename))
-      .pipe(dest(this.settings.dst, options))
-      .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
+      .pipe(gulpIf(this._babelActive, babel(omit(this._settings.settings.babel, ["_flags"]))))
+      .pipe(concat(this._settings.filename))
+      .pipe(dest(this._settings.dst, options))
+      .pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream)
       .pipe(uglify())
       .pipe(rename({ suffix: ".min" }))
-      .pipe(dest(this.settings.dst, options))
-      .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream);
+      .pipe(dest(this._settings.dst, options))
+      .pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream);
 
     return stream;
   }
 
-  protected lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream
       .pipe(esLint())
       .pipe(esLint.format())
       .pipe(
         esLint.results((filesWithErrors: { errorCount: number }): void => {
-          this.lintError = filesWithErrors.errorCount > 0;
+          this._lintError = filesWithErrors.errorCount > 0;
         })
       );
 
     return stream;
   }
 
-  protected displayError(error: any): void {
+  protected _displayError(error: any): void {
     const cliEngine: CLIEngine = new CLIEngine({});
     const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");
-    const relativeFile: string = path.relative(this.settings.cwd, error.fileName);
+    const relativeFile: string = path.relative(this._settings.cwd, error.fileName);
 
     let formattedMessage: CLIEngine.LintResult[] = [];
 
@@ -98,7 +98,7 @@ export default class Javascript extends Task {
       ];
 
       // Particular exit due to the comportment of gulp-babel.
-      if (Task.isBuildRun()) {
+      if (Task._isBuildRun()) {
         console.log(formatter(formattedMessage));
         process.exit(1);
       }

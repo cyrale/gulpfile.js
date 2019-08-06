@@ -32,7 +32,7 @@ export default class Config {
   }
 
   /**
-   * Get settings.
+   * Get _settings.
    */
   get settings(): IGenericSettings {
     return this._settings;
@@ -112,7 +112,7 @@ export default class Config {
   }
 
   /**
-   * Read settings from configuration file.
+   * Read _settings from configuration file.
    */
   private refreshSettings(): void {
     // Read configuration file.
@@ -131,7 +131,7 @@ export default class Config {
 
     delete this._settings.cwd;
 
-    // Merge global and local settings in each tasks.
+    // Merge global and local _settings in each tasks.
     if (this._settings[Browsersync.taskName]) {
       this._settings[Browsersync.taskName].cwd = this._options.cwd;
     }

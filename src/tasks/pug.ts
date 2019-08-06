@@ -13,20 +13,20 @@ export default class Pug extends Task {
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    if (typeof this.settings.settings.data === "string") {
-      this.watchingFiles = [this.settings.settings.data];
-    } else if (typeof this.settings.settings.data === "object") {
-      this.watchingFiles = this.settings.settings.data as string[];
+    if (typeof this._settings.settings.data === "string") {
+      this._watchingFiles = [this._settings.settings.data];
+    } else if (typeof this._settings.settings.data === "object") {
+      this._watchingFiles = this._settings.settings.data as string[];
     }
   }
 
-  protected buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     let data: any[] = [];
 
-    if (typeof this.settings.settings.data === "string") {
-      data = yaml.safeLoad(fs.readFileSync(this.settings.settings.data, "utf8"));
-    } else if (typeof this.settings.settings.data === "object") {
-      (this.settings.settings.data as string[]).forEach((filename: string): void => {
+    if (typeof this._settings.settings.data === "string") {
+      data = yaml.safeLoad(fs.readFileSync(this._settings.settings.data, "utf8"));
+    } else if (typeof this._settings.settings.data === "object") {
+      (this._settings.settings.data as string[]).forEach((filename: string): void => {
         data = Object.assign({}, data, yaml.safeLoad(fs.readFileSync(filename, "utf8")));
       });
     }
@@ -36,12 +36,12 @@ export default class Pug extends Task {
     return stream;
   }
 
-  protected lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream.pipe(
       pugLinter({
         reporter: (errors: any[]): void => {
           if (errors.length > 0) {
-            this.lintError = true;
+            this._lintError = true;
             pugLintStylish(errors);
           }
         },
@@ -51,7 +51,7 @@ export default class Pug extends Task {
     return stream;
   }
 
-  protected displayError(error: any): void {
+  protected _displayError(error: any): void {
     pugLintStylish([error]);
   }
 }

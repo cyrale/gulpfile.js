@@ -48,10 +48,10 @@ export default class Sass extends Task {
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    this.gulpSourcemaps = true;
+    this._gulpSourcemaps = true;
 
-    this.defaultDest = false;
-    this.browserSyncSettings = { match: "**/*.css" };
+    this._defaultDest = false;
+    this._browserSyncSettings = { match: "**/*.css" };
 
     const defaultSettings: {} = {
       SVGO: {},
@@ -88,20 +88,20 @@ export default class Sass extends Task {
       },
     };
 
-    this.settings.settings = merge(defaultSettings, this.settings.settings || {});
-    this.settings.settings.mqpacker.sort =
-      this.settings.settings.mqpacker.sort === "mobile" ? sortCSSMediaQueries : sortCSSMediaQueries.desktopFirst;
+    this._settings.settings = merge(defaultSettings, this._settings.settings || {});
+    this._settings.settings.mqpacker.sort =
+      this._settings.settings.mqpacker.sort === "mobile" ? sortCSSMediaQueries : sortCSSMediaQueries.desktopFirst;
 
     this._criticalActive =
-      typeof this.settings.settings.critical === "object" ||
-      (typeof this.settings.settings.critical === "boolean" && this.settings.settings.critical);
-    this.settings.settings.critical =
-      typeof this.settings.settings.critical === "object" ? (this.settings.settings.critical as string[]) : [];
+      typeof this._settings.settings.critical === "object" ||
+      (typeof this._settings.settings.critical === "boolean" && this._settings.settings.critical);
+    this._settings.settings.critical =
+      typeof this._settings.settings.critical === "object" ? (this._settings.settings.critical as string[]) : [];
 
     this._purgeCSSActive =
-      typeof this.settings.settings.purgeCSS === "object" ||
-      typeof this.settings.settings.purgeCSS === "string" ||
-      (typeof this.settings.settings.purgeCSS === "boolean" && this.settings.settings.purgeCSS);
+      typeof this._settings.settings.purgeCSS === "object" ||
+      typeof this._settings.settings.purgeCSS === "string" ||
+      (typeof this._settings.settings.purgeCSS === "boolean" && this._settings.settings.purgeCSS);
 
     const purgeCSSDefaultSettings: IPurgeCSSOptions = {
       content: ["**/*.html", "**/*.php", "**/*.twig"],
@@ -115,47 +115,47 @@ export default class Sass extends Task {
       whitelistPatternsChildren: [],
     };
 
-    if (typeof this.settings.settings.purgeCSS === "object") {
-      this.settings.settings.purgeCSS = merge(
+    if (typeof this._settings.settings.purgeCSS === "object") {
+      this._settings.settings.purgeCSS = merge(
         purgeCSSDefaultSettings,
         {
           content: purgeCSSDefaultSettings.content,
           css: purgeCSSDefaultSettings.css,
         },
-        this.settings.settings.purgeCSS
+        this._settings.settings.purgeCSS
       );
-    } else if (typeof this.settings.settings.purgeCSS === "string") {
-      this.settings.settings.purgeCSS = path.resolve(this.settings.cwd, this.settings.settings.purgeCSS);
+    } else if (typeof this._settings.settings.purgeCSS === "string") {
+      this._settings.settings.purgeCSS = path.resolve(this._settings.cwd, this._settings.settings.purgeCSS);
     } else {
-      this.settings.settings.purgeCSS = purgeCSSDefaultSettings;
+      this._settings.settings.purgeCSS = purgeCSSDefaultSettings;
     }
   }
 
-  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     const streams: NodeJS.ReadWriteStream[] = [];
 
     const postCSSPluginsBefore: any[] = [
-      assets(this.settings.settings.assets),
-      rucksackCSS(this.settings.settings.rucksack),
-      autoprefixer(this.settings.settings.autoprefixer),
-      inlineSVG(this.settings.settings.inlineSVG),
-      svgo(this.settings.settings.SVGO),
+      assets(this._settings.settings.assets),
+      rucksackCSS(this._settings.settings.rucksack),
+      autoprefixer(this._settings.settings.autoprefixer),
+      inlineSVG(this._settings.settings.inlineSVG),
+      svgo(this._settings.settings.SVGO),
     ];
 
     if (this._purgeCSSActive) {
-      postCSSPluginsBefore.push(purgeCSS(this.settings.settings.purgeCSS));
+      postCSSPluginsBefore.push(purgeCSS(this._settings.settings.purgeCSS));
     }
 
     const postCSSPluginsAfter: any[] = [
-      CSSNano(this.settings.settings.cssnano),
-      CSSMQPacker(this.settings.settings.mqpacker),
+      CSSNano(this._settings.settings.cssnano),
+      CSSMQPacker(this._settings.settings.mqpacker),
     ];
 
     stream = stream
-      .pipe(sass(this.settings.sass || {}))
+      .pipe(sass(this._settings.sass || {}))
       .pipe(postCSS(postCSSPluginsBefore) as NodeJS.WritableStream) as NodeJS.ReadWriteStream;
 
-    if (this.settings.settings.extractMQ) {
+    if (this._settings.settings.extractMQ) {
       let mainFilename: string = "";
 
       let streamExtractMQ: NodeJS.ReadWriteStream = stream
@@ -198,7 +198,7 @@ export default class Sass extends Task {
     }
 
     if (this._criticalActive) {
-      const streamCriticalCSS: NodeJS.ReadWriteStream = stream.pipe(criticalCSS(this.settings.settings.critical));
+      const streamCriticalCSS: NodeJS.ReadWriteStream = stream.pipe(criticalCSS(this._settings.settings.critical));
 
       streams.push(streamCriticalCSS);
     }
@@ -208,30 +208,30 @@ export default class Sass extends Task {
     }
 
     stream = mergeStream(streams)
-      .pipe(dest(this.settings.dst, options))
-      .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
+      .pipe(dest(this._settings.dst, options))
+      .pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream)
       .pipe(postCSS(postCSSPluginsAfter))
       .pipe(rename({ suffix: ".min" }))
-      .pipe(dest(this.settings.dst, options) as NodeJS.WritableStream) as NodeJS.ReadWriteStream;
+      .pipe(dest(this._settings.dst, options) as NodeJS.WritableStream) as NodeJS.ReadWriteStream;
 
     return stream;
   }
 
-  protected lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream
-      .pipe(gulpSassLint({ configFile: path.join(this.settings.cwd, ".sass-lint.yml") }))
+      .pipe(gulpSassLint({ configFile: path.join(this._settings.cwd, ".sass-lint.yml") }))
       .pipe(gulpSassLint.format())
       .pipe(this._lintNotifier());
 
     return stream;
   }
 
-  protected displayError(error: any): void {
+  protected _displayError(error: any): void {
     console.log(
       sassLint.format([
         {
           errorCount: 1,
-          filePath: error.relativePath || path.relative(this.settings.cwd, error.file || error.path),
+          filePath: error.relativePath || path.relative(this._settings.cwd, error.file || error.path),
           messages: [
             {
               column: error.column,
@@ -246,7 +246,7 @@ export default class Sass extends Task {
     );
 
     // Particular exit due to the comportment of Sass.
-    if (Task.isBuildRun() && error.code !== "ENOENT") {
+    if (Task._isBuildRun() && error.code !== "ENOENT") {
       process.exit(1);
     }
   }
@@ -257,7 +257,7 @@ export default class Sass extends Task {
     return through.obj(
       (file: any, encoding: string, cb: TransformCallback): void => {
         if (!file.isNull() && !file.isStream() && file.sassLint[0].errorCount > 0) {
-          that.lintError = true;
+          that._lintError = true;
         }
 
         cb();

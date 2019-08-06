@@ -15,7 +15,7 @@ export default class SVGStore extends Task {
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    this.withLinter = false;
+    this._withLinter = false;
 
     const defaultSettings: {} = {
       svgmin: {
@@ -54,15 +54,15 @@ export default class SVGStore extends Task {
       },
     };
 
-    this.settings.settings = merge(defaultSettings, this.settings.settings);
+    this._settings.settings = merge(defaultSettings, this._settings.settings);
   }
 
-  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     stream = stream
       .pipe(
         svgMin(
           (file: Vinyl): svgo.Options =>
-            merge(this.settings.settings.svgmin, {
+            merge(this._settings.settings.svgmin, {
               plugins: [
                 {
                   cleanupIDs: {
@@ -75,7 +75,7 @@ export default class SVGStore extends Task {
             })
         )
       )
-      .pipe(svgStore(this.settings.settings.svgstore))
+      .pipe(svgStore(this._settings.settings.svgstore))
       .pipe(cheerio({
         parserOptions: {
           xmlMode: true,
@@ -91,8 +91,8 @@ export default class SVGStore extends Task {
           $("symbol")
             .filter((index: number, symbol: CheerioElement): boolean => !!symbol.attribs.id && !!symbol.attribs.viewBox)
             .each((index: number, symbol: CheerioElement): void => {
-              if (this.settings.settings.prefix) {
-                symbol.attribs.id = `${this.settings.settings.prefix}-${symbol.attribs.id}`;
+              if (this._settings.settings.prefix) {
+                symbol.attribs.id = `${this._settings.settings.prefix}-${symbol.attribs.id}`;
               }
 
               const [originX, , width, height] = symbol.attribs.viewBox
@@ -128,7 +128,7 @@ export default class SVGStore extends Task {
         },
       }) as NodeJS.WritableStream)
       .pipe(rename({
-        basename: path.basename(this.settings.filename, path.extname(this.settings.filename)),
+        basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),
         extname: ".svg",
       }) as NodeJS.WritableStream);
 
