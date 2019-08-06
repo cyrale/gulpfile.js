@@ -5,6 +5,7 @@ import { parallel, series, task as gulpTask, watch } from "gulp";
 
 import Browserify from "../tasks/browserify";
 import Browsersync from "../tasks/browsersync";
+import Clean from "../tasks/clean";
 import Fonts from "../tasks/fonts";
 import Images from "../tasks/images";
 import Javascript from "../tasks/javascript";
@@ -56,6 +57,7 @@ export default class TaskFactory {
   };
 
   private tasksGroupAndOrder: string[][] = [
+    [Clean.taskName],
     [Fonts.taskName, Sprites.taskName, SVGStore.taskName],
     [Images.taskName],
     [Browserify.taskName],
@@ -67,11 +69,18 @@ export default class TaskFactory {
     const conf: Config = Config.getInstance();
 
     // Initialize BrowserSync.
-    const browserSync: Browsersync = Browsersync.getInstance();
-
     if (conf.settings.browsersync) {
+      const browserSync: Browsersync = Browsersync.getInstance();
+
       this.stackTask(browserSync.start());
       this.stackTask(browserSync.watch());
+    }
+
+    // Initialize clean task.
+    if (conf.settings.clean) {
+      const clean: Clean = Clean.getInstance();
+
+      this.stackTask(clean.start());
     }
 
     // Initialize other tasks.

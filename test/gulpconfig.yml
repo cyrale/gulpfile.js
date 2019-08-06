@@ -1,3 +1,7 @@
+clean:
+  files:
+    - "dist/"
+    - "src/sass/helpers/*.scss"
 # ------------------------------------------
 # BrowserSync (https://www.browsersync.io/)
 # ------------------------------------------
