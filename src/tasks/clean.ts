@@ -33,7 +33,7 @@ export default class Clean {
 
     gulpTask(
       taskName,
-      (done: TaskCallback): Promise<string[]> => {
+      (): Promise<string[]> => {
         this.chdir();
 
         return del(this._settings.files as string[]);

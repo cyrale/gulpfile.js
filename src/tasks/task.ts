@@ -1,8 +1,7 @@
 import fs from "fs";
-import process from "process";
-
 import { dest, series, src, task as gulpTask, watch } from "gulp";
-import GulpPlumber from "gulp-plumber";
+import plumber from "gulp-plumber";
+import process from "process";
 
 import Config, { IGenericSettings } from "../modules/config";
 import Browsersync from "./browsersync";
@@ -69,14 +68,13 @@ export default abstract class Task {
         };
 
         let stream: NodeJS.ReadWriteStream = src(this.settings.src, options as {}).pipe(
-          GulpPlumber((error: any): void => this.displayOrExitOnError(taskName, error, done))
+          plumber((error: any): void => this.displayOrExitOnError(taskName, error, done))
         );
 
         if (!this.withLinter || !this.lintError) {
-          console.log(this);
           stream = this.buildSpecific(stream, options);
 
-          stream.pipe(GulpPlumber.stop());
+          stream.pipe(plumber.stop());
 
           if (this.defaultDest) {
             stream.pipe(dest(this.settings.dst, options));

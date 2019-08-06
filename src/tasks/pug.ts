@@ -1,11 +1,9 @@
 import fs from "fs";
-
-import GulpData from "gulp-data";
-import GulpPug from "gulp-pug";
-import GulpPugLinter from "gulp-pug-linter";
-import PugLintStylish from "puglint-stylish";
-
+import gulpData from "gulp-data";
+import pug from "gulp-pug";
+import pugLinter from "gulp-pug-linter";
 import * as yaml from "js-yaml";
+import pugLintStylish from "puglint-stylish";
 
 import Task from "./task";
 
@@ -33,18 +31,18 @@ export default class Pug extends Task {
       });
     }
 
-    stream.pipe(GulpData(data)).pipe(GulpPug());
+    stream.pipe(gulpData(data)).pipe(pug());
 
     return stream;
   }
 
   protected lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream.pipe(
-      GulpPugLinter({
+      pugLinter({
         reporter: (errors: any[]): void => {
           if (errors.length > 0) {
             this.lintError = true;
-            PugLintStylish(errors);
+            pugLintStylish(errors);
           }
         },
       })
@@ -54,6 +52,6 @@ export default class Pug extends Task {
   }
 
   protected displayError(error: any): void {
-    PugLintStylish([error]);
+    pugLintStylish([error]);
   }
 }

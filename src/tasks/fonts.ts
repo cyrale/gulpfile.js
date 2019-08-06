@@ -1,13 +1,11 @@
 import changeCase from "change-case";
 import consolidate from "consolidate";
 import fs from "fs";
+import { dest } from "gulp";
+import gulpFile from "gulp-file";
+import iconfont from "gulp-iconfont";
 import merge from "lodash/merge";
 import path from "path";
-
-import { dest } from "gulp";
-
-import GulpFile from "gulp-file";
-import GulpIconfont from "gulp-iconfont";
 
 import Task, { IGulpOptions } from "./task";
 
@@ -33,7 +31,7 @@ export default class Fonts extends Task {
 
     stream = stream
       .pipe(
-        GulpIconfont({
+        iconfont({
           centerHorizontally: true,
           fontName: sanitizedTaskName,
           formats: ["ttf", "eot", "woff", "woff2", "svg"],
@@ -59,9 +57,10 @@ export default class Fonts extends Task {
           consolidate.lodash.render(data.toString(), templateVars).then((stylesheet: string): void => {
             stylesheet = `// sass-lint:disable-all\n\n${stylesheet}`;
 
-            GulpFile(`_${sanitizedTaskName}.scss`, stylesheet, { src: true }).pipe(
-              dest(this.settings.settings.sass.dst, options)
-            );
+            gulpFile(`_${sanitizedTaskName}.scss`, stylesheet, { src: true }).pipe(dest(
+              this.settings.settings.sass.dst,
+              options
+            ) as NodeJS.WritableStream);
           });
         });
       });

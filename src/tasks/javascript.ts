@@ -1,19 +1,14 @@
+import { CLIEngine, Linter } from "eslint";
+import { dest } from "gulp";
+import babel from "gulp-babel";
+import concat from "gulp-concat";
+import esLint from "gulp-eslint";
+import gulpIf from "gulp-if";
+import rename from "gulp-rename";
+import uglify from "gulp-uglify";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
 import path from "path";
-
-import { dest } from "gulp";
-
-import { CLIEngine, Linter } from "eslint";
-import Severity = Linter.Severity;
-import LintResult = CLIEngine.LintResult;
-
-import GulpBabel from "gulp-babel";
-import GulpConcat from "gulp-concat";
-import GulpESLint from "gulp-eslint";
-import GulpIf from "gulp-if";
-import GulpRename from "gulp-rename";
-import GulpUglify from "gulp-uglify";
 
 import Browsersync from "./browsersync";
 import Task, { IGulpOptions } from "./task";
@@ -47,12 +42,12 @@ export default class Javascript extends Task {
 
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     stream
-      .pipe(GulpIf(this.babelActive, GulpBabel(omit(this.settings.settings.babel, ["_flags"]))))
-      .pipe(GulpConcat(this.settings.filename))
+      .pipe(gulpIf(this.babelActive, babel(omit(this.settings.settings.babel, ["_flags"]))))
+      .pipe(concat(this.settings.filename))
       .pipe(dest(this.settings.dst, options))
       .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
-      .pipe(GulpUglify())
-      .pipe(GulpRename({ suffix: ".min" }))
+      .pipe(uglify())
+      .pipe(rename({ suffix: ".min" }))
       .pipe(dest(this.settings.dst, options))
       .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream);
 
@@ -61,10 +56,10 @@ export default class Javascript extends Task {
 
   protected lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream
-      .pipe(GulpESLint())
-      .pipe(GulpESLint.format())
+      .pipe(esLint())
+      .pipe(esLint.format())
       .pipe(
-        GulpESLint.results((filesWithErrors: { errorCount: number }): void => {
+        esLint.results((filesWithErrors: { errorCount: number }): void => {
           this.lintError = filesWithErrors.errorCount > 0;
         })
       );
@@ -77,7 +72,7 @@ export default class Javascript extends Task {
     const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");
     const relativeFile: string = path.relative(this.settings.cwd, error.fileName);
 
-    let formattedMessage: LintResult[] = [];
+    let formattedMessage: CLIEngine.LintResult[] = [];
 
     if (error.cause) {
       // Message send by gulp-babel
@@ -94,7 +89,7 @@ export default class Javascript extends Task {
               message: error.cause.message,
               nodeType: "",
               ruleId: null,
-              severity: 2 as Severity,
+              severity: 2 as Linter.Severity,
               source: null,
             },
           ],
@@ -122,7 +117,7 @@ export default class Javascript extends Task {
               message: error.message.replace(error.fileName, relativeFile),
               nodeType: "",
               ruleId: null,
-              severity: 2 as Severity,
+              severity: 2 as Linter.Severity,
               source: null,
             },
           ],

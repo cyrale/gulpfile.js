@@ -2,11 +2,10 @@ import chalk from "chalk";
 import del from "del";
 import log from "fancy-log";
 import fs from "fs";
+import imagemin from "gulp-imagemin";
+import newer from "gulp-newer";
 import merge from "lodash/merge";
 import path from "path";
-
-import GulpImagemin from "gulp-imagemin";
-import GulpNewer from "gulp-newer";
 
 import Task, { IGulpOptions } from "./task";
 
@@ -39,14 +38,14 @@ export default class Images extends Task {
 
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     stream
-      .pipe(GulpNewer(path.resolve(this.settings.cwd, this.settings.dst)))
+      .pipe(newer(path.resolve(this.settings.cwd, this.settings.dst)))
       .pipe(
-        GulpImagemin(
+        imagemin(
           [
-            GulpImagemin.jpegtran(this.settings.settings.jpegtran || {}),
-            GulpImagemin.optipng(this.settings.settings.optipng || {}),
-            GulpImagemin.gifsicle(this.settings.settings.gifsicle || {}),
-            GulpImagemin.svgo(this.settings.settings.svgo || {}),
+            imagemin.jpegtran(this.settings.settings.jpegtran || {}),
+            imagemin.optipng(this.settings.settings.optipng || {}),
+            imagemin.gifsicle(this.settings.settings.gifsicle || {}),
+            imagemin.svgo(this.settings.settings.svgo || {}),
           ],
           { verbose: true }
         )

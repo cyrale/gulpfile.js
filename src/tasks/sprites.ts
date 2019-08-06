@@ -1,16 +1,14 @@
 import changeCase from "change-case";
+import { dest } from "gulp";
+import header from "gulp-header";
+import gulpIf from "gulp-if";
+import sort from "gulp-sort";
+import spriteSmith from "gulp.spritesmith";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
 import mergeStream from "merge-stream";
 import minimatch from "minimatch";
 import path from "path";
-
-import { dest } from "gulp";
-
-import GulpHeader from "gulp-header";
-import GulpIf from "gulp-if";
-import GulpSort from "gulp-sort";
-import GulpSpriteSmith from "gulp.spritesmith";
 
 import Task, { IGulpOptions } from "./task";
 
@@ -88,11 +86,13 @@ export default class Sprites extends Task {
     const sprite: {
       css: NodeJS.ReadWriteStream;
       img: NodeJS.ReadWriteStream;
-    } = stream.pipe(GulpIf(sortFiles, GulpSort())).pipe(GulpSpriteSmith(spritesmithSettings));
+    } = stream.pipe(gulpIf(sortFiles, sort())).pipe(spriteSmith(spritesmithSettings));
 
     return mergeStream(
       sprite.img.pipe(dest(".", options)),
-      sprite.css.pipe(GulpHeader("// sass-lint:disable-all\n\n")).pipe(dest(this.settings.settings.sass.dst, options))
+      sprite.css
+        .pipe(header("// sass-lint:disable-all\n\n"))
+        .pipe(dest(this.settings.settings.sass.dst, options) as NodeJS.WritableStream)
     );
   }
 

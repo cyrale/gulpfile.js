@@ -1,7 +1,6 @@
+import { parallel, series, task as gulpTask, watch } from "gulp";
 import process from "process";
 import * as Undertaker from "undertaker";
-
-import { parallel, series, task as gulpTask, watch } from "gulp";
 
 import Browserify from "../tasks/browserify";
 import Browsersync from "../tasks/browsersync";
@@ -34,6 +33,39 @@ interface IGlobalTaskList {
 
 export default class TaskFactory {
   private static readonly sortOrder: string[] = ["lint", "build", "watch"];
+
+  private static explodeTaskName(task: string): ITaskNameElements {
+    const [type] = task.split(":");
+    let [, name, step] = task.split(":");
+
+    if (typeof step === "undefined") {
+      step = name;
+      name = "";
+    }
+
+    return {
+      name,
+      step,
+      type,
+    };
+  }
+
+  private static mergeArrays(acc: string[] = [], tasks: string[]): string[] {
+    return [...acc, ...tasks];
+  }
+
+  private static pushTask(list: ITaskList, key: string, task: string): ITaskList {
+    list[key] = list[key] || [];
+    if (list[key].indexOf(task) < 0) {
+      list[key].push(task);
+    }
+
+    return list;
+  }
+
+  private static removeEmptyArrays(tasks: string[]): boolean {
+    return tasks.length > 0;
+  }
 
   private tasks: string[] = [];
 
@@ -126,7 +158,7 @@ export default class TaskFactory {
   private createGlobalTasks(): void {
     // Sort tasks.
     this.tasks.forEach((task: string): void => {
-      const { type, name, step } = this.explodeTaskName(task);
+      const { type, name, step } = TaskFactory.explodeTaskName(task);
 
       if (type === Browsersync.taskName) {
         this.pushGlobalTask("byTypeOnly", type, task);
@@ -148,8 +180,8 @@ export default class TaskFactory {
     if (this.globalTasks.byName) {
       Object.keys(this.globalTasks.byName).forEach((taskName: string): void => {
         this.globalTasks.byName[taskName].sort((itemA: string, itemB: string): number => {
-          const { step: stepA } = this.explodeTaskName(itemA);
-          const { step: stepB } = this.explodeTaskName(itemB);
+          const { step: stepA } = TaskFactory.explodeTaskName(itemA);
+          const { step: stepB } = TaskFactory.explodeTaskName(itemB);
 
           return TaskFactory.sortOrder.indexOf(stepA) - TaskFactory.sortOrder.indexOf(stepB);
         });
@@ -176,18 +208,18 @@ export default class TaskFactory {
         .map((taskNames: string[]): string[] =>
           taskNames.filter((taskName: string): boolean => typeof this.globalTasks.byTypeOnly[taskName] !== "undefined")
         )
-        .filter(this.removeEmptyArrays);
+        .filter(TaskFactory.removeEmptyArrays);
     }
   }
 
   private createSuperGlobalTasks(): void {
     this.tasks.forEach((task: string): void => {
-      const { step } = this.explodeTaskName(task);
+      const { step } = TaskFactory.explodeTaskName(task);
 
       if (TaskFactory.sortOrder.indexOf(step) >= 0) {
-        this.pushTask(this.superGlobalTasks, step, task);
+        TaskFactory.pushTask(this.superGlobalTasks, step, task);
       } else if (step === "start") {
-        this.pushTask(this.superGlobalTasks, "watch", task);
+        TaskFactory.pushTask(this.superGlobalTasks, "watch", task);
       }
     });
 
@@ -198,13 +230,13 @@ export default class TaskFactory {
           taskNames
             .map((taskName: string): string[] =>
               this.superGlobalTasks[step].filter((task: string): boolean => {
-                const { type } = this.explodeTaskName(task);
+                const { type } = TaskFactory.explodeTaskName(task);
                 return type === taskName;
               })
             )
-            .reduce(this.mergeArrays)
+            .reduce(TaskFactory.mergeArrays)
         )
-        .filter(this.removeEmptyArrays);
+        .filter(TaskFactory.removeEmptyArrays);
 
       this.defineTask(
         step,
@@ -265,44 +297,11 @@ export default class TaskFactory {
     }
   }
 
-  private explodeTaskName(task: string): ITaskNameElements {
-    const [type] = task.split(":");
-    let [, name, step] = task.split(":");
-
-    if (typeof step === "undefined") {
-      step = name;
-      name = "";
-    }
-
-    return {
-      name,
-      step,
-      type,
-    };
-  }
-
-  private mergeArrays(acc: string[] = [], tasks: string[]): string[] {
-    return [...acc, ...tasks];
-  }
-
   private pushGlobalTask(sort: string, key: string, task: string): IGlobalTaskList {
     this.globalTasks[sort] = this.globalTasks[sort] || {};
-    this.pushTask(this.globalTasks[sort], key, task);
+    TaskFactory.pushTask(this.globalTasks[sort], key, task);
 
     return this.globalTasks;
-  }
-
-  private pushTask(list: ITaskList, key: string, task: string): ITaskList {
-    list[key] = list[key] || [];
-    if (list[key].indexOf(task) < 0) {
-      list[key].push(task);
-    }
-
-    return list;
-  }
-
-  private removeEmptyArrays(tasks: string[]): boolean {
-    return tasks.length > 0;
   }
 
   private stackTask(name: string | false): string[] {

@@ -1,10 +1,8 @@
-import merge from "lodash/merge";
-import process from "process";
-
 import BrowserSync, { BrowserSyncInstance } from "browser-sync";
 import { task as gulpTask, watch } from "gulp";
-
-import GulpIf from "gulp-if";
+import gulpIf from "gulp-if";
+import merge from "lodash/merge";
+import process from "process";
 
 import Config, { IGenericSettings } from "../modules/config";
 import { TaskCallback } from "./task";
@@ -41,7 +39,7 @@ export default class Browsersync {
   public start(): string {
     const taskName: string = `${this._task}:start`;
 
-    gulpTask(taskName, (done: TaskCallback): void => {
+    gulpTask(taskName, (): void => {
       this.chdir();
 
       this._browserSync.init(
@@ -62,7 +60,7 @@ export default class Browsersync {
   }
 
   public sync(settings?: {}): NodeJS.WritableStream {
-    return GulpIf(this._started, this._browserSync.reload(merge({ stream: true }, settings || {})));
+    return gulpIf(this._started, this._browserSync.reload(merge({ stream: true }, settings || {})));
   }
 
   public watch(): string | false {

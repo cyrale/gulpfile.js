@@ -1,13 +1,11 @@
-import path from "path";
-import Vinyl from "vinyl";
-
+import cheerio from "gulp-cheerio";
+import rename from "gulp-rename";
+import svgMin from "gulp-svgmin";
+import svgStore from "gulp-svgstore";
 import merge from "lodash/merge";
-
-import GulpCheerio from "gulp-cheerio";
-import GulpRename from "gulp-rename";
-import GulpSVGMin from "gulp-svgmin";
-import GulpSVGStore from "gulp-svgstore";
+import path from "path";
 import SVGO from "svgo";
+import Vinyl from "vinyl";
 
 import Task, { IGulpOptions } from "./task";
 
@@ -62,7 +60,7 @@ export default class SVGStore extends Task {
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     stream = stream
       .pipe(
-        GulpSVGMin(
+        svgMin(
           (file: Vinyl): SVGO.Options =>
             merge(this.settings.settings.svgmin, {
               plugins: [
@@ -77,8 +75,8 @@ export default class SVGStore extends Task {
             })
         )
       )
-      .pipe(GulpSVGStore(this.settings.settings.svgstore))
-      .pipe(GulpCheerio({
+      .pipe(svgStore(this.settings.settings.svgstore))
+      .pipe(cheerio({
         parserOptions: {
           xmlMode: true,
         },
@@ -97,7 +95,7 @@ export default class SVGStore extends Task {
                 symbol.attribs.id = `${this.settings.settings.prefix}-${symbol.attribs.id}`;
               }
 
-              const [originX, originY, width, height] = symbol.attribs.viewBox
+              const [originX, , width, height] = symbol.attribs.viewBox
                 .split(" ")
                 .map((i: string): number => Number(i));
               const name: string = `${symbol.attribs.id}-icon`;
@@ -129,7 +127,7 @@ export default class SVGStore extends Task {
           }
         },
       }) as NodeJS.WritableStream)
-      .pipe(GulpRename({
+      .pipe(rename({
         basename: path.basename(this.settings.filename, path.extname(this.settings.filename)),
         extname: ".svg",
       }) as NodeJS.WritableStream);

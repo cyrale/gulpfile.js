@@ -1,14 +1,12 @@
 import browserify from "browserify";
+import { dest } from "gulp";
+import rename from "gulp-rename";
+import uglify from "gulp-uglify";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
 import Buffer from "vinyl-buffer";
 import Source from "vinyl-source-stream";
 import watchify from "watchify";
-
-import { dest } from "gulp";
-
-import GulpRename from "gulp-rename";
-import GulpUglify from "gulp-uglify";
 
 import Browsersync from "./browsersync";
 import Javascript from "./javascript";
@@ -43,8 +41,8 @@ export default class Browserify extends Javascript {
       .pipe(Buffer())
       .pipe(dest(this.settings.dst, options))
       .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
-      .pipe(GulpUglify())
-      .pipe(GulpRename({ suffix: ".min" }))
+      .pipe(uglify())
+      .pipe(rename({ suffix: ".min" }))
       .pipe(dest(this.settings.dst, options));
 
     return stream;

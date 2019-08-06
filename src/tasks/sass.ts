@@ -1,28 +1,26 @@
+import purgeCSS from "@fullhuman/postcss-purgecss";
+import autoprefixer from "autoprefixer";
+import CSSMQPacker from "css-mqpacker";
+import CSSNano from "cssnano";
+import { dest } from "gulp";
+import criticalCSS from "gulp-critical-css";
+import extractMediaQueries from "gulp-extract-media-queries";
+import postCSS from "gulp-postcss";
+import rename from "gulp-rename";
+import sass from "gulp-sass";
+import gulpSassLint from "gulp-sass-lint";
 import merge from "lodash/merge";
 import mergeStream from "merge-stream";
 import path from "path";
+import assets from "postcss-assets";
+import inlineSVG from "postcss-inline-svg";
+import svgo from "postcss-svgo";
+import purgeCSSWithWordPress from "purgecss-with-wordpress";
+import rucksackCSS from "rucksack-css";
+import sassLint from "sass-lint";
+import sortCSSMediaQueries from "sort-css-media-queries";
 import { Transform } from "stream";
-import through from "through2";
-
-import { dest } from "gulp";
-
-import PostCSSPurgeCSS from "@fullhuman/postcss-purgecss";
-import Autoprefixer from "autoprefixer";
-import CSSMQPacker from "css-mqpacker";
-import CSSNano from "cssnano";
-import GulpCriticalCSS from "gulp-critical-css";
-import GulpExtractMediaQueries from "gulp-extract-media-queries";
-import GulpPostCSS from "gulp-postcss";
-import GulpRename from "gulp-rename";
-import GulpSass from "gulp-sass";
-import GulpSassLint from "gulp-sass-lint";
-import PostCSSAssets from "postcss-assets";
-import PostCSSInlineSVG from "postcss-inline-svg";
-import PostCSSSVGO from "postcss-svgo";
-import PurgeCSSWithWordPress from "purgecss-with-wordpress";
-import RucksackCSS from "rucksack-css";
-import SassLint from "sass-lint";
-import SortCSSMediaQueries from "sort-css-media-queries";
+import through, { TransformCallback } from "through2";
 
 import Browsersync from "./browsersync";
 import Task, { IGulpOptions } from "./task";
@@ -92,7 +90,7 @@ export default class Sass extends Task {
 
     this.settings.settings = merge(defaultSettings, this.settings.settings || {});
     this.settings.settings.mqpacker.sort =
-      this.settings.settings.mqpacker.sort === "mobile" ? SortCSSMediaQueries : SortCSSMediaQueries.desktopFirst;
+      this.settings.settings.mqpacker.sort === "mobile" ? sortCSSMediaQueries : sortCSSMediaQueries.desktopFirst;
 
     this.criticalActive =
       typeof this.settings.settings.critical === "object" ||
@@ -112,8 +110,8 @@ export default class Sass extends Task {
       fontFace: true,
       keyframes: true,
       rejected: false,
-      whitelist: PurgeCSSWithWordPress.whitelist,
-      whitelistPatterns: PurgeCSSWithWordPress.whitelistPatterns,
+      whitelist: purgeCSSWithWordPress.whitelist,
+      whitelistPatterns: purgeCSSWithWordPress.whitelistPatterns,
       whitelistPatternsChildren: [],
     };
 
@@ -137,15 +135,15 @@ export default class Sass extends Task {
     const streams: NodeJS.ReadWriteStream[] = [];
 
     const postCSSPluginsBefore: any[] = [
-      PostCSSAssets(this.settings.settings.assets),
-      RucksackCSS(this.settings.settings.rucksack),
-      Autoprefixer(this.settings.settings.autoprefixer),
-      PostCSSInlineSVG(this.settings.settings.inlineSVG),
-      PostCSSSVGO(this.settings.settings.SVGO),
+      assets(this.settings.settings.assets),
+      rucksackCSS(this.settings.settings.rucksack),
+      autoprefixer(this.settings.settings.autoprefixer),
+      inlineSVG(this.settings.settings.inlineSVG),
+      svgo(this.settings.settings.SVGO),
     ];
 
     if (this.purgeCSSActive) {
-      postCSSPluginsBefore.push(PostCSSPurgeCSS(this.settings.settings.purgeCSS));
+      postCSSPluginsBefore.push(purgeCSS(this.settings.settings.purgeCSS));
     }
 
     const postCSSPluginsAfter: any[] = [
@@ -153,37 +151,37 @@ export default class Sass extends Task {
       CSSMQPacker(this.settings.settings.mqpacker),
     ];
 
-    stream = stream.pipe(GulpSass(this.settings.sass || {})).pipe(GulpPostCSS(postCSSPluginsBefore));
+    stream = stream
+      .pipe(sass(this.settings.sass || {}))
+      .pipe(postCSS(postCSSPluginsBefore) as NodeJS.WritableStream) as NodeJS.ReadWriteStream;
 
     if (this.settings.settings.extractMQ) {
       let mainFilename: string = "";
 
       let streamExtractMQ: NodeJS.ReadWriteStream = stream
         .pipe(
-          GulpRename(
-            (pPath: GulpRename.ParsedPath): GulpRename.ParsedPath => {
+          rename(
+            (pPath: rename.ParsedPath): rename.ParsedPath => {
               mainFilename = pPath.basename as string;
 
               return pPath;
             }
           )
         )
-        .pipe(GulpExtractMediaQueries())
-        .pipe(
-          GulpRename(
-            (pPath: GulpRename.ParsedPath): GulpRename.ParsedPath => {
-              if (pPath.basename !== mainFilename) {
-                pPath.basename = `${mainFilename}.${pPath.basename}`;
-              }
-
-              return pPath;
+        .pipe(extractMediaQueries())
+        .pipe(rename(
+          (pPath: rename.ParsedPath): rename.ParsedPath => {
+            if (pPath.basename !== mainFilename) {
+              pPath.basename = `${mainFilename}.${pPath.basename}`;
             }
-          )
-        );
+
+            return pPath;
+          }
+        ) as NodeJS.WritableStream);
 
       if (this.criticalActive) {
         streamExtractMQ = streamExtractMQ.pipe(
-          GulpPostCSS([
+          postCSS([
             (css: any): void => {
               // Remove critical properties.
               css.walkDecls((decl: any): void => {
@@ -200,7 +198,7 @@ export default class Sass extends Task {
     }
 
     if (this.criticalActive) {
-      const streamCriticalCSS: NodeJS.ReadWriteStream = stream.pipe(GulpCriticalCSS(this.settings.settings.critical));
+      const streamCriticalCSS: NodeJS.ReadWriteStream = stream.pipe(criticalCSS(this.settings.settings.critical));
 
       streams.push(streamCriticalCSS);
     }
@@ -212,17 +210,17 @@ export default class Sass extends Task {
     stream = mergeStream(streams)
       .pipe(dest(this.settings.dst, options))
       .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
-      .pipe(GulpPostCSS(postCSSPluginsAfter))
-      .pipe(GulpRename({ suffix: ".min" }))
-      .pipe(dest(this.settings.dst, options));
+      .pipe(postCSS(postCSSPluginsAfter))
+      .pipe(rename({ suffix: ".min" }))
+      .pipe(dest(this.settings.dst, options) as NodeJS.WritableStream) as NodeJS.ReadWriteStream;
 
     return stream;
   }
 
   protected lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream
-      .pipe(GulpSassLint({ configFile: path.join(this.settings.cwd, ".sass-lint.yml") }))
-      .pipe(GulpSassLint.format())
+      .pipe(gulpSassLint({ configFile: path.join(this.settings.cwd, ".sass-lint.yml") }))
+      .pipe(gulpSassLint.format())
       .pipe(this.lintNotifier());
 
     return stream;
@@ -230,7 +228,7 @@ export default class Sass extends Task {
 
   protected displayError(error: any): void {
     console.log(
-      SassLint.format([
+      sassLint.format([
         {
           errorCount: 1,
           filePath: error.relativePath || path.relative(this.settings.cwd, error.file || error.path),
@@ -254,16 +252,17 @@ export default class Sass extends Task {
   }
 
   private lintNotifier(): Transform {
-    return through(
-      { objectMode: true },
-      (file, encoding, cb): void => {
+    const that = this;
+
+    return through.obj(
+      (file: any, encoding: string, cb: TransformCallback): void => {
         if (!file.isNull() && !file.isStream() && file.sassLint[0].errorCount > 0) {
-          this.lintError = true;
+          that.lintError = true;
         }
 
         cb();
       },
-      (cb): void => cb()
+      (cb: TransformCallback): void => cb()
     );
   }
 }
