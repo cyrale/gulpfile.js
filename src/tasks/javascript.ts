@@ -1,4 +1,5 @@
 import merge from "lodash/merge";
+import omit from "lodash/omit";
 import path from "path";
 
 import { dest } from "gulp";
@@ -26,6 +27,8 @@ export default class Javascript extends Task {
     presets: ["@babel/preset-env"],
   };
 
+  private readonly babelActive: boolean;
+
   constructor(name: string, settings: object) {
     super(name, settings);
 
@@ -38,13 +41,13 @@ export default class Javascript extends Task {
       babel: Javascript.babelDefaultSettings,
     };
     this.settings.settings = merge(defaultSettings, this.settings.settings || {});
-    this.settings.settings.babelActive =
-      typeof this.settings.settings.babel === "object" || this.settings.settings.babel !== false;
+
+    this.babelActive = typeof this.settings.settings.babel === "object" || this.settings.settings.babel !== false;
   }
 
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     stream
-      .pipe(GulpIf(this.settings.settings.babelActive, GulpBabel(this.settings.settings.babel)))
+      .pipe(GulpIf(this.babelActive, GulpBabel(omit(this.settings.settings.babel, ["_flags"]))))
       .pipe(GulpConcat(this.settings.filename))
       .pipe(dest(this.settings.dst, options))
       .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)

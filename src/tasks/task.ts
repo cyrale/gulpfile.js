@@ -73,6 +73,7 @@ export default abstract class Task {
         );
 
         if (!this.withLinter || !this.lintError) {
+          console.log(this);
           stream = this.buildSpecific(stream, options);
 
           stream.pipe(GulpPlumber.stop());

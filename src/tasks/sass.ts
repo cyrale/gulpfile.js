@@ -44,6 +44,9 @@ interface IPurgeCSSOptions {
 export default class Sass extends Task {
   public static readonly taskName: string = "sass";
 
+  private readonly criticalActive: boolean;
+  private readonly purgeCSSActive: boolean;
+
   constructor(name: string, settings: object) {
     super(name, settings);
 
@@ -91,13 +94,13 @@ export default class Sass extends Task {
     this.settings.settings.mqpacker.sort =
       this.settings.settings.mqpacker.sort === "mobile" ? SortCSSMediaQueries : SortCSSMediaQueries.desktopFirst;
 
-    this.settings.settings.criticalActive =
+    this.criticalActive =
       typeof this.settings.settings.critical === "object" ||
       (typeof this.settings.settings.critical === "boolean" && this.settings.settings.critical);
     this.settings.settings.critical =
       typeof this.settings.settings.critical === "object" ? (this.settings.settings.critical as string[]) : [];
 
-    this.settings.settings.purgeCSSActive =
+    this.purgeCSSActive =
       typeof this.settings.settings.purgeCSS === "object" ||
       typeof this.settings.settings.purgeCSS === "string" ||
       (typeof this.settings.settings.purgeCSS === "boolean" && this.settings.settings.purgeCSS);
@@ -141,7 +144,7 @@ export default class Sass extends Task {
       PostCSSSVGO(this.settings.settings.SVGO),
     ];
 
-    if (this.settings.settings.purgeCSSActive) {
+    if (this.purgeCSSActive) {
       postCSSPluginsBefore.push(PostCSSPurgeCSS(this.settings.settings.purgeCSS));
     }
 
@@ -178,7 +181,7 @@ export default class Sass extends Task {
           )
         );
 
-      if (this.settings.settings.criticalActive) {
+      if (this.criticalActive) {
         streamExtractMQ = streamExtractMQ.pipe(
           GulpPostCSS([
             (css: any): void => {
@@ -196,7 +199,7 @@ export default class Sass extends Task {
       streams.push(streamExtractMQ);
     }
 
-    if (this.settings.settings.criticalActive) {
+    if (this.criticalActive) {
       const streamCriticalCSS: NodeJS.ReadWriteStream = stream.pipe(GulpCriticalCSS(this.settings.settings.critical));
 
       streams.push(streamCriticalCSS);
