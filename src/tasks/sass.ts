@@ -155,7 +155,7 @@ export default class Sass extends Task {
     if (this.settings.settings.extractMQ) {
       let mainFilename: string = "";
 
-      let streamExtractMQ = stream
+      let streamExtractMQ: NodeJS.ReadWriteStream = stream
         .pipe(
           GulpRename(
             (pPath: GulpRename.ParsedPath): GulpRename.ParsedPath => {
@@ -197,7 +197,7 @@ export default class Sass extends Task {
     }
 
     if (this.settings.settings.criticalActive) {
-      const streamCriticalCSS = stream.pipe(GulpCriticalCSS(this.settings.settings.critical));
+      const streamCriticalCSS: NodeJS.ReadWriteStream = stream.pipe(GulpCriticalCSS(this.settings.settings.critical));
 
       streams.push(streamCriticalCSS);
     }

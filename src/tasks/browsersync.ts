@@ -1,7 +1,9 @@
+import merge from "lodash/merge";
 import process from "process";
 
 import BrowserSync, { BrowserSyncInstance } from "browser-sync";
 import { task as gulpTask, watch } from "gulp";
+
 import GulpIf from "gulp-if";
 
 import Config, { IGenericSettings } from "../modules/config";
@@ -10,9 +12,9 @@ import { TaskCallback } from "./task";
 export default class Browsersync {
   public static readonly taskName: string = "browsersync";
 
-  public static getInstance() {
+  public static getInstance(): Browsersync {
     if (!Browsersync._instance) {
-      const conf = Config.getInstance();
+      const conf: Config = Config.getInstance();
       Browsersync._instance = new Browsersync(conf.settings.browsersync);
     }
 
@@ -37,7 +39,7 @@ export default class Browsersync {
   }
 
   public start(): string {
-    const taskName = `${this._task}:start`;
+    const taskName: string = `${this._task}:start`;
 
     gulpTask(taskName, (done: TaskCallback): void => {
       this.chdir();
@@ -60,16 +62,15 @@ export default class Browsersync {
   }
 
   public sync(settings?: {}): NodeJS.WritableStream {
-    const reloadSettings = Object.assign({ stream: true }, settings || {});
-    return GulpIf(this._started, this._browserSync.reload(reloadSettings));
+    return GulpIf(this._started, this._browserSync.reload(merge({ stream: true }, settings || {})));
   }
 
   public watch(): string | false {
-    const taskName = `${this._task}:watch`;
+    const taskName: string = `${this._task}:watch`;
 
     if (this._settings.watch) {
       gulpTask(taskName, (done: TaskCallback): void => {
-        watch(this._settings.watch).on("change", () => {
+        watch(this._settings.watch).on("change", (): void => {
           if (this._started) {
             this._browserSync.reload();
           }

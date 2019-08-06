@@ -37,23 +37,22 @@ export default class Sprites extends Task {
   }
 
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    const prefix = this.settings.settings.prefix === "" ? "" : `${this.settings.settings.prefix}-`;
+    const prefix: string = this.settings.settings.prefix === "" ? "" : `${this.settings.settings.prefix}-`;
+    const sanitizedTaskName: string = changeCase.paramCase(this.taskName().replace("sprites:", prefix));
 
-    const sanitizedTaskName = changeCase.paramCase(this.taskName().replace("sprites:", prefix));
+    const imgName: string = sanitizedTaskName + ".png";
+    const imgNameRetina: string = sanitizedTaskName + "@2x.png";
+    const imgNameAbs: string = path.join(this.settings.dst, imgName);
+    const imgNameAbsRetina: string = path.join(this.settings.dst, imgNameRetina);
 
-    const imgName = sanitizedTaskName + ".png";
-    const imgNameRetina = sanitizedTaskName + "@2x.png";
-    const imgNameAbs = path.join(this.settings.dst, imgName);
-    const imgNameAbsRetina = path.join(this.settings.dst, imgNameRetina);
-
-    const spritesmithDefaultSettings = {
+    const spritesmithDefaultSettings: {} = {
       cssName: "_" + sanitizedTaskName + ".scss",
       cssSpritesheetName: "spritesheet-" + sanitizedTaskName,
       cssVarMap: (spriteImg: any): void => {
         spriteImg.name = `${sanitizedTaskName}-${spriteImg.name}`;
 
         if (this.settings["src-2x"]) {
-          let match = false;
+          let match: boolean = false;
 
           this.settings["src-2x"].map(Sprites.mapMatchPatterns).forEach((pattern: string): void => {
             match = match || minimatch(spriteImg.source_image, pattern);
@@ -69,7 +68,7 @@ export default class Sprites extends Task {
       padding: 4,
     };
 
-    let spritesmithSettings = merge(spritesmithDefaultSettings, omit(this.settings.settings, ["prefix", "sass"]));
+    let spritesmithSettings: {} = merge(spritesmithDefaultSettings, omit(this.settings.settings, ["prefix", "sass"]));
 
     if (this.settings["src-1x"] && this.settings["src-2x"]) {
       spritesmithSettings = merge(spritesmithSettings, {
@@ -81,12 +80,15 @@ export default class Sprites extends Task {
       });
     }
 
-    const sortFiles =
+    const sortFiles: boolean =
       (typeof this.settings.algorithm === "undefined" || this.settings.algorithm !== "binary-tree") &&
       typeof this.settings.algorithmOpts !== "undefined" &&
       this.settings.algorithmOpts.sort !== false;
 
-    const sprite = stream.pipe(GulpIf(sortFiles, GulpSort())).pipe(GulpSpriteSmith(spritesmithSettings));
+    const sprite: {
+      css: NodeJS.ReadWriteStream;
+      img: NodeJS.ReadWriteStream;
+    } = stream.pipe(GulpIf(sortFiles, GulpSort())).pipe(GulpSpriteSmith(spritesmithSettings));
 
     return mergeStream(
       sprite.img.pipe(dest(".", options)),

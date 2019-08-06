@@ -55,7 +55,7 @@ export default abstract class Task {
   }
 
   public build(): string {
-    const taskName = this.taskName("build");
+    const taskName: string = this.taskName("build");
 
     gulpTask(
       taskName,
@@ -68,8 +68,8 @@ export default abstract class Task {
           sourcemaps: this.gulpSourcemaps && this.settings.settings.sourcemaps,
         };
 
-        let stream = src(this.settings.src, options as {}).pipe(
-          GulpPlumber(error => this.displayOrExitOnError(taskName, error, done))
+        let stream: NodeJS.ReadWriteStream = src(this.settings.src, options as {}).pipe(
+          GulpPlumber((error: any): void => this.displayOrExitOnError(taskName, error, done))
         );
 
         if (!this.withLinter || !this.lintError) {
@@ -92,7 +92,7 @@ export default abstract class Task {
   }
 
   public lint(): string | false {
-    const taskName = this.taskName("lint");
+    const taskName: string = this.taskName("lint");
 
     if (!this.withLinter) {
       return false;
@@ -105,7 +105,7 @@ export default abstract class Task {
       (): NodeJS.ReadWriteStream => {
         this.chdir();
 
-        let stream = src(this.settings.src, { cwd: this.settings.cwd });
+        let stream: NodeJS.ReadWriteStream = src(this.settings.src, { cwd: this.settings.cwd });
         stream = this.lintSpecific(stream);
 
         return stream;
@@ -116,11 +116,11 @@ export default abstract class Task {
   }
 
   public watch(): string {
-    const taskName = this.taskName("watch");
+    const taskName: string = this.taskName("watch");
 
     gulpTask(taskName, (done: TaskCallback): void => {
-      const srcWatch = [...this.settings.src, ...(this.settings.watch || []), ...this.watchingFiles];
-      const tasks = [this.taskName("build")];
+      const srcWatch: string[] = [...this.settings.src, ...(this.settings.watch || []), ...this.watchingFiles];
+      const tasks: string[] = [this.taskName("build")];
 
       if (this.withLinter) {
         tasks.unshift(this.taskName("lint"));

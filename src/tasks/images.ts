@@ -57,21 +57,21 @@ export default class Images extends Task {
 
   protected bindEventsToWatcher(watcher: fs.FSWatcher): void {
     watcher.on("unlink", (filename: string): void => {
-      const srcFilename = path.resolve(this.settings.cwd, filename);
-      const srcParts = srcFilename.split("/");
+      const srcFilename: string = path.resolve(this.settings.cwd, filename);
+      const srcParts: string[] = srcFilename.split("/");
 
-      const dstFilename = path.resolve(this.settings.cwd, this.settings.dst);
-      const dstParts = dstFilename.split("/");
+      const dstFilename: string = path.resolve(this.settings.cwd, this.settings.dst);
+      const dstParts: string[] = dstFilename.split("/");
 
-      let newFilename = "/";
-      let index = 0;
+      let newFilename: string = "/";
+      let index: number = 0;
 
       while (srcParts[index] === dstParts[index] && (index < srcParts.length || index < dstParts.length)) {
         newFilename = path.join(newFilename, srcParts[index]);
         index++;
       }
 
-      for (let i = index; i < dstParts.length; i++) {
+      for (let i: number = index; i < dstParts.length; i++) {
         newFilename = path.join(newFilename, dstParts[i]);
       }
 

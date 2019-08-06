@@ -34,7 +34,7 @@ export default class Javascript extends Task {
     this.defaultDest = false;
     this.browserSyncSettings = { match: "**/*.js" };
 
-    const defaultSettings = {
+    const defaultSettings: {} = {
       babel: Javascript.babelDefaultSettings,
     };
     this.settings.settings = merge(defaultSettings, this.settings.settings || {});
@@ -70,9 +70,9 @@ export default class Javascript extends Task {
   }
 
   protected displayError(error: any): void {
-    const cliEngine = new CLIEngine({});
-    const formatter = cliEngine.getFormatter("stylish");
-    const relativeFile = path.relative(this.settings.cwd, error.fileName);
+    const cliEngine: CLIEngine = new CLIEngine({});
+    const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");
+    const relativeFile: string = path.relative(this.settings.cwd, error.fileName);
 
     let formattedMessage: LintResult[] = [];
 

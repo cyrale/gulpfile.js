@@ -15,5 +15,5 @@ try {
 
 import TaskFactory from "./modules/task-factory";
 
-const factory = new TaskFactory();
+const factory: TaskFactory = new TaskFactory();
 factory.createAllTasks();

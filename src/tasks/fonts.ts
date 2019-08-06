@@ -28,9 +28,8 @@ export default class Fonts extends Task {
   }
 
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    const prefix = this.settings.settings.prefix === "" ? "" : `${this.settings.settings.prefix}-`;
-
-    const sanitizedTaskName = changeCase.paramCase(this.taskName().replace("fonts:", prefix));
+    const prefix: string = this.settings.settings.prefix === "" ? "" : `${this.settings.settings.prefix}-`;
+    const sanitizedTaskName: string = changeCase.paramCase(this.taskName().replace("fonts:", prefix));
 
     stream = stream
       .pipe(
@@ -43,14 +42,14 @@ export default class Fonts extends Task {
         })
       )
       .on("glyphs", (glyphs: any[]): void => {
-        const file = path.resolve(__dirname, `../../src/templates/${this.settings.settings.template}.lodash`);
+        const file: string = path.resolve(__dirname, `../../src/templates/${this.settings.settings.template}.lodash`);
 
         fs.readFile(file, (err: NodeJS.ErrnoException | null, data: Buffer): void => {
           if (err) {
             throw err;
           }
 
-          const templateVars = {
+          const templateVars: {} = {
             className: sanitizedTaskName,
             fontName: sanitizedTaskName,
             fontPath: path.normalize(`${this.settings.settings.sass.rel}/`),

@@ -84,21 +84,23 @@ export default class SVGStore extends Task {
         },
         // tslint:disable-next-line:ban-types
         run: ($: CheerioStatic, file: Vinyl, done?: Function): void => {
-          let offsetY = 0;
-          let maxWidth = 0;
+          let offsetY: number = 0;
+          let maxWidth: number = 0;
 
-          const views = $("<views />");
-          const uses = $("<uses />");
+          const views: Cheerio = $("<views />");
+          const uses: Cheerio = $("<uses />");
 
           $("symbol")
-            .filter((index, symbol) => !!symbol.attribs.id && !!symbol.attribs.viewBox)
-            .each((index, symbol) => {
+            .filter((index: number, symbol: CheerioElement): boolean => !!symbol.attribs.id && !!symbol.attribs.viewBox)
+            .each((index: number, symbol: CheerioElement): void => {
               if (this.settings.settings.prefix) {
                 symbol.attribs.id = `${this.settings.settings.prefix}-${symbol.attribs.id}`;
               }
 
-              const [originX, originY, width, height] = symbol.attribs.viewBox.split(" ").map(i => Number(i));
-              const name = `${symbol.attribs.id}-icon`;
+              const [originX, originY, width, height] = symbol.attribs.viewBox
+                .split(" ")
+                .map((i: string): number => Number(i));
+              const name: string = `${symbol.attribs.id}-icon`;
 
               views.append(`<view id="${name}" viewBox="${originX} ${offsetY} ${width} ${height}" />`);
 

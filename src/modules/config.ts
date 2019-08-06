@@ -1,4 +1,5 @@
 import fs from "fs";
+import merge from "lodash/merge";
 import minimist from "minimist";
 import path from "path";
 import process from "process";
@@ -16,13 +17,11 @@ export interface IGenericSettings {
  */
 export default class Config {
   get currentRun(): string {
-    const options = this.options;
-
-    if (options._.length === 0) {
+    if (this.options._.length === 0) {
       return "default";
     }
 
-    return options._[0];
+    return this.options._[0];
   }
 
   /**
@@ -42,7 +41,7 @@ export default class Config {
   /**
    * Get Config instance.
    */
-  public static getInstance() {
+  public static getInstance(): Config {
     if (!Config._instance) {
       console.log("Loading configuration file...");
 
@@ -70,7 +69,7 @@ export default class Config {
   }
 
   public isBuildRun(): boolean {
-    const search = "build";
+    const search: string = "build";
 
     return (
       this.currentRun !== "default" &&
@@ -86,7 +85,7 @@ export default class Config {
   /**
    * Read options for application from command line.
    */
-  private refreshOptions() {
+  private refreshOptions(): void {
     // Merge default options with command line arguments
     this._options = minimist(process.argv.slice(2), {
       boolean: ["sourcemaps"],
@@ -107,7 +106,7 @@ export default class Config {
   /**
    * Read settings from configuration file.
    */
-  private refreshSettings() {
+  private refreshSettings(): void {
     // Read configuration file.
     try {
       this._settings = yaml.safeLoad(fs.readFileSync(this._options.configfile, "utf8"));
@@ -129,18 +128,21 @@ export default class Config {
       this._settings[Browsersync.taskName].cwd = this._options.cwd;
     }
 
-    const factory = new TaskFactory();
+    const factory: TaskFactory = new TaskFactory();
     factory.availableTaskNames().forEach((name: string): void | true => {
       if (!this._settings[name] || !this._settings[name].tasks) {
         return true;
       }
 
-      const globalSettings = this._settings[name].settings || {};
+      const globalSettings: {} = this._settings[name].settings || {};
 
-      Object.keys(this._settings[name].tasks).forEach(taskName => {
-        const task = this._settings[name].tasks[taskName];
+      Object.keys(this._settings[name].tasks).forEach((taskName: string): void => {
+        const task: {
+          cwd?: string;
+          settings?: {};
+        } = this._settings[name].tasks[taskName];
 
-        task.settings = Object.assign({}, globalSettings, task.settings || {});
+        task.settings = merge(globalSettings, task.settings || {});
         if (!task.cwd) {
           task.cwd = this._options.cwd;
         }

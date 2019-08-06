@@ -15,6 +15,8 @@ import SVGStore from "../tasks/svgstore";
 import Task, { TaskCallback } from "../tasks/task";
 import Config, { IGenericSettings } from "./config";
 
+type TaskRunner = Browserify | Fonts | Images | Javascript | Pug | Sass | Sprites | SVGStore;
+
 interface ITaskNameElements {
   type: string;
   name: string;
@@ -30,7 +32,7 @@ interface IGlobalTaskList {
 }
 
 export default class TaskFactory {
-  private static sortOrder = ["lint", "build", "watch"];
+  private static readonly sortOrder: string[] = ["lint", "build", "watch"];
 
   private tasks: string[] = [];
 
@@ -62,10 +64,10 @@ export default class TaskFactory {
   ];
 
   public createAllTasks(): void {
-    const conf = Config.getInstance();
+    const conf: Config = Config.getInstance();
 
     // Initialize BrowserSync.
-    const browserSync = Browsersync.getInstance();
+    const browserSync: Browsersync = Browsersync.getInstance();
 
     if (conf.settings.browsersync) {
       this.stackTask(browserSync.start());
@@ -73,8 +75,8 @@ export default class TaskFactory {
     }
 
     // Initialize other tasks.
-    Object.keys(conf.settings).forEach((task: string) => {
-      const confTasks = conf.settings[task] as object;
+    Object.keys(conf.settings).forEach((task: string): void => {
+      const confTasks: {} = conf.settings[task] as {};
 
       if (this.isValidTask(task)) {
         this.createTasks(task, confTasks);
@@ -87,12 +89,16 @@ export default class TaskFactory {
 
       gulpTask(
         "default",
-        series(this.orderedGlobalTasks.map((tasks: string[]) => (tasks.length === 1 ? tasks[0] : parallel(tasks))))
+        series(
+          this.orderedGlobalTasks.map((tasks: string[]): string | Undertaker.TaskFunction =>
+            tasks.length === 1 ? tasks[0] : parallel(tasks)
+          )
+        )
       );
     }
   }
 
-  public createTask(task: string, name: string, settings: object): Javascript | Pug | Sass {
+  public createTask(task: string, name: string, settings: object): TaskRunner {
     if (this.availableTaskNames().indexOf(task) < 0) {
       throw new Error(`Unsupported task: ${task}.`);
     }
@@ -117,11 +123,11 @@ export default class TaskFactory {
         this.pushGlobalTask("byTypeOnly", type, task);
       } else {
         // Sort tasks by name.
-        const sortedByName = `${type}:${name}`;
+        const sortedByName: string = `${type}:${name}`;
         this.pushGlobalTask("byName", sortedByName, task);
 
         // Sort tasks by step.
-        const sortedByStep = `${type}:${step}`;
+        const sortedByStep: string = `${type}:${step}`;
         this.pushGlobalTask("byStep", sortedByStep, task);
 
         // Sort tasks by type only.
@@ -131,8 +137,8 @@ export default class TaskFactory {
 
     // Create tasks sorted by type and name.
     if (this.globalTasks.byName) {
-      Object.keys(this.globalTasks.byName).forEach((taskName: string) => {
-        this.globalTasks.byName[taskName].sort((itemA: string, itemB: string) => {
+      Object.keys(this.globalTasks.byName).forEach((taskName: string): void => {
+        this.globalTasks.byName[taskName].sort((itemA: string, itemB: string): number => {
           const { step: stepA } = this.explodeTaskName(itemA);
           const { step: stepB } = this.explodeTaskName(itemB);
 
@@ -145,28 +151,28 @@ export default class TaskFactory {
 
     // Create tasks sorted by type and step.
     if (this.globalTasks.byStep) {
-      Object.keys(this.globalTasks.byStep).forEach((taskName: string) => {
+      Object.keys(this.globalTasks.byStep).forEach((taskName: string): void => {
         this.defineTask(taskName, this.globalTasks.byStep[taskName], "parallel");
       });
     }
 
     // Create tasks sorted by type only.
     if (this.globalTasks.byTypeOnly) {
-      Object.keys(this.globalTasks.byTypeOnly).forEach((taskName: string) => {
+      Object.keys(this.globalTasks.byTypeOnly).forEach((taskName: string): void => {
         this.defineTask(taskName, this.globalTasks.byTypeOnly[taskName], "parallel");
       });
 
       // Sort and order global tasks.
       this.orderedGlobalTasks = this.tasksGroupAndOrder
-        .map((taskNames: string[]) =>
-          taskNames.filter((taskName: string) => typeof this.globalTasks.byTypeOnly[taskName] !== "undefined")
+        .map((taskNames: string[]): string[] =>
+          taskNames.filter((taskName: string): boolean => typeof this.globalTasks.byTypeOnly[taskName] !== "undefined")
         )
         .filter(this.removeEmptyArrays);
     }
   }
 
   private createSuperGlobalTasks(): void {
-    this.tasks.forEach((task: string) => {
+    this.tasks.forEach((task: string): void => {
       const { step } = this.explodeTaskName(task);
 
       if (TaskFactory.sortOrder.indexOf(step) >= 0) {
@@ -181,7 +187,7 @@ export default class TaskFactory {
       this.orderedSuperGlobalTasks[step] = this.tasksGroupAndOrder
         .map((taskNames: string[]): string[] =>
           taskNames
-            .map(taskName =>
+            .map((taskName: string): string[] =>
               this.superGlobalTasks[step].filter((task: string): boolean => {
                 const { type } = this.explodeTaskName(task);
                 return type === taskName;
@@ -193,16 +199,18 @@ export default class TaskFactory {
 
       this.defineTask(
         step,
-        this.orderedSuperGlobalTasks[step].map((taskNames: string[]) => {
-          return parallel(taskNames);
-        })
+        this.orderedSuperGlobalTasks[step].map(
+          (taskNames: string[]): Undertaker.TaskFunction => {
+            return parallel(taskNames);
+          }
+        )
       );
     });
   }
 
   private createTasks(task: string, tasks: IGenericSettings): void {
-    Object.keys(tasks).forEach((name: string) => {
-      const taskInstance = this.createTask(task, name, tasks[name]);
+    Object.keys(tasks).forEach((name: string): void => {
+      const taskInstance: TaskRunner = this.createTask(task, name, tasks[name]);
 
       this.stackTask(taskInstance.lint());
       this.stackTask(taskInstance.build());
@@ -210,8 +218,8 @@ export default class TaskFactory {
     });
   }
 
-  private defineTask(taskName: string, tasks: Undertaker.Task[], type: string = "series") {
-    const errorHandler = `${taskName}:error`;
+  private defineTask(taskName: string, tasks: Undertaker.Task[], type: string = "series"): void {
+    const errorHandler: string = `${taskName}:error`;
 
     if (Config.getInstance().isBuildRun() && Config.getInstance().isCurrentRun(taskName)) {
       gulpTask(errorHandler, (done: TaskCallback): void => {
