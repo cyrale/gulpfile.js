@@ -11,6 +11,17 @@ browsersync:
       baseDir: "dist/"
   watch:
     - "src/**/*.html"
+favicon:
+  tasks:
+    main:
+      src: "src/favicon/git.png"
+      dst: "dist/favicon"
+      settings:
+        name: "Test"
+        backgroundColor: "#ffffff"
+        themeColor: "#ffffff"
+        margin: "20%"
+        iconsPath: "/path/to/icon"
 # ------------------------------------------
 # Pug (https://pugjs.org)
 # ------------------------------------------

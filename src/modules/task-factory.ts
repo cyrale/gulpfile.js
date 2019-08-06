@@ -5,6 +5,7 @@ import * as Undertaker from "undertaker";
 import Browserify from "../tasks/browserify";
 import Browsersync from "../tasks/browsersync";
 import Clean from "../tasks/clean";
+import Favicon from "../tasks/favicon";
 import Fonts from "../tasks/fonts";
 import Images from "../tasks/images";
 import Javascript from "../tasks/javascript";
@@ -79,6 +80,7 @@ export default class TaskFactory {
 
   private _availableTasks: IGenericSettings = {
     [Browserify.taskName]: Browserify,
+    [Favicon.taskName]: Favicon,
     [Fonts.taskName]: Fonts,
     [Images.taskName]: Images,
     [Javascript.taskName]: Javascript,
@@ -90,7 +92,7 @@ export default class TaskFactory {
 
   private _tasksGroupAndOrder: string[][] = [
     [Clean.taskName],
-    [Fonts.taskName, Sprites.taskName, SVGStore.taskName],
+    [Favicon.taskName, Fonts.taskName, Sprites.taskName, SVGStore.taskName],
     [Images.taskName],
     [Browserify.taskName],
     [Sass.taskName, Javascript.taskName, Pug.taskName],

@@ -71,7 +71,7 @@ export default abstract class Task {
         );
 
         if (!this._withLinter || !this._lintError) {
-          stream = this._buildSpecific(stream, options);
+          stream = this._buildSpecific(stream, options, done);
 
           stream.pipe(plumber.stop());
 
@@ -117,7 +117,11 @@ export default abstract class Task {
     const taskName: string = this._taskName("watch");
 
     gulpTask(taskName, (done: TaskCallback): void => {
-      const srcWatch: string[] = [...this._settings.src, ...(this._settings.watch || []), ...this._watchingFiles];
+      const srcWatch: string[] = [
+        ...(typeof this._settings.src === "object" ? this._settings.src : [this._settings.src]),
+        ...(this._settings.watch || []),
+        ...this._watchingFiles,
+      ];
       const tasks: string[] = [this._taskName("build")];
 
       if (this._withLinter) {
@@ -136,7 +140,11 @@ export default abstract class Task {
   // tslint:disable-next-line:no-empty
   protected _bindEventsToWatcher(watcher: fs.FSWatcher): void {}
 
-  protected abstract _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream;
+  protected abstract _buildSpecific(
+    stream: NodeJS.ReadWriteStream,
+    options?: IGulpOptions,
+    done?: TaskCallback
+  ): NodeJS.ReadWriteStream;
 
   protected _displayError(error: any): void {
     console.log(error);
