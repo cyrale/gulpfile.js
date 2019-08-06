@@ -1,18 +1,17 @@
 import changeCase from "change-case";
-import merge from "merge-stream";
+import merge from "lodash/merge";
+import omit from "lodash/omit";
+import mergeStream from "merge-stream";
 import minimatch from "minimatch";
 import path from "path";
-import buffer from "vinyl-buffer";
 
 import { dest } from "gulp";
 
 import GulpHeader from "gulp-header";
 import GulpIf from "gulp-if";
-import GulpImagemin from "gulp-imagemin";
 import GulpSort from "gulp-sort";
 import GulpSpriteSmith from "gulp.spritesmith";
 
-import Images from "./images";
 import Task, { IGulpOptions } from "./task";
 
 export default class Sprites extends Task {
@@ -29,24 +28,18 @@ export default class Sprites extends Task {
     this.defaultDest = false;
 
     this.settings.src = this.srcGlobs();
+
+    const defaultSettings: {} = {
+      prefix: "sprite",
+    };
+
+    this.settings.settings = merge(defaultSettings, this.settings.settings || {});
   }
 
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    const prefix = this.settings.settings.prefix
-      ? this.settings.settings.prefix === ""
-        ? ""
-        : `${this.settings.settings.prefix}-`
-      : "sprite-";
-
-    delete this.settings.settings.prefix;
+    const prefix = this.settings.settings.prefix === "" ? "" : `${this.settings.settings.prefix}-`;
 
     const sanitizedTaskName = changeCase.paramCase(this.taskName().replace("sprites:", prefix));
-
-    const sassSettings = this.settings.settings.sass;
-    const imageminSettings = { ...Images.imageminDefaultSettings, ...(this.settings.settings.imagemin || {}) };
-
-    delete this.settings.settings.sass;
-    delete this.settings.settings.imagemin;
 
     const imgName = sanitizedTaskName + ".png";
     const imgNameRetina = sanitizedTaskName + "@2x.png";
@@ -72,23 +65,20 @@ export default class Sprites extends Task {
         }
       },
       imgName: imgNameAbs,
-      imgPath: path.join(sassSettings.rel, imgName),
+      imgPath: path.join(this.settings.settings.sass.rel, imgName),
       padding: 4,
     };
 
-    let spritesmithSettings = { ...spritesmithDefaultSettings, ...(this.settings.settings || {}) };
+    let spritesmithSettings = merge(spritesmithDefaultSettings, omit(this.settings.settings, ["prefix", "sass"]));
 
     if (this.settings["src-1x"] && this.settings["src-2x"]) {
-      spritesmithSettings = {
-        ...spritesmithSettings,
-        ...{
-          cssRetinaGroupsName: `${sanitizedTaskName}-retina`,
-          cssRetinaSpritesheetName: `spritesheet-${sanitizedTaskName}-retina`,
-          retinaImgName: imgNameAbsRetina,
-          retinaImgPath: path.join(sassSettings.rel, imgNameRetina),
-          retinaSrcFilter: this.settings["src-2x"],
-        },
-      };
+      spritesmithSettings = merge(spritesmithSettings, {
+        cssRetinaGroupsName: `${sanitizedTaskName}-retina`,
+        cssRetinaSpritesheetName: `spritesheet-${sanitizedTaskName}-retina`,
+        retinaImgName: imgNameAbsRetina,
+        retinaImgPath: path.join(this.settings.settings.sass.rel, imgNameRetina),
+        retinaSrcFilter: this.settings["src-2x"],
+      });
     }
 
     const sortFiles =
@@ -98,12 +88,9 @@ export default class Sprites extends Task {
 
     const sprite = stream.pipe(GulpIf(sortFiles, GulpSort())).pipe(GulpSpriteSmith(spritesmithSettings));
 
-    return merge(
-      sprite.img
-        .pipe(buffer())
-        .pipe(GulpImagemin(imageminSettings))
-        .pipe(dest(".", options)),
-      sprite.css.pipe(GulpHeader("// sass-lint:disable-all\n\n")).pipe(dest(sassSettings.dst, options))
+    return mergeStream(
+      sprite.img.pipe(dest(".", options)),
+      sprite.css.pipe(GulpHeader("// sass-lint:disable-all\n\n")).pipe(dest(this.settings.settings.sass.dst, options))
     );
   }
 

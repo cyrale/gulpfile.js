@@ -3,7 +3,7 @@ import Vinyl from "vinyl";
 
 import merge from "lodash/merge";
 
-import GulpCheerio, { Cheerio } from "gulp-cheerio";
+import GulpCheerio from "gulp-cheerio";
 import GulpRename from "gulp-rename";
 import GulpSVGMin from "gulp-svgmin";
 import GulpSVGStore from "gulp-svgstore";
@@ -18,10 +18,8 @@ export default class SVGStore extends Task {
     super(name, settings);
 
     this.withLinter = false;
-  }
 
-  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    const defaultSettings = {
+    const defaultSettings: {} = {
       svgmin: {
         plugins: [
           {
@@ -58,13 +56,15 @@ export default class SVGStore extends Task {
       },
     };
 
-    const settings = merge(defaultSettings, this.settings.settings);
+    this.settings.settings = merge(defaultSettings, this.settings.settings);
+  }
 
+  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     stream = stream
       .pipe(
         GulpSVGMin(
           (file: Vinyl): SVGO.Options =>
-            merge(settings.svgmin, {
+            merge(this.settings.settings.svgmin, {
               plugins: [
                 {
                   cleanupIDs: {
@@ -77,7 +77,7 @@ export default class SVGStore extends Task {
             })
         )
       )
-      .pipe(GulpSVGStore(settings.svgstore))
+      .pipe(GulpSVGStore(this.settings.settings.svgstore))
       .pipe(GulpCheerio({
         parserOptions: {
           xmlMode: true,

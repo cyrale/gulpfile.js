@@ -1,6 +1,7 @@
 import changeCase from "change-case";
 import consolidate from "consolidate";
 import fs from "fs";
+import merge from "lodash/merge";
 import path from "path";
 
 import { dest } from "gulp";
@@ -17,27 +18,19 @@ export default class Fonts extends Task {
     super(name, settings);
 
     this.withLinter = false;
+
+    const defaultSettings: {} = {
+      prefix: "font",
+      template: "fontawesome",
+    };
+
+    this.settings.settings = merge(defaultSettings, this.settings.settings || {});
   }
 
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    const prefix = this.settings.settings.prefix
-      ? this.settings.settings.prefix === ""
-        ? ""
-        : `${this.settings.settings.prefix}-`
-      : "font-";
-
-    delete this.settings.settings.prefix;
+    const prefix = this.settings.settings.prefix === "" ? "" : `${this.settings.settings.prefix}-`;
 
     const sanitizedTaskName = changeCase.paramCase(this.taskName().replace("fonts:", prefix));
-
-    const sassSettings = this.settings.settings.sass;
-    delete this.settings.settings.sass;
-
-    const defaultSettings: {} = {
-      prefix: "",
-      template: "fontawesome",
-    };
-    const settings = { ...defaultSettings, ...(this.settings.settings || {}) };
 
     stream = stream
       .pipe(
@@ -50,7 +43,7 @@ export default class Fonts extends Task {
         })
       )
       .on("glyphs", (glyphs: any[]): void => {
-        const file = path.resolve(__dirname, `../../src/templates/${settings.template}.lodash`);
+        const file = path.resolve(__dirname, `../../src/templates/${this.settings.settings.template}.lodash`);
 
         fs.readFile(file, (err: NodeJS.ErrnoException | null, data: Buffer): void => {
           if (err) {
@@ -60,14 +53,16 @@ export default class Fonts extends Task {
           const templateVars = {
             className: sanitizedTaskName,
             fontName: sanitizedTaskName,
-            fontPath: path.normalize(`${sassSettings.rel}/`),
+            fontPath: path.normalize(`${this.settings.settings.sass.rel}/`),
             glyphs: glyphs.map((glyph: any): any => ({ codepoint: glyph.unicode[0].charCodeAt(0), name: glyph.name })),
           };
 
           consolidate.lodash.render(data.toString(), templateVars).then((stylesheet: string): void => {
             stylesheet = `// sass-lint:disable-all\n\n${stylesheet}`;
 
-            GulpFile(`_${sanitizedTaskName}.scss`, stylesheet, { src: true }).pipe(dest(sassSettings.dst, options));
+            GulpFile(`_${sanitizedTaskName}.scss`, stylesheet, { src: true }).pipe(
+              dest(this.settings.settings.sass.dst, options)
+            );
           });
         });
       });

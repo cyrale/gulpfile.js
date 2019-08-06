@@ -1,3 +1,4 @@
+import merge from "lodash/merge";
 import path from "path";
 
 import { dest } from "gulp";
@@ -32,18 +33,18 @@ export default class Javascript extends Task {
 
     this.defaultDest = false;
     this.browserSyncSettings = { match: "**/*.js" };
+
+    const defaultSettings = {
+      babel: Javascript.babelDefaultSettings,
+    };
+    this.settings.settings = merge(defaultSettings, this.settings.settings || {});
+    this.settings.settings.babelActive =
+      typeof this.settings.settings.babel === "object" || this.settings.settings.babel !== false;
   }
 
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    const babelActive = typeof this.settings.settings.babel === "object" || this.settings.settings.babel !== false;
-
-    let babelSettings: {} = {};
-    if (babelActive && typeof this.settings.settings.babel === "object") {
-      babelSettings = { ...Javascript.babelDefaultSettings, ...this.settings.settings.babel };
-    }
-
     stream
-      .pipe(GulpIf(babelActive, GulpBabel(babelSettings)))
+      .pipe(GulpIf(this.settings.settings.babelActive, GulpBabel(this.settings.settings.babel)))
       .pipe(GulpConcat(this.settings.filename))
       .pipe(dest(this.settings.dst, options))
       .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
@@ -74,8 +75,6 @@ export default class Javascript extends Task {
     const relativeFile = path.relative(this.settings.cwd, error.fileName);
 
     let formattedMessage: LintResult[] = [];
-
-    console.log(error);
 
     if (error.cause) {
       // Message send by gulp-babel

@@ -1,4 +1,5 @@
-import merge from "merge-stream";
+import merge from "lodash/merge";
+import mergeStream from "merge-stream";
 import path from "path";
 import { Transform } from "stream";
 import through from "through2";
@@ -50,10 +51,8 @@ export default class Sass extends Task {
 
     this.defaultDest = false;
     this.browserSyncSettings = { match: "**/*.css" };
-  }
 
-  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    const defaultSettings = {
+    const defaultSettings: {} = {
       SVGO: {},
       assets: {
         cachebuster: true,
@@ -88,34 +87,21 @@ export default class Sass extends Task {
       },
     };
 
-    const settings: {
-      SVGO?: {};
-      assets?: {};
-      autoprefixer?: {};
-      critical?: boolean | {};
-      cssnano?: {};
-      extractMQ?: boolean;
-      inlineSVG?: {};
-      mqpacker?: {};
-      purgeCSS?: boolean | string | {};
-      rucksack?: {};
-      sass?: {};
-    } = this.settings.settings || {};
+    this.settings.settings = merge(defaultSettings, this.settings.settings || {});
+    this.settings.settings.mqpacker.sort =
+      this.settings.settings.mqpacker.sort === "mobile" ? SortCSSMediaQueries : SortCSSMediaQueries.desktopFirst;
 
-    const criticalCSSActive: boolean =
-      typeof settings.critical === "object" ||
-      (typeof settings.critical === "boolean" && (settings.critical || defaultSettings.critical));
-    const criticalCSSSettings: string[] = typeof settings.critical === "object" ? (settings.critical as string[]) : [];
+    this.settings.settings.criticalActive =
+      typeof this.settings.settings.critical === "object" ||
+      (typeof this.settings.settings.critical === "boolean" && this.settings.settings.critical);
+    this.settings.settings.critical =
+      typeof this.settings.settings.critical === "object" ? (this.settings.settings.critical as string[]) : [];
 
-    const mqPackerSettings: {
-      sort: any;
-    } = { ...defaultSettings.mqpacker, ...(this.settings.mqpacker || {}) };
-    mqPackerSettings.sort = mqPackerSettings.sort === "mobile" ? SortCSSMediaQueries : SortCSSMediaQueries.desktopFirst;
+    this.settings.settings.purgeCSSActive =
+      typeof this.settings.settings.purgeCSS === "object" ||
+      typeof this.settings.settings.purgeCSS === "string" ||
+      (typeof this.settings.settings.purgeCSS === "boolean" && this.settings.settings.purgeCSS);
 
-    const purgeCSSActive: boolean =
-      typeof settings.purgeCSS === "object" ||
-      typeof settings.purgeCSS === "string" ||
-      (typeof settings.purgeCSS === "boolean" && (settings.purgeCSS || defaultSettings.purgeCSS));
     const purgeCSSDefaultSettings: IPurgeCSSOptions = {
       content: ["**/*.html", "**/*.php", "**/*.twig"],
       css: ["**/*.css"],
@@ -127,60 +113,46 @@ export default class Sass extends Task {
       whitelistPatterns: PurgeCSSWithWordPress.whitelistPatterns,
       whitelistPatternsChildren: [],
     };
-    let purgeCSSSettings: string | IPurgeCSSOptions | undefined;
 
-    if (purgeCSSActive) {
-      if (typeof settings.purgeCSS === "object") {
-        purgeCSSSettings = {
+    if (typeof this.settings.settings.purgeCSS === "object") {
+      this.settings.settings.purgeCSS = merge(
+        purgeCSSDefaultSettings,
+        {
           content: purgeCSSDefaultSettings.content,
           css: purgeCSSDefaultSettings.css,
-        };
-
-        Object.keys(purgeCSSDefaultSettings).forEach((key: string): void => {
-          const value: TPurgeCSSOptions = (settings.purgeCSS as any)[key];
-          const defaultValue: TPurgeCSSOptions = (purgeCSSDefaultSettings as any)[key];
-
-          let currentValue: TPurgeCSSOptions;
-
-          if (Array.isArray(defaultValue) || Array.isArray(typeof value)) {
-            currentValue = [...((defaultValue as any[]) || []), ...((value as any[]) || [])];
-          } else {
-            currentValue = typeof value !== "undefined" ? value : defaultValue;
-          }
-
-          (purgeCSSSettings as any)[key] = currentValue;
-        });
-      } else if (typeof settings.purgeCSS === "string") {
-        purgeCSSSettings = path.resolve(this.settings.cwd, settings.purgeCSS);
-      } else {
-        purgeCSSSettings = purgeCSSDefaultSettings;
-      }
+        },
+        this.settings.settings.purgeCSS
+      );
+    } else if (typeof this.settings.settings.purgeCSS === "string") {
+      this.settings.settings.purgeCSS = path.resolve(this.settings.cwd, this.settings.settings.purgeCSS);
+    } else {
+      this.settings.settings.purgeCSS = purgeCSSDefaultSettings;
     }
+  }
 
+  protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     const streams: NodeJS.ReadWriteStream[] = [];
 
     const postCSSPluginsBefore: any[] = [
-      PostCSSAssets({ ...defaultSettings.assets, ...(settings.assets || {}) }),
-      RucksackCSS({ ...defaultSettings.rucksack, ...(settings.rucksack || {}) }),
-      Autoprefixer({ ...defaultSettings.autoprefixer, ...(settings.autoprefixer || {}) } as {}),
-      PostCSSInlineSVG({ ...defaultSettings.inlineSVG, ...(settings.inlineSVG || {}) }),
-      PostCSSSVGO({ ...defaultSettings.SVGO, ...(settings.SVGO || {}) }),
+      PostCSSAssets(this.settings.settings.assets),
+      RucksackCSS(this.settings.settings.rucksack),
+      Autoprefixer(this.settings.settings.autoprefixer),
+      PostCSSInlineSVG(this.settings.settings.inlineSVG),
+      PostCSSSVGO(this.settings.settings.SVGO),
     ];
 
-    if (purgeCSSActive) {
-      postCSSPluginsBefore.push(PostCSSPurgeCSS(purgeCSSSettings));
+    if (this.settings.settings.purgeCSSActive) {
+      postCSSPluginsBefore.push(PostCSSPurgeCSS(this.settings.settings.purgeCSS));
     }
 
     const postCSSPluginsAfter: any[] = [
-      CSSNano({ ...defaultSettings.cssnano, ...(settings.cssnano || {}) } as {}),
-      CSSMQPacker(mqPackerSettings),
+      CSSNano(this.settings.settings.cssnano),
+      CSSMQPacker(this.settings.settings.mqpacker),
     ];
 
-    stream = stream
-      .pipe(GulpSass({ ...defaultSettings.sass, ...(this.settings.sass || {}) }))
-      .pipe(GulpPostCSS(postCSSPluginsBefore));
+    stream = stream.pipe(GulpSass(this.settings.sass || {})).pipe(GulpPostCSS(postCSSPluginsBefore));
 
-    if (settings.extractMQ || defaultSettings.extractMQ) {
+    if (this.settings.settings.extractMQ) {
       let mainFilename: string = "";
 
       let streamExtractMQ = stream
@@ -206,7 +178,7 @@ export default class Sass extends Task {
           )
         );
 
-      if (criticalCSSActive) {
+      if (this.settings.settings.criticalActive) {
         streamExtractMQ = streamExtractMQ.pipe(
           GulpPostCSS([
             (css: any): void => {
@@ -224,8 +196,8 @@ export default class Sass extends Task {
       streams.push(streamExtractMQ);
     }
 
-    if (criticalCSSActive) {
-      const streamCriticalCSS = stream.pipe(GulpCriticalCSS(criticalCSSSettings));
+    if (this.settings.settings.criticalActive) {
+      const streamCriticalCSS = stream.pipe(GulpCriticalCSS(this.settings.settings.critical));
 
       streams.push(streamCriticalCSS);
     }
@@ -234,7 +206,7 @@ export default class Sass extends Task {
       streams.push(stream);
     }
 
-    stream = merge(streams)
+    stream = mergeStream(streams)
       .pipe(dest(this.settings.dst, options))
       .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)
       .pipe(GulpPostCSS(postCSSPluginsAfter))
@@ -258,7 +230,7 @@ export default class Sass extends Task {
       SassLint.format([
         {
           errorCount: 1,
-          filePath: error.relativePath || path.relative(this.settings.cwd, error.file),
+          filePath: error.relativePath || path.relative(this.settings.cwd, error.file || error.path),
           messages: [
             {
               column: error.column,
@@ -273,7 +245,7 @@ export default class Sass extends Task {
     );
 
     // Particular exit due to the comportment of Sass.
-    if (Task.isBuildRun()) {
+    if (Task.isBuildRun() && error.code !== "ENOENT") {
       process.exit(1);
     }
   }

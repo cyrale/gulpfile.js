@@ -2,6 +2,7 @@ import chalk from "chalk";
 import del from "del";
 import log from "fancy-log";
 import fs from "fs";
+import merge from "lodash/merge";
 import path from "path";
 
 import GulpImagemin from "gulp-imagemin";
@@ -12,52 +13,44 @@ import Task, { IGulpOptions } from "./task";
 export default class Images extends Task {
   public static readonly taskName: string = "images";
 
-  public static readonly imageminDefaultSettings: {
-    gifsicle: {};
-    jpegtran: {};
-    optipng: {};
-    svgo: {};
-  } = {
-    gifsicle: {
-      interlaced: true,
-      optimizationLevel: 3,
-    },
-    jpegtran: {
-      progressive: true,
-    },
-    optipng: {
-      optimizationLevel: 5,
-    },
-    svgo: {
-      plugins: [{ removeViewBox: true }, { cleanupIDs: false }],
-    },
-  };
-
-  public static imageminPlugins(object: any) {
-    return [
-      GulpImagemin.jpegtran({
-        ...Images.imageminDefaultSettings.jpegtran,
-        ...(object.settings.settings.jpegtran || {}),
-      }),
-      GulpImagemin.optipng({ ...Images.imageminDefaultSettings.optipng, ...(object.settings.settings.optipng || {}) }),
-      GulpImagemin.gifsicle({
-        ...Images.imageminDefaultSettings.gifsicle,
-        ...(object.settings.settings.gifsicle || {}),
-      }),
-      GulpImagemin.svgo({ ...Images.imageminDefaultSettings.svgo, ...(object.settings.settings.svgo || {}) }),
-    ];
-  }
-
   constructor(name: string, settings: object) {
     super(name, settings);
 
     this.withLinter = false;
+
+    const defaultSettings: {} = {
+      gifsicle: {
+        interlaced: true,
+        optimizationLevel: 3,
+      },
+      jpegtran: {
+        progressive: true,
+      },
+      optipng: {
+        optimizationLevel: 5,
+      },
+      svgo: {
+        plugins: [{ removeViewBox: true }, { cleanupIDs: false }],
+      },
+    };
+
+    this.settings.settings = merge(defaultSettings, this.settings.settings || {});
   }
 
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     stream
       .pipe(GulpNewer(path.resolve(this.settings.cwd, this.settings.dst)))
-      .pipe(GulpImagemin(Images.imageminPlugins(this), { verbose: true }));
+      .pipe(
+        GulpImagemin(
+          [
+            GulpImagemin.jpegtran(this.settings.settings.jpegtran || {}),
+            GulpImagemin.optipng(this.settings.settings.optipng || {}),
+            GulpImagemin.gifsicle(this.settings.settings.gifsicle || {}),
+            GulpImagemin.svgo(this.settings.settings.svgo || {}),
+          ],
+          { verbose: true }
+        )
+      );
 
     return stream;
   }
