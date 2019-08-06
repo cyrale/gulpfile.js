@@ -125,8 +125,8 @@ svgstore:
   tasks:
     icons:
       src:
-        - "assets/svg/*.svg"
-      dst: "build/images"
+        - "src/svg/*.svg"
+      dst: "dist/images"
       filename: "icons.svg"
   settings:
     prefix: "icon"

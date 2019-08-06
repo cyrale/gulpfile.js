@@ -1,1 +1,1 @@
-declare module "gulp-store";
+declare module "gulp-svgstore";
