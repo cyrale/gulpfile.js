@@ -1,4 +1,5 @@
 import { CLIEngine, Linter } from "eslint";
+import log from "fancy-log";
 import { dest } from "gulp";
 import babel from "gulp-babel";
 import concat from "gulp-concat";
@@ -99,7 +100,7 @@ export default class Javascript extends Task {
 
       // Particular exit due to the comportment of gulp-babel.
       if (Task._isBuildRun()) {
-        console.log(formatter(formattedMessage));
+        log.error(formatter(formattedMessage));
         process.exit(1);
       }
     } else {
@@ -126,6 +127,6 @@ export default class Javascript extends Task {
       ];
     }
 
-    console.log(formatter(formattedMessage));
+    log.error(formatter(formattedMessage));
   }
 }

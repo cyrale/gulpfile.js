@@ -1,10 +1,11 @@
+import log from "fancy-log";
 import fs from "fs";
+import * as yaml from "js-yaml";
 import merge from "lodash/merge";
 import minimist from "minimist";
 import path from "path";
 import process from "process";
 
-import * as yaml from "js-yaml";
 import Browsersync from "../tasks/browsersync";
 import TaskFactory from "./task-factory";
 
@@ -42,7 +43,7 @@ export default class Config {
     try {
       process.chdir(dir);
     } catch (err) {
-      console.error(`chdir: ${err}`);
+      log.error(`chdir: ${err}`);
     }
   }
 
@@ -51,12 +52,14 @@ export default class Config {
    */
   public static getInstance(): Config {
     if (!Config._instance) {
-      console.log("Loading configuration file...");
+      log("Loading configuration file...");
 
       Config._instance = new Config();
       Config._instance.refreshOptions();
 
       Config._instance.refreshSettings();
+
+      log("Configuration file loaded.");
     }
 
     return Config._instance;
@@ -119,7 +122,7 @@ export default class Config {
     try {
       this._settings = yaml.safeLoad(fs.readFileSync(this._options.configfile, "utf8"));
     } catch (e) {
-      console.log(e.stack || String(e));
+      log.error(e.stack || String(e));
     }
 
     // Normalize current working directory.

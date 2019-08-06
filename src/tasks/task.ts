@@ -1,3 +1,4 @@
+import log from "fancy-log";
 import fs from "fs";
 import { dest, series, src, task as gulpTask, watch } from "gulp";
 import plumber from "gulp-plumber";
@@ -147,7 +148,7 @@ export default abstract class Task {
   ): NodeJS.ReadWriteStream;
 
   protected _displayError(error: any): void {
-    console.log(error);
+    log.error(error);
   }
 
   protected _displayOrExitOnError(taskName: string, error: any, done: TaskCallback): void {

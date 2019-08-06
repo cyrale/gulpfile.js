@@ -2,6 +2,7 @@ import purgeCSS from "@fullhuman/postcss-purgecss";
 import autoprefixer from "autoprefixer";
 import CSSMQPacker from "css-mqpacker";
 import CSSNano from "cssnano";
+import log from "fancy-log";
 import { dest } from "gulp";
 import criticalCSS from "gulp-critical-css";
 import extractMediaQueries from "gulp-extract-media-queries";
@@ -227,7 +228,7 @@ export default class Sass extends Task {
   }
 
   protected _displayError(error: any): void {
-    console.log(
+    log.error(
       sassLint.format([
         {
           errorCount: 1,
