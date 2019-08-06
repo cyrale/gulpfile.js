@@ -22,7 +22,7 @@ export default class Javascript extends Task {
     presets: ["@babel/preset-env"],
   };
 
-  private readonly babelActive: boolean;
+  private readonly _babelActive: boolean;
 
   constructor(name: string, settings: object) {
     super(name, settings);
@@ -37,12 +37,12 @@ export default class Javascript extends Task {
     };
     this.settings.settings = merge(defaultSettings, this.settings.settings || {});
 
-    this.babelActive = typeof this.settings.settings.babel === "object" || this.settings.settings.babel !== false;
+    this._babelActive = typeof this.settings.settings.babel === "object" || this.settings.settings.babel !== false;
   }
 
   protected buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
     stream
-      .pipe(gulpIf(this.babelActive, babel(omit(this.settings.settings.babel, ["_flags"]))))
+      .pipe(gulpIf(this._babelActive, babel(omit(this.settings.settings.babel, ["_flags"]))))
       .pipe(concat(this.settings.filename))
       .pipe(dest(this.settings.dst, options))
       .pipe(Browsersync.getInstance().sync(this.browserSyncSettings) as NodeJS.ReadWriteStream)

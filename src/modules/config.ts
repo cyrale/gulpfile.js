@@ -38,6 +38,14 @@ export default class Config {
     return this._settings;
   }
 
+  public static chdir(dir: string): void {
+    try {
+      process.chdir(dir);
+    } catch (err) {
+      console.error(`chdir: ${err}`);
+    }
+  }
+
   /**
    * Get Config instance.
    */

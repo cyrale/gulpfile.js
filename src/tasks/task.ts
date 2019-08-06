@@ -59,7 +59,7 @@ export default abstract class Task {
     gulpTask(
       taskName,
       (done: TaskCallback): NodeJS.ReadWriteStream => {
-        this.chdir();
+        Config.chdir(this.settings.cwd);
 
         const options: IGulpOptions = {
           cwd: this.settings.cwd,
@@ -102,7 +102,7 @@ export default abstract class Task {
     gulpTask(
       taskName,
       (): NodeJS.ReadWriteStream => {
-        this.chdir();
+        Config.chdir(this.settings.cwd);
 
         let stream: NodeJS.ReadWriteStream = src(this.settings.src, { cwd: this.settings.cwd });
         stream = this.lintSpecific(stream);
@@ -138,14 +138,6 @@ export default abstract class Task {
   protected bindEventsToWatcher(watcher: fs.FSWatcher): void {}
 
   protected abstract buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream;
-
-  protected chdir(): void {
-    try {
-      process.chdir(this.settings.cwd);
-    } catch (err) {
-      console.error(`chdir: ${err}`);
-    }
-  }
 
   protected displayError(error: any): void {
     console.log(error);

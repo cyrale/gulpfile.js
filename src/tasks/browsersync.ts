@@ -40,7 +40,7 @@ export default class Browsersync {
     const taskName: string = `${this._task}:start`;
 
     gulpTask(taskName, (): void => {
-      this.chdir();
+      Config.chdir(this._settings.cwd);
 
       this._browserSync.init(
         Object.assign(
@@ -80,13 +80,5 @@ export default class Browsersync {
     }
 
     return false;
-  }
-
-  private chdir(): void {
-    try {
-      process.chdir(this._settings.cwd);
-    } catch (err) {
-      console.error(`chdir: ${err}`);
-    }
   }
 }

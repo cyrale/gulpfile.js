@@ -42,8 +42,8 @@ interface IPurgeCSSOptions {
 export default class Sass extends Task {
   public static readonly taskName: string = "sass";
 
-  private readonly criticalActive: boolean;
-  private readonly purgeCSSActive: boolean;
+  private readonly _criticalActive: boolean;
+  private readonly _purgeCSSActive: boolean;
 
   constructor(name: string, settings: object) {
     super(name, settings);
@@ -92,13 +92,13 @@ export default class Sass extends Task {
     this.settings.settings.mqpacker.sort =
       this.settings.settings.mqpacker.sort === "mobile" ? sortCSSMediaQueries : sortCSSMediaQueries.desktopFirst;
 
-    this.criticalActive =
+    this._criticalActive =
       typeof this.settings.settings.critical === "object" ||
       (typeof this.settings.settings.critical === "boolean" && this.settings.settings.critical);
     this.settings.settings.critical =
       typeof this.settings.settings.critical === "object" ? (this.settings.settings.critical as string[]) : [];
 
-    this.purgeCSSActive =
+    this._purgeCSSActive =
       typeof this.settings.settings.purgeCSS === "object" ||
       typeof this.settings.settings.purgeCSS === "string" ||
       (typeof this.settings.settings.purgeCSS === "boolean" && this.settings.settings.purgeCSS);
@@ -142,7 +142,7 @@ export default class Sass extends Task {
       svgo(this.settings.settings.SVGO),
     ];
 
-    if (this.purgeCSSActive) {
+    if (this._purgeCSSActive) {
       postCSSPluginsBefore.push(purgeCSS(this.settings.settings.purgeCSS));
     }
 
@@ -179,7 +179,7 @@ export default class Sass extends Task {
           }
         ) as NodeJS.WritableStream);
 
-      if (this.criticalActive) {
+      if (this._criticalActive) {
         streamExtractMQ = streamExtractMQ.pipe(
           postCSS([
             (css: any): void => {
@@ -197,7 +197,7 @@ export default class Sass extends Task {
       streams.push(streamExtractMQ);
     }
 
-    if (this.criticalActive) {
+    if (this._criticalActive) {
       const streamCriticalCSS: NodeJS.ReadWriteStream = stream.pipe(criticalCSS(this.settings.settings.critical));
 
       streams.push(streamCriticalCSS);
@@ -221,7 +221,7 @@ export default class Sass extends Task {
     stream
       .pipe(gulpSassLint({ configFile: path.join(this.settings.cwd, ".sass-lint.yml") }))
       .pipe(gulpSassLint.format())
-      .pipe(this.lintNotifier());
+      .pipe(this._lintNotifier());
 
     return stream;
   }
@@ -251,7 +251,7 @@ export default class Sass extends Task {
     }
   }
 
-  private lintNotifier(): Transform {
+  private _lintNotifier(): Transform {
     const that = this;
 
     return through.obj(

@@ -4,7 +4,7 @@ import svgMin from "gulp-svgmin";
 import svgStore from "gulp-svgstore";
 import merge from "lodash/merge";
 import path from "path";
-import SVGO from "svgo";
+import svgo from "svgo";
 import Vinyl from "vinyl";
 
 import Task, { IGulpOptions } from "./task";
@@ -61,7 +61,7 @@ export default class SVGStore extends Task {
     stream = stream
       .pipe(
         svgMin(
-          (file: Vinyl): SVGO.Options =>
+          (file: Vinyl): svgo.Options =>
             merge(this.settings.settings.svgmin, {
               plugins: [
                 {

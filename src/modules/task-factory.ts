@@ -32,9 +32,9 @@ interface IGlobalTaskList {
 }
 
 export default class TaskFactory {
-  private static readonly sortOrder: string[] = ["lint", "build", "watch"];
+  private static readonly _sortOrder: string[] = ["lint", "build", "watch"];
 
-  private static explodeTaskName(task: string): ITaskNameElements {
+  private static _explodeTaskName(task: string): ITaskNameElements {
     const [type] = task.split(":");
     let [, name, step] = task.split(":");
 
@@ -50,11 +50,11 @@ export default class TaskFactory {
     };
   }
 
-  private static mergeArrays(acc: string[] = [], tasks: string[]): string[] {
+  private static _mergeArrays(acc: string[] = [], tasks: string[]): string[] {
     return [...acc, ...tasks];
   }
 
-  private static pushTask(list: ITaskList, key: string, task: string): ITaskList {
+  private static _pushTask(list: ITaskList, key: string, task: string): ITaskList {
     list[key] = list[key] || [];
     if (list[key].indexOf(task) < 0) {
       list[key].push(task);
@@ -63,21 +63,21 @@ export default class TaskFactory {
     return list;
   }
 
-  private static removeEmptyArrays(tasks: string[]): boolean {
+  private static _removeEmptyArrays(tasks: string[]): boolean {
     return tasks.length > 0;
   }
 
-  private tasks: string[] = [];
+  private _tasks: string[] = [];
 
-  private superGlobalTasks: ITaskList = {};
-  private orderedSuperGlobalTasks: {
+  private _superGlobalTasks: ITaskList = {};
+  private _orderedSuperGlobalTasks: {
     [name: string]: string[][];
   } = {};
 
-  private globalTasks: IGlobalTaskList = {};
-  private orderedGlobalTasks: string[][] = [];
+  private _globalTasks: IGlobalTaskList = {};
+  private _orderedGlobalTasks: string[][] = [];
 
-  private availableTasks: IGenericSettings = {
+  private _availableTasks: IGenericSettings = {
     [Browserify.taskName]: Browserify,
     [Fonts.taskName]: Fonts,
     [Images.taskName]: Images,
@@ -88,7 +88,7 @@ export default class TaskFactory {
     [SVGStore.taskName]: SVGStore,
   };
 
-  private tasksGroupAndOrder: string[][] = [
+  private _tasksGroupAndOrder: string[][] = [
     [Clean.taskName],
     [Fonts.taskName, Sprites.taskName, SVGStore.taskName],
     [Images.taskName],
@@ -104,15 +104,15 @@ export default class TaskFactory {
     if (conf.settings.browsersync) {
       const browserSync: Browsersync = Browsersync.getInstance();
 
-      this.stackTask(browserSync.start());
-      this.stackTask(browserSync.watch());
+      this._stackTask(browserSync.start());
+      this._stackTask(browserSync.watch());
     }
 
     // Initialize clean task.
     if (conf.settings.clean) {
       const clean: Clean = Clean.getInstance();
 
-      this.stackTask(clean.start());
+      this._stackTask(clean.start());
     }
 
     // Initialize other tasks.
@@ -120,18 +120,18 @@ export default class TaskFactory {
       const confTasks: {} = conf.settings[task] as {};
 
       if (this.isValidTask(task)) {
-        this.createTasks(task, confTasks);
+        this._createTasks(task, confTasks);
       }
     });
 
-    if (this.tasks.length > 0) {
-      this.createGlobalTasks();
-      this.createSuperGlobalTasks();
+    if (this._tasks.length > 0) {
+      this._createGlobalTasks();
+      this._createSuperGlobalTasks();
 
       gulpTask(
         "default",
         series(
-          this.orderedGlobalTasks.map((tasks: string[]): string | Undertaker.TaskFunction =>
+          this._orderedGlobalTasks.map((tasks: string[]): string | Undertaker.TaskFunction =>
             tasks.length === 1 ? tasks[0] : parallel(tasks)
           )
         )
@@ -144,103 +144,103 @@ export default class TaskFactory {
       throw new Error(`Unsupported task: ${task}.`);
     }
 
-    return new this.availableTasks[task](name, settings);
+    return new this._availableTasks[task](name, settings);
   }
 
   public availableTaskNames(): string[] {
-    return Object.keys(this.availableTasks);
+    return Object.keys(this._availableTasks);
   }
 
   public isValidTask(task: string): boolean {
     return this.availableTaskNames().indexOf(task) >= 0;
   }
 
-  private createGlobalTasks(): void {
+  private _createGlobalTasks(): void {
     // Sort tasks.
-    this.tasks.forEach((task: string): void => {
-      const { type, name, step } = TaskFactory.explodeTaskName(task);
+    this._tasks.forEach((task: string): void => {
+      const { type, name, step } = TaskFactory._explodeTaskName(task);
 
       if (type === Browsersync.taskName) {
-        this.pushGlobalTask("byTypeOnly", type, task);
+        this._pushGlobalTask("byTypeOnly", type, task);
       } else {
         // Sort tasks by name.
         const sortedByName: string = `${type}:${name}`;
-        this.pushGlobalTask("byName", sortedByName, task);
+        this._pushGlobalTask("byName", sortedByName, task);
 
         // Sort tasks by step.
         const sortedByStep: string = `${type}:${step}`;
-        this.pushGlobalTask("byStep", sortedByStep, task);
+        this._pushGlobalTask("byStep", sortedByStep, task);
 
         // Sort tasks by type only.
-        this.pushGlobalTask("byTypeOnly", type, sortedByName);
+        this._pushGlobalTask("byTypeOnly", type, sortedByName);
       }
     });
 
     // Create tasks sorted by type and name.
-    if (this.globalTasks.byName) {
-      Object.keys(this.globalTasks.byName).forEach((taskName: string): void => {
-        this.globalTasks.byName[taskName].sort((itemA: string, itemB: string): number => {
-          const { step: stepA } = TaskFactory.explodeTaskName(itemA);
-          const { step: stepB } = TaskFactory.explodeTaskName(itemB);
+    if (this._globalTasks.byName) {
+      Object.keys(this._globalTasks.byName).forEach((taskName: string): void => {
+        this._globalTasks.byName[taskName].sort((itemA: string, itemB: string): number => {
+          const { step: stepA } = TaskFactory._explodeTaskName(itemA);
+          const { step: stepB } = TaskFactory._explodeTaskName(itemB);
 
-          return TaskFactory.sortOrder.indexOf(stepA) - TaskFactory.sortOrder.indexOf(stepB);
+          return TaskFactory._sortOrder.indexOf(stepA) - TaskFactory._sortOrder.indexOf(stepB);
         });
 
-        this.defineTask(taskName, this.globalTasks.byName[taskName]);
+        this._defineTask(taskName, this._globalTasks.byName[taskName]);
       });
     }
 
     // Create tasks sorted by type and step.
-    if (this.globalTasks.byStep) {
-      Object.keys(this.globalTasks.byStep).forEach((taskName: string): void => {
-        this.defineTask(taskName, this.globalTasks.byStep[taskName], "parallel");
+    if (this._globalTasks.byStep) {
+      Object.keys(this._globalTasks.byStep).forEach((taskName: string): void => {
+        this._defineTask(taskName, this._globalTasks.byStep[taskName], "parallel");
       });
     }
 
     // Create tasks sorted by type only.
-    if (this.globalTasks.byTypeOnly) {
-      Object.keys(this.globalTasks.byTypeOnly).forEach((taskName: string): void => {
-        this.defineTask(taskName, this.globalTasks.byTypeOnly[taskName], "parallel");
+    if (this._globalTasks.byTypeOnly) {
+      Object.keys(this._globalTasks.byTypeOnly).forEach((taskName: string): void => {
+        this._defineTask(taskName, this._globalTasks.byTypeOnly[taskName], "parallel");
       });
 
       // Sort and order global tasks.
-      this.orderedGlobalTasks = this.tasksGroupAndOrder
+      this._orderedGlobalTasks = this._tasksGroupAndOrder
         .map((taskNames: string[]): string[] =>
-          taskNames.filter((taskName: string): boolean => typeof this.globalTasks.byTypeOnly[taskName] !== "undefined")
+          taskNames.filter((taskName: string): boolean => typeof this._globalTasks.byTypeOnly[taskName] !== "undefined")
         )
-        .filter(TaskFactory.removeEmptyArrays);
+        .filter(TaskFactory._removeEmptyArrays);
     }
   }
 
-  private createSuperGlobalTasks(): void {
-    this.tasks.forEach((task: string): void => {
-      const { step } = TaskFactory.explodeTaskName(task);
+  private _createSuperGlobalTasks(): void {
+    this._tasks.forEach((task: string): void => {
+      const { step } = TaskFactory._explodeTaskName(task);
 
-      if (TaskFactory.sortOrder.indexOf(step) >= 0) {
-        TaskFactory.pushTask(this.superGlobalTasks, step, task);
+      if (TaskFactory._sortOrder.indexOf(step) >= 0) {
+        TaskFactory._pushTask(this._superGlobalTasks, step, task);
       } else if (step === "start") {
-        TaskFactory.pushTask(this.superGlobalTasks, "watch", task);
+        TaskFactory._pushTask(this._superGlobalTasks, "watch", task);
       }
     });
 
     // Sort and order super global tasks.
-    Object.keys(this.superGlobalTasks).forEach((step: string): void => {
-      this.orderedSuperGlobalTasks[step] = this.tasksGroupAndOrder
+    Object.keys(this._superGlobalTasks).forEach((step: string): void => {
+      this._orderedSuperGlobalTasks[step] = this._tasksGroupAndOrder
         .map((taskNames: string[]): string[] =>
           taskNames
             .map((taskName: string): string[] =>
-              this.superGlobalTasks[step].filter((task: string): boolean => {
-                const { type } = TaskFactory.explodeTaskName(task);
+              this._superGlobalTasks[step].filter((task: string): boolean => {
+                const { type } = TaskFactory._explodeTaskName(task);
                 return type === taskName;
               })
             )
-            .reduce(TaskFactory.mergeArrays)
+            .reduce(TaskFactory._mergeArrays)
         )
-        .filter(TaskFactory.removeEmptyArrays);
+        .filter(TaskFactory._removeEmptyArrays);
 
-      this.defineTask(
+      this._defineTask(
         step,
-        this.orderedSuperGlobalTasks[step].map(
+        this._orderedSuperGlobalTasks[step].map(
           (taskNames: string[]): Undertaker.TaskFunction => {
             return parallel(taskNames);
           }
@@ -249,17 +249,17 @@ export default class TaskFactory {
     });
   }
 
-  private createTasks(task: string, tasks: IGenericSettings): void {
+  private _createTasks(task: string, tasks: IGenericSettings): void {
     Object.keys(tasks).forEach((name: string): void => {
       const taskInstance: TaskRunner = this.createTask(task, name, tasks[name]);
 
-      this.stackTask(taskInstance.lint());
-      this.stackTask(taskInstance.build());
-      this.stackTask(taskInstance.watch());
+      this._stackTask(taskInstance.lint());
+      this._stackTask(taskInstance.build());
+      this._stackTask(taskInstance.watch());
     });
   }
 
-  private defineTask(taskName: string, tasks: Undertaker.Task[], type: string = "series"): void {
+  private _defineTask(taskName: string, tasks: Undertaker.Task[], type: string = "series"): void {
     const errorHandler: string = `${taskName}:error`;
 
     if (Config.getInstance().isBuildRun() && Config.getInstance().isCurrentRun(taskName)) {
@@ -297,18 +297,18 @@ export default class TaskFactory {
     }
   }
 
-  private pushGlobalTask(sort: string, key: string, task: string): IGlobalTaskList {
-    this.globalTasks[sort] = this.globalTasks[sort] || {};
-    TaskFactory.pushTask(this.globalTasks[sort], key, task);
+  private _pushGlobalTask(sort: string, key: string, task: string): IGlobalTaskList {
+    this._globalTasks[sort] = this._globalTasks[sort] || {};
+    TaskFactory._pushTask(this._globalTasks[sort], key, task);
 
-    return this.globalTasks;
+    return this._globalTasks;
   }
 
-  private stackTask(name: string | false): string[] {
+  private _stackTask(name: string | false): string[] {
     if (name !== false) {
-      this.tasks.push(name);
+      this._tasks.push(name);
     }
 
-    return this.tasks;
+    return this._tasks;
   }
 }

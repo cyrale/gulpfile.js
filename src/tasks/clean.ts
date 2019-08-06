@@ -1,10 +1,8 @@
 import del from "del";
 import { task as gulpTask } from "gulp";
 import merge from "lodash/merge";
-import process from "process";
 
 import Config, { IGenericSettings } from "../modules/config";
-import { TaskCallback } from "./task";
 
 export default class Clean {
   public static readonly taskName: string = "clean";
@@ -34,20 +32,11 @@ export default class Clean {
     gulpTask(
       taskName,
       (): Promise<string[]> => {
-        this.chdir();
-
+        Config.chdir(this._settings.cwd);
         return del(this._settings.files as string[]);
       }
     );
 
     return taskName;
-  }
-
-  private chdir(): void {
-    try {
-      process.chdir(this._settings.cwd);
-    } catch (err) {
-      console.error(`chdir: ${err}`);
-    }
   }
 }

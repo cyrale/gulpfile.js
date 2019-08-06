@@ -15,7 +15,7 @@ import Task, { IGulpOptions } from "./task";
 export default class Sprites extends Task {
   public static readonly taskName: string = "sprites";
 
-  private static mapMatchPatterns(pattern: string): string {
+  private static _mapMatchPatterns(pattern: string): string {
     return ("**/" + pattern).replace("//", "/");
   }
 
@@ -25,7 +25,7 @@ export default class Sprites extends Task {
     this.withLinter = false;
     this.defaultDest = false;
 
-    this.settings.src = this.srcGlobs();
+    this.settings.src = this._srcGlobs();
 
     const defaultSettings: {} = {
       prefix: "sprite",
@@ -52,7 +52,7 @@ export default class Sprites extends Task {
         if (this.settings["src-2x"]) {
           let match: boolean = false;
 
-          this.settings["src-2x"].map(Sprites.mapMatchPatterns).forEach((pattern: string): void => {
+          this.settings["src-2x"].map(Sprites._mapMatchPatterns).forEach((pattern: string): void => {
             match = match || minimatch(spriteImg.source_image, pattern);
           });
 
@@ -96,7 +96,7 @@ export default class Sprites extends Task {
     );
   }
 
-  private srcGlobs(): string[] {
+  private _srcGlobs(): string[] {
     if (this.settings["src-1x"] && this.settings["src-2x"]) {
       return [...this.settings["src-1x"], ...this.settings["src-2x"]];
     }
