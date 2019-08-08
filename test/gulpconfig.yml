@@ -65,7 +65,7 @@ sass:
     extractMQ: true
     purgeCSS: true
 # ------------------------------------------
-# JavaScript (concatenation only)
+# JavaScript (concatenation)
 # ------------------------------------------
 javascript:
   tasks:
