@@ -23,7 +23,7 @@ export default class Javascript extends Task {
     presets: ["@babel/preset-env"],
   };
 
-  private readonly _babelActive: boolean;
+  private readonly _babelActive: boolean = false;
 
   constructor(name: string, settings: object) {
     super(name, settings);
@@ -33,12 +33,15 @@ export default class Javascript extends Task {
     this._defaultDest = false;
     this._browserSyncSettings = { match: "**/*.js" };
 
-    const defaultSettings: {} = {
-      babel: Javascript._babelDefaultSettings,
-    };
-    this._settings.settings = merge(defaultSettings, this._settings.settings || {});
+    if (this.constructor.name === Javascript.constructor.name) {
+      const defaultSettings: {} = {
+        babel: Javascript._babelDefaultSettings,
+      };
 
-    this._babelActive = typeof this._settings.settings.babel === "object" || this._settings.settings.babel !== false;
+      this._settings.settings = merge(defaultSettings, this._settings.settings || {});
+
+      this._babelActive = typeof this._settings.settings.babel === "object" || this._settings.settings.babel !== false;
+    }
   }
 
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
@@ -71,7 +74,7 @@ export default class Javascript extends Task {
   protected _displayError(error: any): void {
     const cliEngine: CLIEngine = new CLIEngine({});
     const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");
-    const relativeFile: string = path.relative(this._settings.cwd, error.fileName);
+    const relativeFile: string = path.relative(this._settings.cwd, error.fileName || "");
 
     let formattedMessage: CLIEngine.LintResult[] = [];
 
@@ -103,7 +106,7 @@ export default class Javascript extends Task {
         log.error(formatter(formattedMessage));
         process.exit(1);
       }
-    } else {
+    } else if (error.message && error.loc) {
       // Message send by gulp-uglify or other
       formattedMessage = [
         {
@@ -125,8 +128,10 @@ export default class Javascript extends Task {
           warningCount: 0,
         },
       ];
-    }
 
-    log.error(formatter(formattedMessage));
+      log.error(formatter(formattedMessage));
+    } else {
+      log.error(formattedMessage);
+    }
   }
 }

@@ -14,9 +14,10 @@ import Sass from "../tasks/sass";
 import Sprites from "../tasks/sprites";
 import SVGStore from "../tasks/svgstore";
 import Task, { TaskCallback } from "../tasks/task";
+import Webpack from "../tasks/webpack";
 import Config, { IGenericSettings } from "./config";
 
-type TaskRunner = Browserify | Fonts | Images | Javascript | Pug | Sass | Sprites | SVGStore;
+type TaskRunner = Browserify | Fonts | Images | Javascript | Pug | Sass | Sprites | SVGStore | Webpack;
 
 interface ITaskNameElements {
   type: string;
@@ -88,13 +89,14 @@ export default class TaskFactory {
     [Sass.taskName]: Sass,
     [Sprites.taskName]: Sprites,
     [SVGStore.taskName]: SVGStore,
+    [Webpack.taskName]: Webpack,
   };
 
   private _tasksGroupAndOrder: string[][] = [
     [Clean.taskName],
     [Favicon.taskName, Fonts.taskName, Sprites.taskName, SVGStore.taskName],
     [Images.taskName],
-    [Browserify.taskName],
+    [Browserify.taskName, Webpack.taskName],
     [Sass.taskName, Javascript.taskName, Pug.taskName],
     [Browsersync.taskName],
   ];

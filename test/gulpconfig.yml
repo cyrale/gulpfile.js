@@ -65,7 +65,7 @@ sass:
     extractMQ: true
     purgeCSS: true
 # ------------------------------------------
-# JavaScript
+# JavaScript (concatenation only)
 # ------------------------------------------
 javascript:
   tasks:
@@ -85,6 +85,15 @@ browserify:
         - "src/js/modules/app.js"
       dst: "dist/js"
       filename: "modules.js"
+# ------------------------------------------
+# Webpack
+# ------------------------------------------
+webpack:
+  tasks:
+    public:
+      src: "src/js/bundles/app.js"
+      dst: "dist/js"
+      filename: "bundle.js"
 # ------------------------------------------
 # Images
 # ------------------------------------------
