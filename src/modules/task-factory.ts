@@ -19,7 +19,7 @@ import Config, { IGenericSettings } from "./config";
 
 type TaskRunner = Browserify | Fonts | Images | Javascript | Pug | Sass | Sprites | SVGStore | Webpack;
 
-interface ITaskNameElements {
+export interface ITaskNameElements {
   type: string;
   name: string;
   step: string;
@@ -34,9 +34,7 @@ interface IGlobalTaskList {
 }
 
 export default class TaskFactory {
-  private static readonly _sortOrder: string[] = ["lint", "build", "watch"];
-
-  private static _explodeTaskName(task: string): ITaskNameElements {
+  public static explodeTaskName(task: string): ITaskNameElements {
     const [type] = task.split(":");
     let [, name, step] = task.split(":");
 
@@ -51,6 +49,8 @@ export default class TaskFactory {
       type,
     };
   }
+
+  private static readonly _sortOrder: string[] = ["lint", "build", "watch"];
 
   private static _mergeArrays(acc: string[] = [], tasks: string[]): string[] {
     return [...acc, ...tasks];
@@ -162,7 +162,7 @@ export default class TaskFactory {
   private _createGlobalTasks(): void {
     // Sort tasks.
     this._tasks.forEach((task: string): void => {
-      const { type, name, step } = TaskFactory._explodeTaskName(task);
+      const { type, name, step } = TaskFactory.explodeTaskName(task);
 
       if (type === Browsersync.taskName) {
         this._pushGlobalTask("byTypeOnly", type, task);
@@ -184,8 +184,8 @@ export default class TaskFactory {
     if (this._globalTasks.byName) {
       Object.keys(this._globalTasks.byName).forEach((taskName: string): void => {
         this._globalTasks.byName[taskName].sort((itemA: string, itemB: string): number => {
-          const { step: stepA } = TaskFactory._explodeTaskName(itemA);
-          const { step: stepB } = TaskFactory._explodeTaskName(itemB);
+          const { step: stepA } = TaskFactory.explodeTaskName(itemA);
+          const { step: stepB } = TaskFactory.explodeTaskName(itemB);
 
           return TaskFactory._sortOrder.indexOf(stepA) - TaskFactory._sortOrder.indexOf(stepB);
         });
@@ -218,7 +218,7 @@ export default class TaskFactory {
 
   private _createSuperGlobalTasks(): void {
     this._tasks.forEach((task: string): void => {
-      const { step } = TaskFactory._explodeTaskName(task);
+      const { step } = TaskFactory.explodeTaskName(task);
 
       if (TaskFactory._sortOrder.indexOf(step) >= 0) {
         TaskFactory._pushTask(this._superGlobalTasks, step, task);
@@ -234,7 +234,7 @@ export default class TaskFactory {
           taskNames
             .map((taskName: string): string[] =>
               this._superGlobalTasks[step].filter((task: string): boolean => {
-                const { type } = TaskFactory._explodeTaskName(task);
+                const { type } = TaskFactory.explodeTaskName(task);
                 return type === taskName;
               })
             )

@@ -5,6 +5,8 @@ import plumber from "gulp-plumber";
 import process from "process";
 
 import Config, { IGenericSettings } from "../modules/config";
+import Revision from "../modules/revision";
+import TaskFactory from "../modules/task-factory";
 import Browsersync from "./browsersync";
 
 interface ITaskErrorDefinition {
@@ -54,6 +56,7 @@ export default abstract class Task {
   }
 
   public build(): string {
+    const config = Config.getInstance();
     const taskName: string = this._taskName("build");
 
     gulpTask(
@@ -77,7 +80,18 @@ export default abstract class Task {
           stream.pipe(plumber.stop());
 
           if (this._defaultDest) {
-            stream.pipe(dest(this._settings.dst, options));
+            stream
+              .pipe(dest(this._settings.dst, options))
+              .pipe(
+                Revision.manifest({
+                  active: !!config.settings.revision,
+                  cwd: config.options.cwd,
+                  manifest:
+                    typeof config.settings.revision === "string" ? config.settings.revision : "rev-manifest.json",
+                  task: TaskFactory.explodeTaskName(taskName),
+                })
+              )
+              .pipe(dest(".", options));
           }
 
           stream.pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream);
