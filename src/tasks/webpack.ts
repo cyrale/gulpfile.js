@@ -27,7 +27,7 @@ export default class Webpack extends Javascript {
             test: /\.m?js$/,
             use: {
               loader: "babel-loader",
-              options: merge(Webpack._babelDefaultSettings, { sourceType: "unambiguous" }),
+              options: Webpack._babelDefaultSettings,
             },
           },
         ],

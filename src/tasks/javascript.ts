@@ -21,6 +21,7 @@ export default class Javascript extends Task {
     [name: string]: any;
   } = {
     presets: ["@babel/preset-env"],
+    sourceType: "unambiguous",
   };
 
   private readonly _babelActive: boolean = false;
