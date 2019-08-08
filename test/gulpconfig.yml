@@ -67,7 +67,7 @@ sass:
       path: "assets/"
     critical: true
     extractMQ: true
-    purgeCSS: true
+    purgeCSS: false
 # ------------------------------------------
 # JavaScript (concatenation)
 # ------------------------------------------

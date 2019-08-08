@@ -35,8 +35,8 @@ a {
   color: $black;
   font-size: 2rem;
   transform: rotate(46deg);
-  //background: resolve("../images/image01.jpg");
-  //background-size: size("../images/image01.jpg");
+  background: resolve("../images/image01.jpg");
+  background-size: size("../images/image01.jpg");
 
   &:hover {
     color: $white;
@@ -54,7 +54,7 @@ a {
 // sass-lint:disable force-element-nesting
 :fullscreen a {
   display: flex;
-  //width: width("../images/image01.jpg");
+  width: width("../images/image01.jpg");
 }
 
 html {

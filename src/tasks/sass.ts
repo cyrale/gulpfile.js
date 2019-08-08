@@ -57,7 +57,7 @@ export default class Sass extends Task {
     const defaultSettings: {} = {
       SVGO: {},
       assets: {
-        cachebuster: true,
+        cachebuster: false,
         relative: true,
       },
       autoprefixer: {
