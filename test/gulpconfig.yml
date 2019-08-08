@@ -81,8 +81,7 @@ javascript:
 browserify:
   tasks:
     public:
-      src:
-        - "src/js/modules/app.js"
+      src: "src/js/modules/app.js"
       dst: "dist/js"
       filename: "modules.js"
 # ------------------------------------------
