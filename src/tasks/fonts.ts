@@ -29,7 +29,7 @@ export default class Fonts extends Task {
     const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
     const sanitizedTaskName: string = changeCase.paramCase(this._taskName().replace("fonts:", prefix));
 
-    stream = stream
+    return stream
       .pipe(
         iconfont({
           centerHorizontally: true,
@@ -64,7 +64,5 @@ export default class Fonts extends Task {
           });
         });
       });
-
-    return stream;
   }
 }

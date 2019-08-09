@@ -37,7 +37,7 @@ export default class Images extends Task {
   }
 
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    stream
+    return stream
       .pipe(newer(path.resolve(this._settings.cwd, this._settings.dst)))
       .pipe(
         imagemin(
@@ -50,8 +50,6 @@ export default class Images extends Task {
           { verbose: true }
         )
       );
-
-    return stream;
   }
 
   protected _bindEventsToWatcher(watcher: fs.FSWatcher): void {

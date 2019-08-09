@@ -1,8 +1,10 @@
-import BrowserSync, { BrowserSyncInstance } from "browser-sync";
+import BrowserSync, { BrowserSyncInstance, StreamOptions } from "browser-sync";
 import { task as gulpTask, watch } from "gulp";
 import gulpIf from "gulp-if";
+import isEmpty from "lodash/isEmpty";
 import merge from "lodash/merge";
-import process from "process";
+import { Transform } from "stream";
+import through, { TransformCallback } from "through2";
 
 import Config, { IGenericSettings } from "../modules/config";
 import { TaskCallback } from "./task";
@@ -26,6 +28,12 @@ export default class Browsersync {
 
   private _browserSync: BrowserSyncInstance = BrowserSync.create();
   private _started: boolean = false;
+
+  private _syncedFiles: {
+    [taskName: string]: {
+      [filename: string]: any;
+    };
+  } = {};
 
   public get task(): string {
     return this._task;
@@ -59,8 +67,51 @@ export default class Browsersync {
     return taskName;
   }
 
-  public sync(settings?: {}): NodeJS.WritableStream {
-    return gulpIf(this._started, this._browserSync.reload(merge({ stream: true }, settings || {})));
+  public memorize(taskName: string): Transform {
+    const that = this;
+
+    return through.obj(
+      (file: any, encoding: string, cb: TransformCallback): void => {
+        if (file.isNull() || file.isStream()) {
+          return cb(null, file);
+        }
+
+        that._syncedFiles = merge(that._syncedFiles, {
+          [taskName]: {
+            [file.path]: file.clone(),
+          },
+        });
+
+        cb(null, file);
+      },
+      (cb: TransformCallback): void => {
+        cb();
+      }
+    );
+  }
+
+  public remember(taskName: string): Transform {
+    const that = this;
+
+    return through.obj((file: any, encoding: string, cb: TransformCallback): void => cb(null, file), function(
+      cb: TransformCallback
+    ): void {
+      if (isEmpty(that._syncedFiles[taskName])) {
+        return cb();
+      }
+
+      Object.keys(that._syncedFiles[taskName]).forEach((filename: string): void => {
+        this.push(that._syncedFiles[taskName][filename]);
+      });
+
+      delete that._syncedFiles[taskName];
+
+      cb();
+    });
+  }
+
+  public sync(taskName: string, settings?: StreamOptions): NodeJS.ReadWriteStream {
+    return gulpIf(this._started, this._browserSync.stream(settings || {}));
   }
 
   public watch(): string | false {
@@ -70,7 +121,7 @@ export default class Browsersync {
       gulpTask(taskName, (done: TaskCallback): void => {
         watch(this._settings.watch).on("change", (): void => {
           if (this._started) {
-            this._browserSync.reload();
+            this._browserSync.stream();
           }
         });
         done();

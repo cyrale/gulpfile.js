@@ -55,12 +55,8 @@ export default class Revision {
       (file: any, encoding: string, cb: TransformCallback): void => {
         const { type, name } = options.task;
 
-        if (file.isNull() || path.extname(file.path) === ".map") {
+        if (file.isNull() || file.isStream() || path.extname(file.path) === ".map") {
           return cb();
-        }
-
-        if (file.isStream()) {
-          return cb(new PluginError("revision", "Streaming not supported"));
         }
 
         const origPath = file.path;

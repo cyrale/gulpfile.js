@@ -33,7 +33,7 @@
   $(function() {
     let test = 0;
 
-    test = test + 1;
+    test = test + 10000;
 
     window.console.log(test);
   });

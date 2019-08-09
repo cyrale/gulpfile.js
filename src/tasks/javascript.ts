@@ -1,6 +1,5 @@
 import { CLIEngine, Linter } from "eslint";
 import log from "fancy-log";
-import { dest } from "gulp";
 import babel from "gulp-babel";
 import concat from "gulp-concat";
 import esLint from "gulp-eslint";
@@ -30,11 +29,9 @@ export default class Javascript extends Task {
     super(name, settings);
 
     this._gulpSourcemaps = true;
-
-    this._defaultDest = false;
     this._browserSyncSettings = { match: "**/*.js" };
 
-    if (this.constructor.name === Javascript.constructor.name) {
+    if (this.constructor.name === "Javascript") {
       const defaultSettings: {} = {
         babel: Javascript._babelDefaultSettings,
       };
@@ -46,17 +43,15 @@ export default class Javascript extends Task {
   }
 
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    stream
+    const browserSync = Browsersync.getInstance();
+    const taskName = this._taskName("build");
+
+    return stream
       .pipe(gulpIf(this._babelActive, babel(omit(this._settings.settings.babel, ["_flags"]))))
       .pipe(concat(this._settings.filename))
-      .pipe(dest(this._settings.dst, options))
-      .pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream)
+      .pipe(browserSync.memorize(taskName))
       .pipe(uglify())
-      .pipe(rename({ suffix: ".min" }))
-      .pipe(dest(this._settings.dst, options))
-      .pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream);
-
-    return stream;
+      .pipe(rename({ suffix: ".min" }));
   }
 
   protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {

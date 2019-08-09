@@ -15,6 +15,9 @@ browsersync:
       baseDir: "dist/"
   watch:
     - "src/**/*.html"
+# ------------------------------------------
+# Favicon (https://realfavicongenerator.net/)
+# ------------------------------------------
 favicon:
   tasks:
     main:
@@ -75,7 +78,7 @@ javascript:
   tasks:
     public:
       src:
-        - "dist/js/modules.min.js"
+#        - "dist/js/modules.min.js"
         - "src/js/concat/**/*.js"
       dst: "dist/js"
       filename: "all.js"

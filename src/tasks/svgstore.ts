@@ -58,7 +58,7 @@ export default class SVGStore extends Task {
   }
 
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    stream = stream
+    return stream
       .pipe(
         svgMin(
           (file: Vinyl): svgo.Options =>
@@ -131,7 +131,5 @@ export default class SVGStore extends Task {
         basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),
         extname: ".svg",
       }) as NodeJS.WritableStream);
-
-    return stream;
   }
 }

@@ -1,6 +1,7 @@
 import log from "fancy-log";
 import fs from "fs";
 import { dest, series, src, task as gulpTask, watch } from "gulp";
+import gulpIf from "gulp-if";
 import plumber from "gulp-plumber";
 import process from "process";
 
@@ -56,6 +57,7 @@ export default abstract class Task {
   }
 
   public build(): string {
+    const browserSync = Browsersync.getInstance();
     const config = Config.getInstance();
     const taskName: string = this._taskName("build");
 
@@ -75,26 +77,20 @@ export default abstract class Task {
         );
 
         if (!this._withLinter || !this._lintError) {
-          stream = this._buildSpecific(stream, options, done);
-
-          stream.pipe(plumber.stop());
-
-          if (this._defaultDest) {
-            stream
-              .pipe(dest(this._settings.dst, options))
-              .pipe(
-                Revision.manifest({
-                  active: !!config.settings.revision,
-                  cwd: config.options.cwd,
-                  manifest:
-                    typeof config.settings.revision === "string" ? config.settings.revision : "rev-manifest.json",
-                  task: TaskFactory.explodeTaskName(taskName),
-                })
-              )
-              .pipe(dest(".", options));
-          }
-
-          stream.pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream);
+          stream = this._buildSpecific(stream, options, done)
+            .pipe(plumber.stop())
+            .pipe(browserSync.remember(taskName))
+            .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, options)))
+            .pipe(browserSync.sync(taskName, this._browserSyncSettings))
+            .pipe(
+              Revision.manifest({
+                active: !!config.settings.revision,
+                cwd: config.options.cwd,
+                manifest: typeof config.settings.revision === "string" ? config.settings.revision : "rev-manifest.json",
+                task: TaskFactory.explodeTaskName(taskName),
+              })
+            )
+            .pipe(dest(".", options));
         }
 
         return stream;

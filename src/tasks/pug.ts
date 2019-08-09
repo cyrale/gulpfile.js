@@ -31,9 +31,7 @@ export default class Pug extends Task {
       });
     }
 
-    stream.pipe(gulpData(data)).pipe(pug());
-
-    return stream;
+    return stream.pipe(gulpData(data)).pipe(pug());
   }
 
   protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {

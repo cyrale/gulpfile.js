@@ -34,17 +34,18 @@ export default class Browserify extends Javascript {
   }
 
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    stream = watchify(browserify(omit(this._settings.settings, ["babel"])))
+    const browserSync = Browsersync.getInstance();
+    const taskName = this._taskName("build");
+
+    return watchify(browserify(omit(this._settings.settings, ["babel"])))
       .transform("babelify", this._settings.settings.babel)
       .bundle()
       .pipe(Source(this._settings.filename))
       .pipe(Buffer())
       .pipe(dest(this._settings.dst, options))
-      .pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream)
+      .pipe(browserSync.memorize(taskName))
       .pipe(uglify())
       .pipe(rename({ suffix: ".min" }))
       .pipe(dest(this._settings.dst, options));
-
-    return stream;
   }
 }

@@ -43,7 +43,10 @@ export default class Webpack extends Javascript {
   }
 
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
-    stream = stream
+    const browserSync = Browsersync.getInstance();
+    const taskName = this._taskName("build");
+
+    return stream
       .pipe(named())
       .pipe(webpackStream(this._settings.settings, webpack as any))
       .pipe(
@@ -51,13 +54,9 @@ export default class Webpack extends Javascript {
           basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),
         })
       )
-      .pipe(dest(this._settings.dst, options))
-      .pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream)
+      .pipe(browserSync.memorize(taskName))
       .pipe(uglify())
-      .pipe(rename({ suffix: ".min" }))
-      .pipe(dest(this._settings.dst, options));
-
-    return stream;
+      .pipe(rename({ suffix: ".min" }));
   }
 
   protected _displayError(error: any): void {

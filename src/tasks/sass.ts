@@ -50,8 +50,6 @@ export default class Sass extends Task {
     super(name, settings);
 
     this._gulpSourcemaps = true;
-
-    this._defaultDest = false;
     this._browserSyncSettings = { match: "**/*.css" };
 
     const defaultSettings: {} = {
@@ -133,6 +131,8 @@ export default class Sass extends Task {
   }
 
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+    const browserSync = Browsersync.getInstance();
+    const taskName = this._taskName("build");
     const streams: NodeJS.ReadWriteStream[] = [];
 
     const postCSSPluginsBefore: any[] = [
@@ -208,14 +208,10 @@ export default class Sass extends Task {
       streams.push(stream);
     }
 
-    stream = mergeStream(streams)
-      .pipe(dest(this._settings.dst, options))
-      .pipe(Browsersync.getInstance().sync(this._browserSyncSettings) as NodeJS.ReadWriteStream)
+    return mergeStream(streams)
+      .pipe(browserSync.memorize(taskName))
       .pipe(postCSS(postCSSPluginsAfter))
-      .pipe(rename({ suffix: ".min" }))
-      .pipe(dest(this._settings.dst, options) as NodeJS.WritableStream) as NodeJS.ReadWriteStream;
-
-    return stream;
+      .pipe(rename({ suffix: ".min" }));
   }
 
   protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
