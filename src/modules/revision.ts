@@ -7,7 +7,8 @@ import through, { TransformCallback } from "through2";
 import Vinyl from "vinyl";
 import vinylFile from "vinyl-file";
 
-import { ITaskNameElements } from "./task-factory";
+import Config from "./config";
+import TaskFactory from "./task-factory";
 
 enum Hash {
   MD5 = "md5",
@@ -20,40 +21,59 @@ interface IRevisionManifest {
     [name: string]: {
       [origRelFile: string]: {
         revRelFile: string;
-        md5: string;
-        sha1: string;
-        sha256: string;
+        [Hash.MD5]: string;
+        [Hash.SHA1]: string;
+        [Hash.SHA256]: string;
       };
     };
   };
 }
 
 interface IRevisionDefaultOption {
-  active?: boolean;
   manifest?: string;
 }
 
 export interface IRevisionOptions extends IRevisionDefaultOption {
   cwd: string;
-  task: ITaskNameElements;
+  taskName: string;
 }
 
 export default class Revision {
+  public static getHash(taskName: string, fileName: string, hash: Hash = Hash.SHA1): string | false {
+    const { type, name } = TaskFactory.explodeTaskName(taskName);
+
+    if (!Revision._isActive()) {
+      return false;
+    }
+
+    try {
+      return Revision._manifest[type][name][fileName][hash];
+    } catch (e) {
+      // Do nothing!
+    }
+
+    return false;
+  }
+
+  public static getHashRevision(taskName: string, fileName: string, hash: Hash = Hash.SHA1): string | false {
+    const hashStr = Revision.getHash(taskName, fileName, hash);
+    return hashStr === false ? hashStr : hashStr.slice(0, 10);
+  }
+
   public static manifest(options: IRevisionOptions): Transform {
     const defaultOptions: IRevisionDefaultOption = {
-      active: false,
       manifest: "rev-manifest.json",
     };
 
     options = merge(defaultOptions, options);
 
-    if (!options.active) {
+    if (!Revision._isActive()) {
       return through.obj();
     }
 
     return through.obj(
       (file: any, encoding: string, cb: TransformCallback): void => {
-        const { type, name } = options.task;
+        const { type, name } = TaskFactory.explodeTaskName(options.taskName);
 
         if (file.isNull() || file.isStream() || path.extname(file.path) === ".map") {
           return cb();
@@ -143,6 +163,11 @@ export default class Revision {
       .createHash(hash)
       .update(contents)
       .digest("hex");
+  }
+
+  private static _isActive() {
+    const config = Config.getInstance();
+    return !!config.settings.revision;
   }
 
   // public static styleRevision(): Transform {

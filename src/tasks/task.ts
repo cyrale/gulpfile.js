@@ -6,8 +6,7 @@ import plumber from "gulp-plumber";
 import process from "process";
 
 import Config, { IGenericSettings } from "../modules/config";
-import Revision from "../modules/revision";
-import TaskFactory, { ITaskNameElements } from "../modules/task-factory";
+import Revision, { IRevisionOptions } from "../modules/revision";
 import Browsersync from "./browsersync";
 
 interface ITaskErrorDefinition {
@@ -22,16 +21,10 @@ export interface IGulpOptions {
   sourcemaps?: true | string;
 }
 
-export interface IRevisionSettings {
-  active: boolean;
-  cwd: string;
-  manifest: string;
-  task: ITaskNameElements;
-}
-
 export interface IBuildSettings {
   options: IGulpOptions;
-  revision: IRevisionSettings;
+  revision: IRevisionOptions;
+  taskName: string;
 }
 
 export type TaskCallback = (error?: any) => void;
@@ -86,11 +79,11 @@ export default abstract class Task {
             sourcemaps: this._gulpSourcemaps && this._settings.settings.sourcemaps,
           },
           revision: {
-            active: !!config.settings.revision,
             cwd: config.options.cwd,
             manifest: typeof config.settings.revision === "string" ? config.settings.revision : "rev-manifest.json",
-            task: TaskFactory.explodeTaskName(taskName),
+            taskName,
           },
+          taskName,
         };
 
         let stream: NodeJS.ReadWriteStream = src(this._settings.src, buildSettings.options as {}).pipe(
@@ -102,9 +95,9 @@ export default abstract class Task {
             .pipe(plumber.stop())
             .pipe(browserSync.remember(taskName))
             .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)))
-            .pipe(browserSync.sync(taskName, this._browserSyncSettings))
             .pipe(gulpIf(this._defaultRevision, Revision.manifest(buildSettings.revision)))
-            .pipe(dest(".", buildSettings.options));
+            .pipe(gulpIf(this._defaultRevision, dest(".", buildSettings.options)))
+            .pipe(browserSync.sync(taskName, this._browserSyncSettings));
         }
 
         return stream;
