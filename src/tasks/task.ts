@@ -7,7 +7,7 @@ import process from "process";
 
 import Config, { IGenericSettings } from "../modules/config";
 import Revision from "../modules/revision";
-import TaskFactory from "../modules/task-factory";
+import TaskFactory, { ITaskNameElements } from "../modules/task-factory";
 import Browsersync from "./browsersync";
 
 interface ITaskErrorDefinition {
@@ -20,6 +20,18 @@ export interface IGulpOptions {
   cwd: string;
   read?: boolean;
   sourcemaps?: true | string;
+}
+
+export interface IRevisionSettings {
+  active: boolean;
+  cwd: string;
+  manifest: string;
+  task: ITaskNameElements;
+}
+
+export interface IBuildSettings {
+  options: IGulpOptions;
+  revision: IRevisionSettings;
 }
 
 export type TaskCallback = (error?: any) => void;
@@ -40,6 +52,7 @@ export default abstract class Task {
   protected _settings: IGenericSettings = {};
 
   protected _defaultDest: boolean = true;
+  protected _defaultRevision: boolean = true;
 
   protected _watchingFiles: string[] = [];
 
@@ -66,31 +79,32 @@ export default abstract class Task {
       (done: TaskCallback): NodeJS.ReadWriteStream => {
         Config.chdir(this._settings.cwd);
 
-        const options: IGulpOptions = {
-          cwd: this._settings.cwd,
-          read: this._gulpRead,
-          sourcemaps: this._gulpSourcemaps && this._settings.settings.sourcemaps,
+        const buildSettings: IBuildSettings = {
+          options: {
+            cwd: this._settings.cwd,
+            read: this._gulpRead,
+            sourcemaps: this._gulpSourcemaps && this._settings.settings.sourcemaps,
+          },
+          revision: {
+            active: !!config.settings.revision,
+            cwd: config.options.cwd,
+            manifest: typeof config.settings.revision === "string" ? config.settings.revision : "rev-manifest.json",
+            task: TaskFactory.explodeTaskName(taskName),
+          },
         };
 
-        let stream: NodeJS.ReadWriteStream = src(this._settings.src, options as {}).pipe(
+        let stream: NodeJS.ReadWriteStream = src(this._settings.src, buildSettings.options as {}).pipe(
           plumber((error: any): void => this._displayOrExitOnError(taskName, error, done))
         );
 
         if (!this._withLinter || !this._lintError) {
-          stream = this._buildSpecific(stream, options, done)
+          stream = this._buildSpecific(stream, buildSettings, done)
             .pipe(plumber.stop())
             .pipe(browserSync.remember(taskName))
-            .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, options)))
+            .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)))
             .pipe(browserSync.sync(taskName, this._browserSyncSettings))
-            .pipe(
-              Revision.manifest({
-                active: !!config.settings.revision,
-                cwd: config.options.cwd,
-                manifest: typeof config.settings.revision === "string" ? config.settings.revision : "rev-manifest.json",
-                task: TaskFactory.explodeTaskName(taskName),
-              })
-            )
-            .pipe(dest(".", options));
+            .pipe(gulpIf(this._defaultRevision, Revision.manifest(buildSettings.revision)))
+            .pipe(dest(".", buildSettings.options));
         }
 
         return stream;
@@ -153,7 +167,7 @@ export default abstract class Task {
 
   protected abstract _buildSpecific(
     stream: NodeJS.ReadWriteStream,
-    options?: IGulpOptions,
+    buildSettings?: IBuildSettings,
     done?: TaskCallback
   ): NodeJS.ReadWriteStream;
 

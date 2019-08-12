@@ -3,7 +3,6 @@ import autoprefixer from "autoprefixer";
 import CSSMQPacker from "css-mqpacker";
 import CSSNano from "cssnano";
 import log from "fancy-log";
-import { dest } from "gulp";
 import criticalCSS from "gulp-critical-css";
 import extractMediaQueries from "gulp-extract-media-queries";
 import postCSS from "gulp-postcss";
@@ -24,7 +23,7 @@ import { Transform } from "stream";
 import through, { TransformCallback } from "through2";
 
 import Browsersync from "./browsersync";
-import Task, { IGulpOptions } from "./task";
+import Task from "./task";
 
 type TPurgeCSSOptions = any[] | boolean;
 
@@ -130,7 +129,7 @@ export default class Sass extends Task {
     }
   }
 
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     const browserSync = Browsersync.getInstance();
     const taskName = this._taskName("build");
     const streams: NodeJS.ReadWriteStream[] = [];

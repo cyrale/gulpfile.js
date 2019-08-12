@@ -3,7 +3,7 @@ import favicon from "gulp-real-favicon";
 import merge from "lodash/merge";
 import path from "path";
 
-import Task, { IGulpOptions, TaskCallback } from "./task";
+import Task, { IBuildSettings, TaskCallback } from "./task";
 
 export default class Favicon extends Task {
   public static readonly taskName: string = "favicon";
@@ -110,7 +110,7 @@ export default class Favicon extends Task {
 
   protected _buildSpecific(
     stream: NodeJS.ReadWriteStream,
-    options?: IGulpOptions,
+    buildSettings?: IBuildSettings,
     done?: TaskCallback
   ): NodeJS.ReadWriteStream {
     favicon.generateFavicon(this._settings.settings, () => {

@@ -7,7 +7,7 @@ import path from "path";
 import svgo from "svgo";
 import Vinyl from "vinyl";
 
-import Task, { IGulpOptions } from "./task";
+import Task from "./task";
 
 export default class SVGStore extends Task {
   public static readonly taskName: string = "svgstore";
@@ -57,7 +57,7 @@ export default class SVGStore extends Task {
     this._settings.settings = merge(defaultSettings, this._settings.settings);
   }
 
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     return stream
       .pipe(
         svgMin(

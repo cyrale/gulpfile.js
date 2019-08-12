@@ -10,7 +10,7 @@ import mergeStream from "merge-stream";
 import minimatch from "minimatch";
 import path from "path";
 
-import Task, { IGulpOptions } from "./task";
+import Task, { IBuildSettings } from "./task";
 
 export default class Sprites extends Task {
   public static readonly taskName: string = "sprites";
@@ -34,7 +34,7 @@ export default class Sprites extends Task {
     this._settings.settings = merge(defaultSettings, this._settings.settings || {});
   }
 
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
     const sanitizedTaskName: string = changeCase.paramCase(this._taskName().replace("sprites:", prefix));
 
@@ -89,10 +89,10 @@ export default class Sprites extends Task {
     } = stream.pipe(gulpIf(sortFiles, sort())).pipe(spriteSmith(spritesmithSettings));
 
     return mergeStream(
-      sprite.img.pipe(dest(".", options)),
+      sprite.img.pipe(dest(".", buildSettings.options)),
       sprite.css
         .pipe(header("// sass-lint:disable-all\n\n"))
-        .pipe(dest(this._settings.settings.sass.dst, options) as NodeJS.WritableStream)
+        .pipe(dest(this._settings.settings.sass.dst, buildSettings.options) as NodeJS.WritableStream)
     );
   }
 

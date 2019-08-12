@@ -11,7 +11,7 @@ import omit from "lodash/omit";
 import path from "path";
 
 import Browsersync from "./browsersync";
-import Task, { IGulpOptions } from "./task";
+import Task, { IBuildSettings } from "./task";
 
 export default class Javascript extends Task {
   public static readonly taskName: string = "javascript";
@@ -42,7 +42,7 @@ export default class Javascript extends Task {
     }
   }
 
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const browserSync = Browsersync.getInstance();
     const taskName = this._taskName("build");
 

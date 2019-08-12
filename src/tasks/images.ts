@@ -7,7 +7,7 @@ import newer from "gulp-newer";
 import merge from "lodash/merge";
 import path from "path";
 
-import Task, { IGulpOptions } from "./task";
+import Task from "./task";
 
 export default class Images extends Task {
   public static readonly taskName: string = "images";
@@ -36,7 +36,7 @@ export default class Images extends Task {
     this._settings.settings = merge(defaultSettings, this._settings.settings || {});
   }
 
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     return stream
       .pipe(newer(path.resolve(this._settings.cwd, this._settings.dst)))
       .pipe(

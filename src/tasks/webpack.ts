@@ -1,6 +1,5 @@
 import { CLIEngine, Linter } from "eslint";
 import log from "fancy-log";
-import { dest } from "gulp";
 import rename from "gulp-rename";
 import uglify from "gulp-uglify";
 import merge from "lodash/merge";
@@ -11,7 +10,6 @@ import webpackStream from "webpack-stream";
 
 import Browsersync from "./browsersync";
 import Javascript from "./javascript";
-import { IGulpOptions } from "./task";
 
 export default class Webpack extends Javascript {
   public static readonly taskName: string = "webpack";
@@ -42,7 +40,7 @@ export default class Webpack extends Javascript {
           });
   }
 
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     const browserSync = Browsersync.getInstance();
     const taskName = this._taskName("build");
 

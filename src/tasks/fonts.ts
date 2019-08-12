@@ -7,7 +7,7 @@ import iconfont from "gulp-iconfont";
 import merge from "lodash/merge";
 import path from "path";
 
-import Task, { IGulpOptions } from "./task";
+import Task, { IBuildSettings } from "./task";
 
 export default class Fonts extends Task {
   public static readonly taskName: string = "fonts";
@@ -16,6 +16,7 @@ export default class Fonts extends Task {
     super(name, settings);
 
     this._withLinter = false;
+    this._defaultRevision = false;
 
     const defaultSettings: {} = {
       prefix: "font",
@@ -25,7 +26,7 @@ export default class Fonts extends Task {
     this._settings.settings = merge(defaultSettings, this._settings.settings || {});
   }
 
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
     const sanitizedTaskName: string = changeCase.paramCase(this._taskName().replace("fonts:", prefix));
 
@@ -39,6 +40,7 @@ export default class Fonts extends Task {
           timestamp: Math.round(Date.now() / 1000).toString(),
         })
       )
+      .pipe()
       .on("glyphs", (glyphs: any[]): void => {
         const file: string = path.resolve(__dirname, `../../src/templates/${this._settings.settings.template}.lodash`);
 
@@ -57,10 +59,9 @@ export default class Fonts extends Task {
           consolidate.lodash.render(data.toString(), templateVars).then((stylesheet: string): void => {
             stylesheet = `// sass-lint:disable-all\n\n${stylesheet}`;
 
-            gulpFile(`_${sanitizedTaskName}.scss`, stylesheet, { src: true }).pipe(dest(
-              this._settings.settings.sass.dst,
-              options
-            ) as NodeJS.WritableStream);
+            gulpFile(`_${sanitizedTaskName}.scss`, stylesheet, { src: true }).pipe(
+              dest(this._settings.settings.sass.dst, buildSettings.options)
+            );
           });
         });
       });

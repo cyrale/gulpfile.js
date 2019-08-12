@@ -10,7 +10,7 @@ import watchify from "watchify";
 
 import Browsersync from "./browsersync";
 import Javascript from "./javascript";
-import { IGulpOptions } from "./task";
+import { IBuildSettings } from "./task";
 
 export default class Browserify extends Javascript {
   public static readonly taskName: string = "browserify";
@@ -33,7 +33,7 @@ export default class Browserify extends Javascript {
         : {};
   }
 
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, options?: IGulpOptions): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const browserSync = Browsersync.getInstance();
     const taskName = this._taskName("build");
 
@@ -42,10 +42,10 @@ export default class Browserify extends Javascript {
       .bundle()
       .pipe(Source(this._settings.filename))
       .pipe(Buffer())
-      .pipe(dest(this._settings.dst, options))
+      .pipe(dest(this._settings.dst, buildSettings.options))
       .pipe(browserSync.memorize(taskName))
       .pipe(uglify())
       .pipe(rename({ suffix: ".min" }))
-      .pipe(dest(this._settings.dst, options));
+      .pipe(dest(this._settings.dst, buildSettings.options));
   }
 }
