@@ -16,10 +16,6 @@ enum Hash {
   SHA256 = "sha256",
 }
 
-interface IDefaultObject {
-  [name: string]: any;
-}
-
 interface IRevisionManifest {
   [type: string]: {
     [name: string]: {
@@ -174,8 +170,8 @@ export default class Revision {
       .digest("hex");
   }
 
-  private static _sortObjectByKeys(obj: IDefaultObject) {
-    const result: IDefaultObject = {};
+  private static _sortObjectByKeys(obj: { [name: string]: any }) {
+    const result: { [name: string]: any } = {};
 
     Object.keys(obj)
       .sort()
