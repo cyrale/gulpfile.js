@@ -22,6 +22,7 @@ import sortCSSMediaQueries from "sort-css-media-queries";
 import { Transform } from "stream";
 import through, { TransformCallback } from "through2";
 
+import Revision from "../modules/revision";
 import Browsersync from "./browsersync";
 import Task from "./task";
 
@@ -54,7 +55,7 @@ export default class Sass extends Task {
     const defaultSettings: {} = {
       SVGO: {},
       assets: {
-        cachebuster: false,
+        cachebuster: Revision.isActive(),
         relative: true,
       },
       autoprefixer: {
@@ -136,6 +137,12 @@ export default class Sass extends Task {
 
     const postCSSPluginsBefore: any[] = [
       assets(this._settings.settings.assets),
+      (css: any): void => {
+        // Normalize revision parameter
+        css.walkDecls((decl: any): void => {
+          decl.value = decl.value.replace(/(url\('[^\?]+\?)([0-9a-f]+)('\))/, "$1rev=$2$3");
+        });
+      },
       rucksackCSS(this._settings.settings.rucksack),
       autoprefixer(this._settings.settings.autoprefixer),
       inlineSVG(this._settings.settings.inlineSVG),
@@ -184,10 +191,10 @@ export default class Sass extends Task {
           postCSS([
             (css: any): void => {
               // Remove critical properties.
-              css.walkDecls((decl: any): void => {
-                if (decl.prop === "critical") {
-                  decl.remove();
-                }
+              css.walkDecls("critical", (decl: any): void => {
+                // if (decl.prop === "critical") {
+                decl.remove();
+                // }
               });
             },
           ])

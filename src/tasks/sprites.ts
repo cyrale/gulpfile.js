@@ -43,8 +43,6 @@ export default class Sprites extends Task {
 
     const imgName: string = sanitizedTaskName + ".png";
     const imgNameRetina: string = sanitizedTaskName + "@2x.png";
-    // const imgNameAbs: string = path.join(this._settings.dst, imgName);
-    // const imgNameAbsRetina: string = path.join(this._settings.dst, imgNameRetina);
 
     const spritesmithDefaultSettings: {} = {
       cssName: "_" + sanitizedTaskName + ".scss",
