@@ -42,7 +42,7 @@ export default class Revision {
   public static getHash(taskName: string, fileName: string, hash: Hash = Hash.SHA1): string | false {
     const { type, name } = TaskFactory.explodeTaskName(taskName);
 
-    if (!Revision._isActive()) {
+    if (!Revision.isActive()) {
       return false;
     }
 
@@ -60,6 +60,11 @@ export default class Revision {
     return hashStr === false ? hashStr : hashStr.slice(0, 10);
   }
 
+  public static isActive() {
+    const config = Config.getInstance();
+    return !!config.settings.revision;
+  }
+
   public static manifest(options: IRevisionOptions): Transform {
     const defaultOptions: IRevisionDefaultOption = {
       manifest: "rev-manifest.json",
@@ -67,7 +72,7 @@ export default class Revision {
 
     options = merge(defaultOptions, options);
 
-    if (!Revision._isActive()) {
+    if (!Revision.isActive()) {
       return through.obj();
     }
 
@@ -163,11 +168,6 @@ export default class Revision {
       .createHash(hash)
       .update(contents)
       .digest("hex");
-  }
-
-  private static _isActive() {
-    const config = Config.getInstance();
-    return !!config.settings.revision;
   }
 
   // public static styleRevision(): Transform {

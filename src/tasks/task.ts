@@ -95,8 +95,8 @@ export default abstract class Task {
             .pipe(plumber.stop())
             .pipe(browserSync.remember(taskName))
             .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)))
-            .pipe(gulpIf(this._defaultRevision, Revision.manifest(buildSettings.revision)))
-            .pipe(gulpIf(this._defaultRevision, dest(".", buildSettings.options)))
+            .pipe(gulpIf(this._defaultRevision && Revision.isActive(), Revision.manifest(buildSettings.revision)))
+            .pipe(gulpIf(this._defaultRevision && Revision.isActive(), dest(".", buildSettings.options)))
             .pipe(browserSync.sync(taskName, this._browserSyncSettings));
         }
 

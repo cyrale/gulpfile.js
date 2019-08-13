@@ -5,6 +5,7 @@ import fs from "fs";
 import { dest } from "gulp";
 import gulpFile from "gulp-file";
 import iconfont from "gulp-iconfont";
+import gulpIf from "gulp-if";
 import merge from "lodash/merge";
 import path from "path";
 import buffer from "vinyl-buffer";
@@ -47,10 +48,10 @@ export default class Fonts extends Task {
       {
         fonts: (cb: any): void => {
           iconfontStream
-            .pipe(buffer())
             .pipe(dest(this._settings.dst, buildSettings.options))
-            .pipe(Revision.manifest(buildSettings.revision))
-            .pipe(dest(".", buildSettings.options))
+            .pipe(gulpIf(Revision.isActive(), buffer()))
+            .pipe(gulpIf(Revision.isActive(), Revision.manifest(buildSettings.revision)))
+            .pipe(gulpIf(Revision.isActive(), dest(".", buildSettings.options)))
             .on("finish", cb);
         },
         glyphs: (cb: any): void => {

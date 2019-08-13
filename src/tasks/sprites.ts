@@ -94,9 +94,9 @@ export default class Sprites extends Task {
     return mergeStream(
       sprite.img
         .pipe(dest(this._settings.dst, buildSettings.options))
-        .pipe(buffer())
-        .pipe(Revision.manifest(buildSettings.revision))
-        .pipe(dest(".", buildSettings.options)),
+        .pipe(gulpIf(Revision.isActive(), buffer()))
+        .pipe(gulpIf(Revision.isActive(), Revision.manifest(buildSettings.revision)))
+        .pipe(gulpIf(Revision.isActive(), dest(".", buildSettings.options))),
       sprite.css
         .pipe(header("// sass-lint:disable-all\n\n"))
         .pipe(dest(this._settings.settings.sass.dst, buildSettings.options))
