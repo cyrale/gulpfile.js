@@ -56,7 +56,6 @@ export default class Config {
 
       Config._instance = new Config();
       Config._instance.refreshOptions();
-
       Config._instance.refreshSettings();
 
       log("Configuration file loaded.");
@@ -115,7 +114,7 @@ export default class Config {
   }
 
   /**
-   * Read _settings from configuration file.
+   * Read settings from configuration file.
    */
   private refreshSettings(): void {
     // Read configuration file.
