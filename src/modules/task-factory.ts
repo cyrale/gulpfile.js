@@ -1,6 +1,6 @@
 import { parallel, series, task as gulpTask, watch } from "gulp";
 import process from "process";
-import * as Undertaker from "undertaker";
+import Undertaker from "undertaker";
 
 import Browserify from "../tasks/browserify";
 import Browsersync from "../tasks/browsersync";
