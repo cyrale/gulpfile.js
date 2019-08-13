@@ -9,7 +9,6 @@ import merge from "lodash/merge";
 import path from "path";
 import buffer from "vinyl-buffer";
 
-import { Error } from "tslint/lib/error";
 import Revision from "../modules/revision";
 import Task, { IBuildSettings } from "./task";
 
