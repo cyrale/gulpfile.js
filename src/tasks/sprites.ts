@@ -9,7 +9,9 @@ import omit from "lodash/omit";
 import mergeStream from "merge-stream";
 import minimatch from "minimatch";
 import path from "path";
+import buffer from "vinyl-buffer";
 
+import Revision from "../modules/revision";
 import Task, { IBuildSettings } from "./task";
 
 export default class Sprites extends Task {
@@ -24,6 +26,7 @@ export default class Sprites extends Task {
 
     this._withLinter = false;
     this._defaultDest = false;
+    this._defaultRevision = false;
 
     this._settings.src = this._srcGlobs();
 
@@ -40,8 +43,8 @@ export default class Sprites extends Task {
 
     const imgName: string = sanitizedTaskName + ".png";
     const imgNameRetina: string = sanitizedTaskName + "@2x.png";
-    const imgNameAbs: string = path.join(this._settings.dst, imgName);
-    const imgNameAbsRetina: string = path.join(this._settings.dst, imgNameRetina);
+    // const imgNameAbs: string = path.join(this._settings.dst, imgName);
+    // const imgNameAbsRetina: string = path.join(this._settings.dst, imgNameRetina);
 
     const spritesmithDefaultSettings: {} = {
       cssName: "_" + sanitizedTaskName + ".scss",
@@ -61,7 +64,7 @@ export default class Sprites extends Task {
           }
         }
       },
-      imgName: imgNameAbs,
+      imgName,
       imgPath: path.join(this._settings.settings.sass.rel, imgName),
       padding: 4,
     };
@@ -72,7 +75,7 @@ export default class Sprites extends Task {
       spritesmithSettings = merge(spritesmithSettings, {
         cssRetinaGroupsName: `${sanitizedTaskName}-retina`,
         cssRetinaSpritesheetName: `spritesheet-${sanitizedTaskName}-retina`,
-        retinaImgName: imgNameAbsRetina,
+        retinaImgName: imgNameRetina,
         retinaImgPath: path.join(this._settings.settings.sass.rel, imgNameRetina),
         retinaSrcFilter: this._settings["src-2x"],
       });
@@ -89,10 +92,14 @@ export default class Sprites extends Task {
     } = stream.pipe(gulpIf(sortFiles, sort())).pipe(spriteSmith(spritesmithSettings));
 
     return mergeStream(
-      sprite.img.pipe(dest(".", buildSettings.options)),
+      sprite.img
+        .pipe(dest(this._settings.dst, buildSettings.options))
+        .pipe(buffer())
+        .pipe(Revision.manifest(buildSettings.revision))
+        .pipe(dest(".", buildSettings.options)),
       sprite.css
         .pipe(header("// sass-lint:disable-all\n\n"))
-        .pipe(dest(this._settings.settings.sass.dst, buildSettings.options) as NodeJS.WritableStream)
+        .pipe(dest(this._settings.settings.sass.dst, buildSettings.options))
     );
   }
 
