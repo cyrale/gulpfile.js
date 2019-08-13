@@ -138,7 +138,7 @@ export default class Sass extends Task {
     const postCSSPluginsBefore: any[] = [
       assets(this._settings.settings.assets),
       (css: any): void => {
-        // Normalize revision parameter
+        // Normalize revision parameter.
         css.walkDecls((decl: any): void => {
           decl.value = decl.value.replace(/(url\('[^\?]+\?)([0-9a-f]+)('\))/, "$1rev=$2$3");
         });
@@ -192,9 +192,7 @@ export default class Sass extends Task {
             (css: any): void => {
               // Remove critical properties.
               css.walkDecls("critical", (decl: any): void => {
-                // if (decl.prop === "critical") {
-                decl.remove();
-                // }
+                decl.parent.remove();
               });
             },
           ])
