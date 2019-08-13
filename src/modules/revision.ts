@@ -16,6 +16,10 @@ enum Hash {
   SHA256 = "sha256",
 }
 
+interface IDefaultObject {
+  [name: string]: any;
+}
+
 interface IRevisionManifest {
   [type: string]: {
     [name: string]: {
@@ -146,7 +150,7 @@ export default class Revision {
               // Do nothing!
             }
 
-            Revision._manifest = merge(oldManifest, Revision._manifest);
+            Revision._manifest = Revision._sortObjectByKeys(merge(oldManifest, Revision._manifest));
 
             manifest.contents = Buffer.from(JSON.stringify(Revision._manifest, null, "  "));
             this.push(manifest);
@@ -168,5 +172,17 @@ export default class Revision {
       .createHash(hash)
       .update(contents)
       .digest("hex");
+  }
+
+  private static _sortObjectByKeys(obj: IDefaultObject) {
+    const result: IDefaultObject = {};
+
+    Object.keys(obj)
+      .sort()
+      .forEach((key: string) => {
+        result[key] = typeof obj[key] === "object" ? Revision._sortObjectByKeys(obj[key]) : obj[key];
+      });
+
+    return result;
   }
 }
