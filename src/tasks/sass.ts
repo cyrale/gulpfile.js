@@ -251,6 +251,12 @@ export default class Sass extends Task {
     if (this._criticalActive) {
       const streamCriticalCSS: NodeJS.ReadWriteStream = stream.pipe(criticalCSS(this._settings.settings.critical));
 
+      // Remove critical rules from original file.
+      if (!this._settings.settings.extractMQ) {
+        stream = stream.pipe(postCSS([Sass._removeCriticalRules]));
+        streams.push(stream);
+      }
+
       streams.push(streamCriticalCSS);
     }
 
