@@ -13,12 +13,27 @@ import buffer from "vinyl-buffer";
 import Revision from "../modules/revision";
 import Task, { IBuildSettings } from "./task";
 
+/**
+ * Build fonts based on SVG files.
+ */
 export default class Fonts extends Task {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "fonts";
 
+  /**
+   * Task constructor.
+   *
+   * @param {string} name
+   * @param {object} settings
+   */
   constructor(name: string, settings: object) {
     super(name, settings);
 
+    // No need of linter, default save method and revision.
     this._withLinter = false;
     this._defaultDest = false;
     this._defaultRevision = false;
@@ -31,10 +46,19 @@ export default class Fonts extends Task {
     this._settings.settings = merge(defaultSettings, this._settings.settings || {});
   }
 
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @param {IBuildSettings} buildSettings
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
     const sanitizedTaskName: string = changeCase.paramCase(this._taskName().replace("fonts:", prefix));
 
+    // Build font based on SVG files.
     const iconfontStream = stream.pipe(
       iconfont({
         centerHorizontally: true,
@@ -47,6 +71,7 @@ export default class Fonts extends Task {
     async.parallel(
       {
         fonts: (cb: any): void => {
+          // Save fonts and revision.
           iconfontStream
             .pipe(dest(this._settings.dst, buildSettings.options))
             .pipe(gulpIf(Revision.isActive(), buffer()))
@@ -55,23 +80,27 @@ export default class Fonts extends Task {
             .on("finish", cb);
         },
         glyphs: (cb: any): void => {
+          // Memorize glyphs to generate SASS file.
           iconfontStream.on("glyphs", (glyphs: any[]): void => {
             cb(null, glyphs);
           });
         },
       },
       (error: any, results: async.Dictionary<any>): void => {
+        // Generate SASS file with all glyphs.
         if (error) {
           throw error;
         }
 
         const file: string = path.resolve(__dirname, `../../src/templates/${this._settings.settings.template}.lodash`);
 
+        // Load template file to build SASS file.
         fs.readFile(file, (err: NodeJS.ErrnoException | null, data: Buffer): void => {
           if (err) {
             throw err;
           }
 
+          // Get all variables used in template.
           const templateVars: {} = {
             className: sanitizedTaskName,
             fontName: sanitizedTaskName,
@@ -89,6 +118,7 @@ export default class Fonts extends Task {
             },
           };
 
+          // Generate and save SASS file.
           consolidate.lodash.render(data.toString(), templateVars).then((stylesheet: string): void => {
             stylesheet = `// sass-lint:disable-all\n\n${stylesheet}`;
 

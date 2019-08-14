@@ -33,7 +33,16 @@ interface IGlobalTaskList {
   [name: string]: ITaskList;
 }
 
+/**
+ * Factory that create all tasks.
+ */
 export default class TaskFactory {
+  /**
+   * Explode name separated by two points in 3 elements.
+   *
+   * @param {string} task
+   * @return {ITaskNameElements}
+   */
   public static explodeTaskName(task: string): ITaskNameElements {
     const [type] = task.split(":");
     let [, name, step] = task.split(":");
@@ -50,12 +59,22 @@ export default class TaskFactory {
     };
   }
 
+  /**
+   * Sort order for tasks.
+   * @type {string[]}
+   * @private
+   */
   private static readonly _sortOrder: string[] = ["lint", "build", "watch"];
 
-  private static _mergeArrays(acc: string[] = [], tasks: string[]): string[] {
-    return [...acc, ...tasks];
-  }
-
+  /**
+   * Add a task in a list.
+   *
+   * @param {ITaskList} list
+   * @param {string} key
+   * @param {string} task
+   * @return {ITaskList}
+   * @private
+   */
   private static _pushTask(list: ITaskList, key: string, task: string): ITaskList {
     list[key] = list[key] || [];
     if (list[key].indexOf(task) < 0) {
@@ -65,20 +84,59 @@ export default class TaskFactory {
     return list;
   }
 
+  /**
+   * Check if an array is empty. Used in filters.
+   *
+   * @param {string[]} tasks
+   * @return {boolean}
+   * @private
+   */
   private static _removeEmptyArrays(tasks: string[]): boolean {
     return tasks.length > 0;
   }
 
+  /**
+   * List of final tasks.
+   * @type {string[]}
+   * @private
+   */
   private _tasks: string[] = [];
 
+  /**
+   * List of super global tasks (lint, build, watch).
+   * @type {ITaskList}
+   * @private
+   */
   private _superGlobalTasks: ITaskList = {};
+
+  /**
+   * Ordered super global tasks group by step (lint, build, watch).
+   * @type {{}}
+   * @private
+   */
   private _orderedSuperGlobalTasks: {
     [name: string]: string[][];
   } = {};
 
+  /**
+   * Global tasks grouped by step, name and type.
+   * @type {IGlobalTaskList}
+   * @private
+   */
   private _globalTasks: IGlobalTaskList = {};
+
+  /**
+   * Existing tasks grouped by steps of execution.
+   * @type {string[][]}
+   * @private
+   */
   private _orderedGlobalTasks: string[][] = [];
 
+  /**
+   * List of available and supported tasks.
+   * @type {{[p: string]: Browserify | Favicon | Fonts | Images | Javascript | Pug | Sass | Sprites | SVGStore | Webpack}}
+   * @private
+   */
   private _availableTasks: IGenericSettings = {
     [Browserify.taskName]: Browserify,
     [Favicon.taskName]: Favicon,
@@ -92,6 +150,11 @@ export default class TaskFactory {
     [Webpack.taskName]: Webpack,
   };
 
+  /**
+   * Tasks grouped by steps of execution.
+   * @type {string[][]}
+   * @private
+   */
   private _tasksGroupAndOrder: string[][] = [
     [Clean.taskName],
     [Favicon.taskName, Fonts.taskName, Sprites.taskName, SVGStore.taskName],
@@ -101,6 +164,9 @@ export default class TaskFactory {
     [Browsersync.taskName],
   ];
 
+  /**
+   * Create all tasks.
+   */
   public createAllTasks(): void {
     const conf: Config = Config.getInstance();
 
@@ -108,15 +174,15 @@ export default class TaskFactory {
     if (conf.settings.browsersync) {
       const browserSync: Browsersync = Browsersync.getInstance();
 
-      this._stackTask(browserSync.start());
-      this._stackTask(browserSync.watch());
+      this._pushTask(browserSync.start());
+      this._pushTask(browserSync.watch());
     }
 
     // Initialize clean task.
     if (conf.settings.clean) {
       const clean: Clean = Clean.getInstance();
 
-      this._stackTask(clean.start());
+      this._pushTask(clean.start());
     }
 
     // Initialize other tasks.
@@ -129,9 +195,11 @@ export default class TaskFactory {
     });
 
     if (this._tasks.length > 0) {
+      // Create global and super global tasks.
       this._createGlobalTasks();
       this._createSuperGlobalTasks();
 
+      // Default task.
       gulpTask(
         "default",
         series(
@@ -143,6 +211,14 @@ export default class TaskFactory {
     }
   }
 
+  /**
+   * Create a task.
+   *
+   * @param {string} task
+   * @param {string} name
+   * @param {object} settings
+   * @return {TaskRunner}
+   */
   public createTask(task: string, name: string, settings: object): TaskRunner {
     if (this.availableTaskNames().indexOf(task) < 0) {
       throw new Error(`Unsupported task: ${task}.`);
@@ -151,20 +227,36 @@ export default class TaskFactory {
     return new this._availableTasks[task](name, settings);
   }
 
+  /**
+   * Get supported task names.
+   *
+   * @return {string[]}
+   */
   public availableTaskNames(): string[] {
     return Object.keys(this._availableTasks);
   }
 
-  public isValidTask(task: string): boolean {
-    return this.availableTaskNames().indexOf(task) >= 0;
+  /**
+   * Check if a task is valid (exists in supported tasks).
+   *
+   * @param {string} taskName
+   * @return {boolean}
+   */
+  public isValidTask(taskName: string): boolean {
+    return this.availableTaskNames().indexOf(taskName) >= 0;
   }
 
+  /**
+   * Create global tasks grouped by step, name and type.
+   *
+   * @private
+   */
   private _createGlobalTasks(): void {
-    // Sort tasks.
+    // Group tasks by step, name and type.
     this._tasks.forEach((task: string): void => {
       const { type, name, step } = TaskFactory.explodeTaskName(task);
 
-      if (type === Browsersync.taskName) {
+      if (type === Browsersync.taskName || type === Clean.taskName) {
         this._pushGlobalTask("byTypeOnly", type, task);
       } else {
         // Sort tasks by name.
@@ -216,7 +308,13 @@ export default class TaskFactory {
     }
   }
 
+  /**
+   * Create super global tasks (lint, build, watch).
+   *
+   * @private
+   */
   private _createSuperGlobalTasks(): void {
+    // Collect and group tasks.
     this._tasks.forEach((task: string): void => {
       const { step } = TaskFactory.explodeTaskName(task);
 
@@ -227,8 +325,8 @@ export default class TaskFactory {
       }
     });
 
-    // Sort and order super global tasks.
     Object.keys(this._superGlobalTasks).forEach((step: string): void => {
+      // Sort and order super global tasks.
       this._orderedSuperGlobalTasks[step] = this._tasksGroupAndOrder
         .map((taskNames: string[]): string[] =>
           taskNames
@@ -238,10 +336,11 @@ export default class TaskFactory {
                 return type === taskName;
               })
             )
-            .reduce(TaskFactory._mergeArrays)
+            .reduce((acc: string[] = [], value: string[]) => [...acc, ...value])
         )
         .filter(TaskFactory._removeEmptyArrays);
 
+      // Define super global task.
       this._defineTask(
         step,
         this._orderedSuperGlobalTasks[step].map(
@@ -253,19 +352,35 @@ export default class TaskFactory {
     });
   }
 
+  /**
+   * Create all tasks: lint, build and watch.
+   *
+   * @param {string} task
+   * @param {IGenericSettings} tasks
+   * @private
+   */
   private _createTasks(task: string, tasks: IGenericSettings): void {
     Object.keys(tasks).forEach((name: string): void => {
       const taskInstance: TaskRunner = this.createTask(task, name, tasks[name]);
 
-      this._stackTask(taskInstance.lint());
-      this._stackTask(taskInstance.build());
-      this._stackTask(taskInstance.watch());
+      this._pushTask(taskInstance.lint());
+      this._pushTask(taskInstance.build());
+      this._pushTask(taskInstance.watch());
     });
   }
 
+  /**
+   * Create gulp task.
+   *
+   * @param {string} taskName
+   * @param {Undertaker.Task[]} tasks
+   * @param {string} type
+   * @private
+   */
   private _defineTask(taskName: string, tasks: Undertaker.Task[], type: string = "series"): void {
     const errorHandler: string = `${taskName}:error`;
 
+    // Define gulp task to catch error in build run to exit with error code.
     if (Config.getInstance().isBuildRun() && Config.getInstance().isCurrentRun(taskName)) {
       gulpTask(errorHandler, (done: TaskCallback): void => {
         done();
@@ -279,6 +394,7 @@ export default class TaskFactory {
     let task: Undertaker.TaskFunction = (done: TaskCallback) => done();
 
     if (Config.getInstance().isBuildRun() && Config.getInstance().isCurrentRun(taskName)) {
+      // Add error handler to the tasks.
       let tasksWithHandler: any[] = [];
 
       if (type === "series") {
@@ -296,11 +412,21 @@ export default class TaskFactory {
       task = parallel(tasks);
     }
 
+    // Define gulp task.
     if (task.name === "series" || task.name === "parallel") {
       gulpTask(taskName, task);
     }
   }
 
+  /**
+   * Add task to list of global tasks.
+   *
+   * @param {string} sort
+   * @param {string} key
+   * @param {string} task
+   * @return {IGlobalTaskList}
+   * @private
+   */
   private _pushGlobalTask(sort: string, key: string, task: string): IGlobalTaskList {
     this._globalTasks[sort] = this._globalTasks[sort] || {};
     TaskFactory._pushTask(this._globalTasks[sort], key, task);
@@ -308,7 +434,14 @@ export default class TaskFactory {
     return this._globalTasks;
   }
 
-  private _stackTask(name: string | false): string[] {
+  /**
+   * Add task to the list.
+   *
+   * @param {string | false} name
+   * @return {string[]}
+   * @private
+   */
+  private _pushTask(name: string | false): string[] {
     if (name !== false) {
       this._tasks.push(name);
     }

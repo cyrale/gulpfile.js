@@ -13,9 +13,24 @@ import path from "path";
 import Browsersync from "./browsersync";
 import Task, { IBuildSettings } from "./task";
 
+/**
+ * Concatenate Javascript files into one file. This file could be babelified.
+ */
 export default class Javascript extends Task {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "javascript";
 
+  /**
+   * Default settings for babel.
+   *
+   * @type {{[name: string]: any}}
+   * @protected
+   * @readonly
+   */
   protected static readonly _babelDefaultSettings: {
     [name: string]: any;
   } = {
@@ -23,14 +38,28 @@ export default class Javascript extends Task {
     sourceType: "unambiguous",
   };
 
+  /**
+   * Flag to define if Babel is active or not.
+   * @type {boolean}
+   * @private
+   * @readonly
+   */
   private readonly _babelActive: boolean = false;
 
+  /**
+   * Task constructor.
+   *
+   * @param {string} name
+   * @param {object} settings
+   */
   constructor(name: string, settings: object) {
     super(name, settings);
 
+    // This task could build sourcemaps and sync browser with filter.
     this._gulpSourcemaps = true;
     this._browserSyncSettings = { match: "**/*.js" };
 
+    // Merge settings only for an object of type of Javascript, not for children.
     if (this.constructor.name === "Javascript") {
       const defaultSettings: {} = {
         babel: Javascript._babelDefaultSettings,
@@ -42,6 +71,14 @@ export default class Javascript extends Task {
     }
   }
 
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @param {IBuildSettings} buildSettings
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const browserSync = Browsersync.getInstance();
     const taskName = this._taskName("build");
@@ -54,6 +91,13 @@ export default class Javascript extends Task {
       .pipe(rename({ suffix: ".min" }));
   }
 
+  /**
+   * Method to add specific steps for the lint.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream
       .pipe(esLint())
@@ -67,6 +111,12 @@ export default class Javascript extends Task {
     return stream;
   }
 
+  /**
+   * Display error from Babel, Uglify or other modules used by this task.
+   *
+   * @param error
+   * @protected
+   */
   protected _displayError(error: any): void {
     const cliEngine: CLIEngine = new CLIEngine({});
     const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");

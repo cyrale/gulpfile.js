@@ -40,12 +40,52 @@ interface IPurgeCSSOptions {
   rejected?: TPurgeCSSOptions;
 }
 
+/**
+ * Build SASS files to CSS.
+ */
 export default class Sass extends Task {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "sass";
 
-  private readonly _criticalActive: boolean;
-  private readonly _purgeCSSActive: boolean;
+  /**
+   * Remove critical rules (PostCSS plugin).
+   *
+   * @param {any} css
+   * @private
+   */
+  private static _removeCriticalRules(css: any): void {
+    // Remove critical properties.
+    css.walkDecls("critical", (decl: any): void => {
+      decl.parent.remove();
+    });
+  }
 
+  /**
+   * Flag to define if critical rule is active.
+   * @type {boolean}
+   * @private
+   * @readonly
+   */
+  private readonly _criticalActive: boolean = false;
+
+  /**
+   * Flag to define if purgeCSS is active.
+   * @type {boolean}
+   * @private
+   * @readonly
+   */
+  private readonly _purgeCSSActive: boolean = false;
+
+  /**
+   * Task constructor.
+   *
+   * @param {string} name
+   * @param {object} settings
+   */
   constructor(name: string, settings: object) {
     super(name, settings);
 
@@ -88,15 +128,19 @@ export default class Sass extends Task {
     };
 
     this._settings.settings = merge(defaultSettings, this._settings.settings || {});
+
+    // Determine media queries order.
     this._settings.settings.mqpacker.sort =
       this._settings.settings.mqpacker.sort === "mobile" ? sortCSSMediaQueries : sortCSSMediaQueries.desktopFirst;
 
+    // Settings to extract critical CSS.
     this._criticalActive =
       typeof this._settings.settings.critical === "object" ||
       (typeof this._settings.settings.critical === "boolean" && this._settings.settings.critical);
     this._settings.settings.critical =
       typeof this._settings.settings.critical === "object" ? (this._settings.settings.critical as string[]) : [];
 
+    // Settings to purge CSS (preconfigured for WordPress).
     this._purgeCSSActive =
       typeof this._settings.settings.purgeCSS === "object" ||
       typeof this._settings.settings.purgeCSS === "string" ||
@@ -130,11 +174,19 @@ export default class Sass extends Task {
     }
   }
 
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     const browserSync = Browsersync.getInstance();
     const taskName = this._taskName("build");
     const streams: NodeJS.ReadWriteStream[] = [];
 
+    // Collect PostCSS plugins to run before first save.
     const postCSSPluginsBefore: any[] = [
       assets(this._settings.settings.assets),
       (css: any): void => {
@@ -153,15 +205,16 @@ export default class Sass extends Task {
       postCSSPluginsBefore.push(purgeCSS(this._settings.settings.purgeCSS));
     }
 
+    // Collect PostCSS pluging to run after first save, for minification process.
     const postCSSPluginsAfter: any[] = [
       CSSNano(this._settings.settings.cssnano),
       CSSMQPacker(this._settings.settings.mqpacker),
     ];
 
-    stream = stream
-      .pipe(sass(this._settings.sass || {}))
-      .pipe(postCSS(postCSSPluginsBefore) as NodeJS.WritableStream) as NodeJS.ReadWriteStream;
+    // Start SASS process.
+    stream = stream.pipe(sass(this._settings.sass || {})).pipe(postCSS(postCSSPluginsBefore));
 
+    // Extract media queries to saves it to separated files.
     if (this._settings.settings.extractMQ) {
       let mainFilename: string = "";
 
@@ -186,22 +239,15 @@ export default class Sass extends Task {
           }
         ) as NodeJS.WritableStream);
 
+      // Remove critical rules from original file.
       if (this._criticalActive) {
-        streamExtractMQ = streamExtractMQ.pipe(
-          postCSS([
-            (css: any): void => {
-              // Remove critical properties.
-              css.walkDecls("critical", (decl: any): void => {
-                decl.parent.remove();
-              });
-            },
-          ])
-        );
+        streamExtractMQ = streamExtractMQ.pipe(postCSS([Sass._removeCriticalRules]));
       }
 
       streams.push(streamExtractMQ);
     }
 
+    // Extract critical rules to saves it to separated files.
     if (this._criticalActive) {
       const streamCriticalCSS: NodeJS.ReadWriteStream = stream.pipe(criticalCSS(this._settings.settings.critical));
 
@@ -218,6 +264,13 @@ export default class Sass extends Task {
       .pipe(rename({ suffix: ".min" }));
   }
 
+  /**
+   * Method to add specific steps for the lint.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream
       .pipe(gulpSassLint({ configFile: path.join(this._settings.cwd, ".sass-lint.yml") }))
@@ -227,6 +280,12 @@ export default class Sass extends Task {
     return stream;
   }
 
+  /**
+   * Display error from SASS.
+   *
+   * @param error
+   * @protected
+   */
   protected _displayError(error: any): void {
     log.error(
       sassLint.format([
@@ -252,6 +311,12 @@ export default class Sass extends Task {
     }
   }
 
+  /**
+   * Collect error from lint.
+   *
+   * @return {Transform}
+   * @private
+   */
   private _lintNotifier(): Transform {
     const that = this;
 

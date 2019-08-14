@@ -9,12 +9,27 @@ import Vinyl from "vinyl";
 
 import Task from "./task";
 
+/**
+ * Combine SVG files into one.
+ */
 export default class SVGStore extends Task {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "svgstore";
 
+  /**
+   * Task constructor.
+   *
+   * @param {string} name
+   * @param {object} settings
+   */
   constructor(name: string, settings: object) {
     super(name, settings);
 
+    // No need of linter.
     this._withLinter = false;
 
     const defaultSettings: {} = {
@@ -57,6 +72,13 @@ export default class SVGStore extends Task {
     this._settings.settings = merge(defaultSettings, this._settings.settings);
   }
 
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     return stream
       .pipe(
@@ -81,7 +103,8 @@ export default class SVGStore extends Task {
           xmlMode: true,
         },
         // tslint:disable-next-line:ban-types
-        run: ($: CheerioStatic, file: Vinyl, done?: Function): void => {
+        run: ($: CheerioStatic, file: Vinyl, done?: Function): any => {
+          // Append view and use tags to the SVG.
           let offsetY: number = 0;
           let maxWidth: number = 0;
 

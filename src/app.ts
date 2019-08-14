@@ -5,10 +5,10 @@ import path from "path";
 import process from "process";
 
 try {
-  // Fallback for Windows backs out of node_modules folder to root of project
+  // Fallback for Windows backs out of node_modules folder to root of project.
   process.env.PWD = process.env.PWD || path.resolve(process.cwd(), "../../");
 
-  // Change working directory
+  // Change working directory.
   process.chdir(process.env.PWD as string);
 } catch (err) {
   log.error(`chdir: ${err}`);
@@ -16,5 +16,6 @@ try {
 
 import TaskFactory from "./modules/task-factory";
 
+// Load all tasks.
 const factory: TaskFactory = new TaskFactory();
 factory.createAllTasks();

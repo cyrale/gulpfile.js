@@ -4,9 +4,22 @@ import merge from "lodash/merge";
 
 import Config, { IGenericSettings } from "../modules/config";
 
+/**
+ * Clean task to delete files and directories.
+ */
 export default class Clean {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "clean";
 
+  /**
+   * Get Clean instance.
+   *
+   * @return {Clean}
+   */
   public static getInstance(): Clean {
     if (!Clean._instance) {
       const conf: Config = Config.getInstance();
@@ -16,18 +29,35 @@ export default class Clean {
     return Clean._instance;
   }
 
+  /**
+   * Clean instance.
+   * @type {Clean}
+   * @private
+   */
   private static _instance: Clean;
 
-  private readonly _task: string;
+  /**
+   * Clean settings.
+   * @type {IGenericSettings}
+   * @private
+   * @readonly
+   */
   private readonly _settings: IGenericSettings;
 
-  private constructor(settings: {}) {
-    this._task = Clean.taskName;
+  /**
+   * Clean constructor.
+   * @param {IGenericSettings} settings
+   */
+  private constructor(settings: IGenericSettings) {
     this._settings = settings;
   }
 
+  /**
+   * Start clean. Delete files and directories.
+   * @return {string}
+   */
   public start(): string {
-    const taskName: string = `${this._task}:start`;
+    const taskName: string = `${Clean.taskName}:start`;
 
     gulpTask(
       taskName,

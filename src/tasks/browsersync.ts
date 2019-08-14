@@ -9,9 +9,22 @@ import through, { TransformCallback } from "through2";
 import Config, { IGenericSettings } from "../modules/config";
 import { TaskCallback } from "./task";
 
+/**
+ * Use Browsersync to reload browser on file modification.
+ */
 export default class Browsersync {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "browsersync";
 
+  /**
+   * Get Browsersync instance.
+   *
+   * @return {Browsersync}
+   */
   public static getInstance(): Browsersync {
     if (!Browsersync._instance) {
       const conf: Config = Config.getInstance();
@@ -21,52 +34,87 @@ export default class Browsersync {
     return Browsersync._instance;
   }
 
+  /**
+   * Browsersync instance.
+   * @type {Browsersync}
+   * @private
+   */
   private static _instance: Browsersync;
 
-  private readonly _task: string;
-  private readonly _settings: IGenericSettings;
+  /**
+   * Browsersync settings.
+   * @type {IGenericSettings}
+   * @private
+   * @readonly
+   */
+  private readonly _settings: IGenericSettings = {};
 
+  /**
+   * Real Browsersync instance.
+   * @type {browserSync.BrowserSyncInstance}
+   * @private
+   */
   private _browserSync: BrowserSyncInstance = BrowserSync.create();
+
+  /**
+   * Flag to know status of browsersync start.
+   * @type {boolean}
+   * @private
+   */
   private _started: boolean = false;
 
+  /**
+   * List of modified files to sync.
+   * @type {{}}
+   * @private
+   */
   private _syncedFiles: {
     [taskName: string]: {
       [filename: string]: any;
     };
   } = {};
 
-  public get task(): string {
-    return this._task;
-  }
+  /**
+   * Browsersync constructor.
+   *
+   * @param {IGenericSettings} settings
+   */
+  private constructor(settings: IGenericSettings) {
+    const defaultSetting: {} = {
+      open: false,
+      ui: false,
+    };
 
-  private constructor(settings: {}) {
-    this._task = Browsersync.taskName;
     this._settings = settings;
+    this._settings.settings = merge(defaultSetting, this._settings.settings || {});
   }
 
+  /**
+   * Start Browsersync.
+   *
+   * @return {string}
+   */
   public start(): string {
-    const taskName: string = `${this._task}:start`;
+    const taskName: string = `${Browsersync.taskName}:start`;
 
     gulpTask(taskName, (): void => {
       Config.chdir(this._settings.cwd);
 
-      this._browserSync.init(
-        Object.assign(
-          {
-            open: false,
-            ui: false,
-          },
-          this._settings.settings || {}
-        ),
-        (): void => {
-          this._started = true;
-        }
-      );
+      // Initialize Browsersync.
+      this._browserSync.init(this._settings.settings, (): void => {
+        this._started = true;
+      });
     });
 
     return taskName;
   }
 
+  /**
+   * Memorize (keep files in memory) files to trigger sync.
+   *
+   * @param {string} taskName
+   * @return {Transform}
+   */
   public memorize(taskName: string): Transform {
     const that = this;
 
@@ -90,6 +138,12 @@ export default class Browsersync {
     );
   }
 
+  /**
+   * Remember (re-add files into the steam) files to trigger sync with all new files.
+   *
+   * @param {string} taskName
+   * @return {Transform}
+   */
   public remember(taskName: string): Transform {
     const that = this;
 
@@ -110,12 +164,24 @@ export default class Browsersync {
     });
   }
 
+  /**
+   * Trigger sync.
+   *
+   * @param {string} taskName
+   * @param {browserSync.StreamOptions} settings
+   * @return {NodeJS.ReadWriteStream}
+   */
   public sync(taskName: string, settings?: StreamOptions): NodeJS.ReadWriteStream {
     return gulpIf(this._started, this._browserSync.stream(settings || {}));
   }
 
+  /**
+   * Watch files to trigger sync.
+   *
+   * @return {string | false}
+   */
   public watch(): string | false {
-    const taskName: string = `${this._task}:watch`;
+    const taskName: string = `${Browsersync.taskName}:watch`;
 
     if (this._settings.watch) {
       gulpTask(taskName, (done: TaskCallback): void => {

@@ -12,14 +12,29 @@ import Browsersync from "./browsersync";
 import Javascript from "./javascript";
 import { IBuildSettings } from "./task";
 
+/**
+ * Package Javascript using Browserify.
+ */
 export default class Browserify extends Javascript {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "browserify";
 
+  /**
+   * Browserify constructor.
+   *
+   * @param {string} name
+   * @param {object} settings
+   */
   constructor(name: string, settings: object) {
     super(name, settings);
 
     this._gulpRead = false;
 
+    // Merge settings with default.
     const defaultSettings: {} = {
       debug: false,
       entries: this._settings.src,
@@ -33,6 +48,14 @@ export default class Browserify extends Javascript {
         : {};
   }
 
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @param {IBuildSettings} buildSettings
+   * @return {NodeJS.ReadWriteStream}
+   * @private
+   */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const browserSync = Browsersync.getInstance();
     const taskName = this._taskName("build");

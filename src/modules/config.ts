@@ -17,6 +17,11 @@ export interface IGenericSettings {
  * Get configuration of the application from command line and settings file.
  */
 export default class Config {
+  /**
+   * Get name of the current run.
+   *
+   * @return {string}
+   */
   get currentRun(): string {
     if (this.options._.length === 0) {
       return "default";
@@ -27,21 +32,28 @@ export default class Config {
 
   /**
    * Get options.
+   *
+   * @return {IGenericSettings}
    */
   get options(): IGenericSettings {
     return this._options;
   }
 
   /**
-   * Get _settings.
+   * Get settings.
    */
   get settings(): IGenericSettings {
     return this._settings;
   }
 
-  public static chdir(dir: string): void {
+  /**
+   * Change the current working directory.
+   *
+   * @param directory
+   */
+  public static chdir(directory: string): void {
     try {
-      process.chdir(dir);
+      process.chdir(directory);
     } catch (err) {
       log.error(`chdir: ${err}`);
     }
@@ -49,6 +61,8 @@ export default class Config {
 
   /**
    * Get Config instance.
+   *
+   * @return Unique instance of Config.
    */
   public static getInstance(): Config {
     if (!Config._instance) {
@@ -64,20 +78,37 @@ export default class Config {
     return Config._instance;
   }
 
+  /**
+   * Config instance.
+   * @type {Config}
+   * @private
+   */
   private static _instance: Config;
 
-  private _options: IGenericSettings;
+  /**
+   * Global options passed in command line.
+   * @type {IGenericSettings}
+   * @private
+   */
+  private _options: IGenericSettings = {};
 
-  private _settings: IGenericSettings;
+  /**
+   * All settings in YAML file that define tasks.
+   * @type {IGenericSettings}
+   * @private
+   */
+  private _settings: IGenericSettings = {};
 
   /**
    * Config constructor.
    */
-  private constructor() {
-    this._options = {};
-    this._settings = {};
-  }
+  private constructor() {}
 
+  /**
+   * Check if current run is a build run.
+   *
+   * @return {boolean}
+   */
   public isBuildRun(): boolean {
     const search: string = "build";
 
@@ -88,8 +119,14 @@ export default class Config {
     );
   }
 
-  public isCurrentRun(task: string): boolean {
-    return this.currentRun === task;
+  /**
+   * Check if a task is the current run.
+   *
+   * @param {string} taskName
+   * @return {boolean}
+   */
+  public isCurrentRun(taskName: string): boolean {
+    return this.currentRun === taskName;
   }
 
   /**
@@ -133,7 +170,7 @@ export default class Config {
 
     delete this._settings.cwd;
 
-    // Merge global and local _settings in each tasks.
+    // Merge global and local settings in each tasks.
     if (this._settings[Browsersync.taskName]) {
       this._settings[Browsersync.taskName].cwd = this._options.cwd;
     }

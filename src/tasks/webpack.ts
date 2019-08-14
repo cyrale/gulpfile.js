@@ -11,9 +11,22 @@ import webpackStream from "webpack-stream";
 import Browsersync from "./browsersync";
 import Javascript from "./javascript";
 
+/**
+ * Package Javascript using Webpack.
+ */
 export default class Webpack extends Javascript {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "webpack";
 
+  /**
+   * Task constructor.
+   * @param {string} name
+   * @param {object} settings
+   */
   constructor(name: string, settings: object) {
     super(name, settings);
 
@@ -40,6 +53,13 @@ export default class Webpack extends Javascript {
           });
   }
 
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     const browserSync = Browsersync.getInstance();
     const taskName = this._taskName("build");
@@ -57,6 +77,12 @@ export default class Webpack extends Javascript {
       .pipe(rename({ suffix: ".min" }));
   }
 
+  /**
+   * Display errors from Webpack.
+   *
+   * @param error
+   * @protected
+   */
   protected _displayError(error: any): void {
     const cliEngine: CLIEngine = new CLIEngine({});
     const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");

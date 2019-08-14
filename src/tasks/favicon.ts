@@ -5,12 +5,27 @@ import path from "path";
 
 import Task, { IBuildSettings, TaskCallback } from "./task";
 
+/**
+ * Get all needs for the favicon (different sizes, manifest... Based on https://realfavicongenerator.net).
+ */
 export default class Favicon extends Task {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "favicon";
 
+  /**
+   * Task constructor.
+   *
+   * @param {string} name
+   * @param {object} settings
+   */
   constructor(name: string, settings: object) {
     super(name, settings);
 
+    // No need of linter.
     this._withLinter = false;
 
     const defaultSettings: {} = {
@@ -71,6 +86,9 @@ export default class Favicon extends Task {
       },
     };
 
+    // 2 methods to define settings:
+    // - simple: choose basic settings, there will be merged in all settings.
+    // - complete: choose all settings used by https://realfavicongenerator.net
     if (
       this._settings.settings.name ||
       this._settings.settings.backgroundColor ||
@@ -108,10 +126,19 @@ export default class Favicon extends Task {
     this._settings.settings.markupFile = path.join(this._settings.dst, "favicon-data.json");
   }
 
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @param {IBuildSettings} buildSettings
+   * @param {TaskCallback} done
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _buildSpecific(
     stream: NodeJS.ReadWriteStream,
-    buildSettings?: IBuildSettings,
-    done?: TaskCallback
+    buildSettings: IBuildSettings,
+    done: TaskCallback
   ): NodeJS.ReadWriteStream {
     favicon.generateFavicon(this._settings.settings, () => {
       const markupFile = path.resolve(this._settings.cwd, this._settings.settings.markupFile);
@@ -130,9 +157,7 @@ export default class Favicon extends Task {
         });
       });
 
-      if (done) {
-        done();
-      }
+      done();
     });
 
     return stream;

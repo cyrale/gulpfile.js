@@ -9,12 +9,27 @@ import path from "path";
 
 import Task from "./task";
 
+/**
+ * Minify images.
+ */
 export default class Images extends Task {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "images";
 
+  /**
+   * Task constructor.
+   *
+   * @param {string} name
+   * @param {object} settings
+   */
   constructor(name: string, settings: object) {
     super(name, settings);
 
+    // No need of linter.
     this._withLinter = false;
 
     const defaultSettings: {} = {
@@ -36,6 +51,13 @@ export default class Images extends Task {
     this._settings.settings = merge(defaultSettings, this._settings.settings || {});
   }
 
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     return stream
       .pipe(newer(path.resolve(this._settings.cwd, this._settings.dst)))
@@ -52,7 +74,14 @@ export default class Images extends Task {
       );
   }
 
+  /**
+   * Bind events to file watcher.
+   *
+   * @param {fs.FSWatcher} watcher
+   * @protected
+   */
   protected _bindEventsToWatcher(watcher: fs.FSWatcher): void {
+    // Watch if files were deleted to delete in destination directory.
     watcher.on("unlink", (filename: string): void => {
       const srcFilename: string = path.resolve(this._settings.cwd, filename);
       const srcParts: string[] = srcFilename.split("/");

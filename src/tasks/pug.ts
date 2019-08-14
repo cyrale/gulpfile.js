@@ -7,12 +7,27 @@ import pugLintStylish from "puglint-stylish";
 
 import Task from "./task";
 
+/**
+ * Build PUG files into HTML.
+ */
 export default class Pug extends Task {
+  /**
+   * Global task name.
+   * @type {string}
+   * @readonly
+   */
   public static readonly taskName: string = "pug";
 
+  /**
+   * Task constructor.
+   *
+   * @param {string} name
+   * @param {object} settings
+   */
   constructor(name: string, settings: object) {
     super(name, settings);
 
+    // Add data files to files to watch.
     if (typeof this._settings.settings.data === "string") {
       this._watchingFiles = [this._settings.settings.data];
     } else if (typeof this._settings.settings.data === "object") {
@@ -20,9 +35,17 @@ export default class Pug extends Task {
     }
   }
 
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     let data: any[] = [];
 
+    // Load data from YAML files.
     if (typeof this._settings.settings.data === "string") {
       data = yaml.safeLoad(fs.readFileSync(this._settings.settings.data, "utf8"));
     } else if (typeof this._settings.settings.data === "object") {
@@ -34,6 +57,13 @@ export default class Pug extends Task {
     return stream.pipe(gulpData(data)).pipe(pug());
   }
 
+  /**
+   * Method to add specific steps for the lint.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
   protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     stream.pipe(
       pugLinter({
@@ -49,6 +79,12 @@ export default class Pug extends Task {
     return stream;
   }
 
+  /**
+   * Display error from Pug.
+   *
+   * @param error
+   * @protected
+   */
   protected _displayError(error: any): void {
     pugLintStylish([error]);
   }
