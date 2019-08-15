@@ -18,6 +18,7 @@ deploy:
     repo: cyrale/gulpfile.js
     branch: master
     tags: true
+  skip_cleanup: true
 
 notifications:
   email:
