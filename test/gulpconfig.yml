@@ -158,5 +158,5 @@ svgstore:
         - "src/svg/*.svg"
       dst: "dist/images"
       filename: "icons.svg"
-  settings:
-    prefix: "icon"
+      settings:
+        prefix: "icon"
