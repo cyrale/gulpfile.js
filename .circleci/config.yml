@@ -51,11 +51,14 @@ jobs:
 
 workflows:
   version: 2
-  test-deploy:
+  build-deploy:
     jobs:
-      - deploy:
+      - lint
+      - build:
           requires:
             - lint
+      - deploy:
+          requires:
             - build
           filters:
             tags:
