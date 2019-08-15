@@ -50,7 +50,7 @@ Install **gulpfile.js**:
 ```bash
 npm init
 npm install gulpfile.js --save-dev --save-exact
-npx gulpfile
+npx gulpfile.js
 ```
 
 Create configuration files:
@@ -63,13 +63,13 @@ touch .eslintrc
 Start **gulpfile.js**:
 
 ```bash
-npx gulpfile
+npx gulpfile.js
 ```
 
 ## Commands
 
 ```bash
-npx gulpfile
+npx gulpfile.js
 ```
 
 This is where the magic happens. The perfect front-end workflow. This runs the
@@ -79,7 +79,7 @@ whatever you've configured it to do. You'll be able to see live changes in all
 connected browsers.
 
 ```bash
-npx gulpfile build
+npx gulpfile.js build
 ```
 
 Compiles files to your destination directory.
@@ -91,8 +91,8 @@ package.json:
 ```json
 {
   "scripts": {
-    "start": "npx gulpfile",
-    "build": "npx gulpfile build"
+    "start": "npx gulpfile.js",
+    "build": "npx gulpfile.js build"
   }
 }
 ```
