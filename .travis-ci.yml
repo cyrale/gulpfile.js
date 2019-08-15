@@ -1,0 +1,27 @@
+language: node_js
+
+node_js:
+  - "10"
+
+install:
+  - npm install
+
+script:
+  - npm run lint
+  - npm run build
+
+deploy:
+  provider: npm
+  email: "cyril@jacquesson.me"
+  api_key: "$NPM_AUTH_TOKEN"
+  on:
+    repo: cyrale/gulpfile.js
+    branch: master
+    tags: true
+
+notifications:
+  email:
+    recipients:
+      - cyril@jacquesson.me
+    on_success: change
+    on_failure: always
