@@ -35,7 +35,7 @@ task with Babel.
 
 Here's how all the tasks run:
 
-![Execution graph](./assets/graph.svg | width=280)
+![Execution graph](./assets/graph.svg)
 
 With this organisation, you can chain some process. For example, you can bundle
 your scripts with Browserify or Webpack and pass it to default Javascript task.
