@@ -129,7 +129,7 @@
     "@types/merge-stream": "^1.1.2",
     "@types/minimatch": "^3.0.3",
     "@types/minimist": "^1.2.0",
-    "@types/node": "^10.14.12",
+    "@types/node": "^12.7.2",
     "@types/source-map": "^0.5.7",
     "@types/svgo": "^1.2.1",
     "@types/through2": "^2.0.34",
