@@ -1,3 +1,4 @@
+[![CircleCI](https://circleci.com/gh/cyrale/gulpfile.js.svg?style=svg)](https://circleci.com/gh/cyrale/gulpfile.js)
 [![npm version](https://badge.fury.io/js/gulpfile.js.svg)](https://badge.fury.io/js/gulpfile.js)
 [![Dependency Status](https://david-dm.org/cyrale/gulpfile.js.svg?theme=shields.io)](https://david-dm.org/cyrale/gulpfile.js)
 [![devDependency Status](https://david-dm.org/cyrale/gulpfile.js/dev-status.svg?theme=shields.io)](https://david-dm.org/cyrale/gulpfile.js#info=devDependencies)
