@@ -35,7 +35,7 @@ task with Babel.
 
 Here's how all the tasks run:
 
-![Execution graph](./assets/graph.svg)
+<img src="https://github.com/cyrale/gulpfile.js/raw/3.0.x/assets/graph.svg?sanitize=true" alt="Execution graph" width="500px" />
 
 With this organisation, you can chain some process. For example, you can bundle
 your scripts with Browserify or Webpack and pass it to default Javascript task.
