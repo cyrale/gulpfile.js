@@ -16,7 +16,6 @@
     "gulpfile.js": "bin/gulpfile.js.js"
   },
   "scripts": {
-    "prepare": "npm run build",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "npx gulp --gulpfile dist/app.js --configfile test/gulpconfig.yml",
@@ -75,8 +74,12 @@
     "minimatch": "^3.0.4",
     "minimist": "^1.2.0",
     "plugin-error": "^1.0.1",
+    "postcss": "^7.0.17",
     "postcss-assets": "^5.0.0",
+    "postcss-discard-comments": "^4.0.2",
+    "postcss-discard-empty": "^4.0.1",
     "postcss-inline-svg": "^4.1.0",
+    "postcss-scss": "^2.0.0",
     "postcss-svgo": "^4.0.2",
     "puglint-stylish": "^1.0.1",
     "purgecss-with-wordpress": "^1.0.0",

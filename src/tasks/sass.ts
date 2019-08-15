@@ -5,15 +5,20 @@ import CSSNano from "cssnano";
 import log from "fancy-log";
 import criticalCSS from "gulp-critical-css";
 import extractMediaQueries from "gulp-extract-media-queries";
-import postCSS from "gulp-postcss";
+import gulpIf from "gulp-if";
+import gulpPostCSS from "gulp-postcss";
 import rename from "gulp-rename";
 import sass from "gulp-sass";
 import gulpSassLint from "gulp-sass-lint";
 import merge from "lodash/merge";
 import mergeStream from "merge-stream";
 import path from "path";
+import postcss from "postcss";
 import assets from "postcss-assets";
+import discardComments from "postcss-discard-comments";
+import discardEmpty from "postcss-discard-empty";
 import inlineSVG from "postcss-inline-svg";
+import scssParser from "postcss-scss";
 import svgo from "postcss-svgo";
 import purgeCSSWithWordPress from "purgecss-with-wordpress";
 import rucksackCSS from "rucksack-css";
@@ -22,6 +27,10 @@ import sortCSSMediaQueries from "sort-css-media-queries";
 import { Transform } from "stream";
 import through, { TransformCallback } from "through2";
 
+import hierarchicalCriticalCSS from "../modules/postcss-hierarchical-critical-css";
+import normalizeRevision from "../modules/postcss-normalize-revision";
+import removeCriticalProperties from "../modules/postcss-remove-critical-properties";
+import removeCriticalRules from "../modules/postcss-remove-critical-rules";
 import Revision from "../modules/revision";
 import Browsersync from "./browsersync";
 import Task from "./task";
@@ -50,19 +59,6 @@ export default class Sass extends Task {
    * @readonly
    */
   public static readonly taskName: string = "sass";
-
-  /**
-   * Remove critical rules (PostCSS plugin).
-   *
-   * @param {any} css
-   * @private
-   */
-  private static _removeCriticalRules(css: any): void {
-    // Remove critical properties.
-    css.walkDecls("critical", (decl: any): void => {
-      decl.parent.remove();
-    });
-  }
 
   /**
    * Flag to define if critical rule is active.
@@ -186,15 +182,11 @@ export default class Sass extends Task {
     const taskName = this._taskName("build");
     const streams: NodeJS.ReadWriteStream[] = [];
 
-    // Collect PostCSS plugins to run before first save.
-    const postCSSPluginsBefore: any[] = [
+    // Collect PostCSS plugins to run on global CSS file, before media queries or critical extraction.
+    const postCSSPluginsBefore: postcss.AcceptedPlugin[] = [
+      discardComments(),
       assets(this._settings.settings.assets),
-      (css: any): void => {
-        // Normalize revision parameter.
-        css.walkDecls((decl: any): void => {
-          decl.value = decl.value.replace(/(url\('[^\?]+\?)([0-9a-f]+)('\))/, "$1rev=$2$3");
-        });
-      },
+      normalizeRevision(),
       rucksackCSS(this._settings.settings.rucksack),
       autoprefixer(this._settings.settings.autoprefixer),
       inlineSVG(this._settings.settings.inlineSVG),
@@ -205,14 +197,20 @@ export default class Sass extends Task {
       postCSSPluginsBefore.push(purgeCSS(this._settings.settings.purgeCSS));
     }
 
+    // Collect PostCSS plugins to run before first save.
+    const postCSSPluginsIntermediate: postcss.AcceptedPlugin[] = [removeCriticalProperties(), discardEmpty()];
+
     // Collect PostCSS pluging to run after first save, for minification process.
-    const postCSSPluginsAfter: any[] = [
+    const postCSSPluginsAfter: postcss.AcceptedPlugin[][] = [
       CSSNano(this._settings.settings.cssnano),
       CSSMQPacker(this._settings.settings.mqpacker),
     ];
 
     // Start SASS process.
-    stream = stream.pipe(sass(this._settings.sass || {})).pipe(postCSS(postCSSPluginsBefore));
+    stream = stream
+      .pipe(gulpIf(this._criticalActive, gulpPostCSS([hierarchicalCriticalCSS()], { parser: scssParser })))
+      .pipe(sass(this._settings.sass || {}))
+      .pipe(gulpPostCSS(postCSSPluginsBefore));
 
     // Extract media queries to saves it to separated files.
     if (this._settings.settings.extractMQ) {
@@ -241,7 +239,7 @@ export default class Sass extends Task {
 
       // Remove critical rules from original file.
       if (this._criticalActive) {
-        streamExtractMQ = streamExtractMQ.pipe(postCSS([Sass._removeCriticalRules]));
+        streamExtractMQ = streamExtractMQ.pipe(gulpPostCSS([removeCriticalRules()]));
       }
 
       streams.push(streamExtractMQ);
@@ -253,7 +251,7 @@ export default class Sass extends Task {
 
       // Remove critical rules from original file.
       if (!this._settings.settings.extractMQ) {
-        stream = stream.pipe(postCSS([Sass._removeCriticalRules]));
+        stream = stream.pipe(gulpPostCSS([removeCriticalRules()]));
         streams.push(stream);
       }
 
@@ -265,8 +263,9 @@ export default class Sass extends Task {
     }
 
     return mergeStream(streams)
+      .pipe(gulpPostCSS(postCSSPluginsIntermediate))
       .pipe(browserSync.memorize(taskName))
-      .pipe(postCSS(postCSSPluginsAfter))
+      .pipe(gulpPostCSS(postCSSPluginsAfter))
       .pipe(rename({ suffix: ".min" }));
   }
 

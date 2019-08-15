@@ -69,7 +69,7 @@ sass:
     inlineSVG:
       path: "assets/"
     critical: true
-    extractMQ: false
+    extractMQ: true
     purgeCSS: false
 # ------------------------------------------
 # JavaScript (concatenation)

@@ -18,6 +18,10 @@ html {
 
   a {
     color: $black;
+
+    strong {
+      color: $white;
+    }
   }
 }
 
@@ -26,12 +30,17 @@ html {
 }
 
 body {
-  //critical: this;
+  critical: this;
   background: $white;
 
   @media screen and (min-width: 768px) {
-    //critical: this;
     background: $white;
+  }
+
+  @for $i from 1 through 4 {
+    .test-#{$i} {
+      width: 60px + $i
+    }
   }
 }
 
