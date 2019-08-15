@@ -84,5 +84,7 @@ workflows:
             - lint
             - build
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^v.*/
