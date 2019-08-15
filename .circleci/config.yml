@@ -15,6 +15,7 @@ jobs:
           paths: .
   install:
     <<: *defaults
+    steps:
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "package.json" }}
