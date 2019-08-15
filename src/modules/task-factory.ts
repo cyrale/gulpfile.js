@@ -158,9 +158,8 @@ export default class TaskFactory {
   private _tasksGroupAndOrder: string[][] = [
     [Clean.taskName],
     [Favicon.taskName, Fonts.taskName, Sprites.taskName, SVGStore.taskName],
-    [Images.taskName],
-    [Browserify.taskName, Webpack.taskName],
-    [Sass.taskName, Javascript.taskName, Pug.taskName],
+    [Browserify.taskName, Images.taskName, Webpack.taskName],
+    [Javascript.taskName, Pug.taskName, Sass.taskName],
     [Browsersync.taskName],
   ];
 
