@@ -115,6 +115,19 @@ template. Each section define 2 entries:
 For each tasks, you can override settings globally or for the task only. All
 options is detailed below.
 
+### Clean
+
+Delete directories or files.
+
+**Template:**
+
+```yaml
+clean:
+  files:
+    - "dist/"
+    - "src/sass/helpers/*.scss"
+```
+
 ### Browsersync
 
 Override default settings and watch files not watched by other tasks.
