@@ -15,8 +15,8 @@ jobs:
             - v1-dependencies-{{ checksum "package.json" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
-      - run: npm install
-          name: Install Dependencies
+      - run:
+          name: Install dependencies
           command: yarn install
       - save_cache:
           paths:
@@ -31,7 +31,7 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run:
-          name: Lint apllication
+          name: Lint code
           command: npm run lint
       - persist_to_workspace:
           root: ~/repo
@@ -42,7 +42,7 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run:
-          name: Build apllication
+          name: Build code
           command: npm run build
       - persist_to_workspace:
           root: ~/repo
