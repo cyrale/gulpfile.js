@@ -73,12 +73,12 @@ workflows:
 
   release:
     jobs:
-      - checkout
-        filters:
-          tags:
-            only: /^v.*/
-          branches:
-            ignore: /.*/
+      - checkout:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
       - lint:
           requires:
             - checkout
