@@ -122,7 +122,6 @@ export default class Revision {
     return through.obj(
       (file: any, encoding: string, cb: TransformCallback): void => {
         // Collect files and calculate hash from the stream.
-        const { type, name } = TaskFactory.explodeTaskName(options.taskName);
 
         // Exclude null, stream and MAP files, only Buffer works.
         if (file.isNull() || file.isStream() || path.extname(file.path) === ".map") {
@@ -149,18 +148,7 @@ export default class Revision {
         revRelFile = path.join(options.dst, revRelFile);
 
         // Insert file and calculated hashes into the manifest.
-        Revision._manifest = merge(Revision._manifest, {
-          [type]: {
-            [name]: {
-              [origRelFile]: {
-                md5: Revision._hash(file.contents, Hash.MD5),
-                revRelFile,
-                sha1: Revision._hash(file.contents, Hash.SHA1),
-                sha256: Revision._hash(file.contents, Hash.SHA256),
-              },
-            },
-          },
-        });
+        Revision._pushHash(origRelFile, revRelFile, file.contents, options);
 
         cb();
       },
@@ -210,6 +198,36 @@ export default class Revision {
   }
 
   /**
+   * Push arbitrary file in manifest.
+   *
+   * @param {string} fileName
+   * @param {IRevisionOptions} options
+   */
+  public static pushAndWrite(fileName: string, options: IRevisionOptions): void {
+    if (!Revision.isActive() || !path.isAbsolute(fileName)) {
+      return;
+    }
+
+    const origRelFile = path.basename(fileName);
+    const revRelFile = path.join(options.dst, origRelFile);
+
+    fs.readFile(fileName, (error: NodeJS.ErrnoException | null, data: Buffer): void => {
+      if (error) {
+        throw error;
+      }
+
+      Revision._pushHash(origRelFile, revRelFile, data, options);
+
+      // tslint:disable-next-line:no-empty
+      fs.writeFile(
+        path.resolve(options.cwd, options.manifest as string),
+        JSON.stringify(Revision._manifest, null, "  "),
+        (): void => {}
+      );
+    });
+  }
+
+  /**
    * Collection of hashes.
    * @type {IRevisionManifest}
    * @private
@@ -245,6 +263,39 @@ export default class Revision {
    */
   private static _hashFile(fileName: string, hash: Hash): string {
     return Revision._hash(fs.readFileSync(fileName), hash);
+  }
+
+  /**
+   * Push a new file in manifest and calculate the hash of this file.
+   *
+   * @param {string} origRelFile
+   * @param {string} revRelFile
+   * @param {string | Buffer} contents
+   * @param {IRevisionOptions} options
+   * @private
+   */
+  private static _pushHash(
+    origRelFile: string,
+    revRelFile: string,
+    contents: string | Buffer,
+    options: IRevisionOptions
+  ): void {
+    const { type, name } = TaskFactory.explodeTaskName(options.taskName);
+
+    Revision._manifest = Revision._sortObjectByKeys(
+      merge(Revision._manifest, {
+        [type]: {
+          [name]: {
+            [origRelFile]: {
+              md5: Revision._hash(contents, Hash.MD5),
+              revRelFile,
+              sha1: Revision._hash(contents, Hash.SHA1),
+              sha256: Revision._hash(contents, Hash.SHA256),
+            },
+          },
+        },
+      })
+    );
   }
 
   /**

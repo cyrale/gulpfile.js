@@ -154,8 +154,8 @@ export default class Favicon extends Task {
         try {
           const decodedData = JSON.parse(data.toString());
 
-          // Get generated files and manage revision.
           if (Revision.isActive()) {
+            // Get generated files and manage revision.
             const dir = decodedData.files_location.path;
             decodedData.favicon.files_urls.forEach((iconURL: string): void => {
               const base = path.basename(iconURL);
@@ -170,10 +170,13 @@ export default class Favicon extends Task {
             fs.writeFile(
               markupFile,
               JSON.stringify(decodedData, null, "  "),
-              (errorWrite: NodeJS.ErrnoException | null) => {
+              (errorWrite: NodeJS.ErrnoException | null): void => {
                 if (errorWrite) {
                   throw errorWrite;
                 }
+
+                // Update Revision file.
+                Revision.pushAndWrite(markupFile, buildSettings.revision);
               }
             );
           }
