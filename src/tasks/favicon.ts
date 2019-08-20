@@ -3,6 +3,7 @@ import favicon from "gulp-real-favicon";
 import merge from "lodash/merge";
 import path from "path";
 
+import Revision from "../modules/revision";
 import Task, { IBuildSettings, TaskCallback } from "./task";
 
 /**
@@ -27,6 +28,8 @@ export default class Favicon extends Task {
 
     // No need of linter.
     this._withLinter = false;
+    this._defaultDest = false;
+    this._defaultRevision = false;
 
     const defaultSettings: {} = {
       design: {
@@ -143,18 +146,47 @@ export default class Favicon extends Task {
     favicon.generateFavicon(this._settings.settings, () => {
       const markupFile = path.resolve(this._settings.cwd, this._settings.settings.markupFile);
 
-      fs.readFile(markupFile, (err: NodeJS.ErrnoException | null, data: Buffer): void => {
-        if (err) {
-          throw err;
+      fs.readFile(markupFile, (errorRead: NodeJS.ErrnoException | null, data: Buffer): void => {
+        if (errorRead) {
+          throw errorRead;
         }
 
-        const decodedData = JSON.parse(data.toString());
+        try {
+          const decodedData = JSON.parse(data.toString());
 
-        favicon.checkForUpdates(decodedData.version, (error: any): void => {
-          if (error) {
-            throw error;
+          // Get generated files and manage revision.
+          if (Revision.isActive()) {
+            const dir = decodedData.files_location.path;
+            decodedData.favicon.files_urls.forEach((iconURL: string): void => {
+              const base = path.basename(iconURL);
+              const url = path.join(dir, base);
+
+              const fileName = path.resolve(this._settings.dst, base);
+              const rev = Revision.getHashRevision(buildSettings.taskName, fileName);
+
+              decodedData.favicon.html_code = decodedData.favicon.html_code.replace(url, `${url}?rev=${rev}`);
+            });
+
+            fs.writeFile(
+              markupFile,
+              JSON.stringify(decodedData, null, "  "),
+              (errorWrite: NodeJS.ErrnoException | null) => {
+                if (errorWrite) {
+                  throw errorWrite;
+                }
+              }
+            );
           }
-        });
+
+          // Check for new version of favicon.
+          favicon.checkForUpdates(decodedData.version, (errorUpdate: any): void => {
+            if (errorUpdate) {
+              throw errorUpdate;
+            }
+          });
+        } catch (e) {
+          throw e;
+        }
       });
 
       done();

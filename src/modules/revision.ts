@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import fs from "fs";
 import merge from "lodash/merge";
 import path from "path";
 import PluginError from "plugin-error";
@@ -61,6 +62,10 @@ export default class Revision {
     // If revision is deactivated, return false.
     if (!Revision.isActive()) {
       return false;
+    }
+
+    if (path.isAbsolute(fileName)) {
+      return Revision._hashFile(fileName, hash);
     }
 
     // Try to search and return hash.
@@ -212,14 +217,14 @@ export default class Revision {
   private static _manifest: IRevisionManifest = {};
 
   /**
-   * Calculate hash from a string or a Buffer.
+   * Calculate the hash from a string or a Buffer.
    *
    * @param {string | Buffer} contents
    * @param {Hash} hash
-   * @return {PromiseLike<ArrayBuffer>}
+   * @return {string}
    * @private
    */
-  private static _hash(contents: string | Buffer, hash: Hash) {
+  private static _hash(contents: string | Buffer, hash: Hash): string {
     if (typeof contents !== "string" && !Buffer.isBuffer(contents)) {
       throw new PluginError("revision", "Expected a Buffer or string");
     }
@@ -228,6 +233,18 @@ export default class Revision {
       .createHash(hash)
       .update(contents)
       .digest("hex");
+  }
+
+  /**
+   * Calculate the hash from a file with its name.
+   *
+   * @param {string} fileName
+   * @param {Hash} hash
+   * @return {string}
+   * @private
+   */
+  private static _hashFile(fileName: string, hash: Hash): string {
+    return Revision._hash(fs.readFileSync(fileName), hash);
   }
 
   /**
