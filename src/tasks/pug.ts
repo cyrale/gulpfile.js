@@ -3,6 +3,7 @@ import gulpData from "gulp-data";
 import pug from "gulp-pug";
 import pugLinter from "gulp-pug-linter";
 import * as yaml from "js-yaml";
+import merge from "lodash/merge";
 import pugLintStylish from "puglint-stylish";
 
 import Task from "./task";
@@ -50,7 +51,7 @@ export default class Pug extends Task {
       data = yaml.safeLoad(fs.readFileSync(this._settings.settings.data, "utf8"));
     } else if (typeof this._settings.settings.data === "object") {
       (this._settings.settings.data as string[]).forEach((filename: string): void => {
-        data = Object.assign({}, data, yaml.safeLoad(fs.readFileSync(filename, "utf8")));
+        data = merge(data, yaml.safeLoad(fs.readFileSync(filename, "utf8")));
       });
     }
 
