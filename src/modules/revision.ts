@@ -218,10 +218,10 @@ export default class Revision {
 
       Revision._pushHash(origRelFile, revRelFile, data, options);
 
-      // tslint:disable-next-line:no-empty
       fs.writeFile(
         path.resolve(options.cwd, options.manifest as string),
         JSON.stringify(Revision._manifest, null, "  "),
+        // tslint:disable-next-line:no-empty
         (): void => {}
       );
     });
