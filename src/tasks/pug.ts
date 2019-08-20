@@ -66,7 +66,7 @@ export default class Pug extends Task {
    * @protected
    */
   protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
-    stream.pipe(
+    return stream.pipe(
       pugLinter({
         reporter: (errors: any[]): void => {
           if (errors.length > 0) {
@@ -76,8 +76,6 @@ export default class Pug extends Task {
         },
       })
     );
-
-    return stream;
   }
 
   /**
