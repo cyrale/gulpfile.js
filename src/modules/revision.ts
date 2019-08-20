@@ -39,6 +39,7 @@ interface IRevisionDefaultOption {
 
 export interface IRevisionOptions extends IRevisionDefaultOption {
   cwd: string;
+  dst: string;
   taskName: string;
 }
 
@@ -140,6 +141,7 @@ export default class Revision {
         }
 
         const origRelFile = path.join(path.dirname(revRelFile), path.basename(file.path)).replace(/\\/g, "/");
+        revRelFile = path.join(options.dst, revRelFile);
 
         // Insert file and calculated hashes into the manifest.
         Revision._manifest = merge(Revision._manifest, {

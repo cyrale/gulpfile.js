@@ -172,6 +172,7 @@ export default abstract class Task {
           },
           revision: {
             cwd: config.options.cwd,
+            dst: this._settings.dst,
             manifest: typeof config.settings.revision === "string" ? config.settings.revision : "rev-manifest.json",
             taskName,
           },
