@@ -28,7 +28,7 @@ export default class Browsersync {
   public static getInstance(): Browsersync {
     if (!Browsersync._instance) {
       const conf: Config = Config.getInstance();
-      Browsersync._instance = new Browsersync(conf.settings.browsersync);
+      Browsersync._instance = new Browsersync(conf.settings.browsersync || {});
     }
 
     return Browsersync._instance;
