@@ -209,7 +209,7 @@ export default class Sass extends Task {
     // Start SASS process.
     stream = stream
       .pipe(gulpIf(this._criticalActive, gulpPostCSS([hierarchicalCriticalCSS()], { parser: scssParser })))
-      .pipe(sass(this._settings.sass || {}))
+      .pipe(sass(this._settings.settings.sass || {}))
       .pipe(gulpPostCSS(postCSSPluginsBefore));
 
     // Extract media queries to saves it to separated files.
