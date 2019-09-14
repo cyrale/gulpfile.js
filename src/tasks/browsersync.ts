@@ -185,11 +185,12 @@ export default class Browsersync {
 
     if (this._settings.watch) {
       gulpTask(taskName, (done: TaskCallback): void => {
-        watch(this._settings.watch).on("change", (): void => {
+        watch(this._settings.watch, { cwd: this._settings.cwd }).on("change", (): void => {
           if (this._started) {
-            this._browserSync.stream();
+            this._browserSync.reload();
           }
         });
+
         done();
       });
 
