@@ -11,6 +11,7 @@ import rename from "gulp-rename";
 import sass from "gulp-sass";
 import gulpSassLint from "gulp-sass-lint";
 import merge from "lodash/merge";
+import uniq from "lodash/uniq";
 import mergeStream from "merge-stream";
 import path from "path";
 import postcss from "postcss";
@@ -27,11 +28,12 @@ import sortCSSMediaQueries from "sort-css-media-queries";
 import { Transform } from "stream";
 import through, { TransformCallback } from "through2";
 
+import MediaQueries from "../modules/media-queries";
 import hierarchicalCriticalCSS from "../modules/postcss-hierarchical-critical-css";
 import normalizeRevision from "../modules/postcss-normalize-revision";
 import removeCriticalProperties from "../modules/postcss-remove-critical-properties";
 import removeCriticalRules from "../modules/postcss-remove-critical-rules";
-import Revision from "../modules/revision";
+import Revision, { IDefaultObject } from "../modules/revision";
 import Browsersync from "./browsersync";
 import Task, { IBuildSettings } from "./task";
 
@@ -170,6 +172,17 @@ export default class Sass extends Task {
     } else {
       this._settings.settings.purgeCSS = purgeCSSDefaultSettings;
     }
+
+    this._manifestCallback = (data, additionalInformation) => {
+      const media: string = MediaQueries.mediaQuery(
+        data.origRelFile.replace(this._minifySuffix, ""),
+        additionalInformation.media || []
+      );
+
+      return {
+        media: media === "" ? "all" : media,
+      };
+    };
   }
 
   /**
@@ -219,6 +232,7 @@ export default class Sass extends Task {
     if (this._settings.settings.extractMQ) {
       let mainFilename: string = "";
 
+      // TODO: print media queries as comment in file or in revision.
       let streamExtractMQ: NodeJS.ReadWriteStream = stream
         .pipe(
           rename(
@@ -229,16 +243,23 @@ export default class Sass extends Task {
             }
           )
         )
+        .pipe(
+          Revision.additionalData((file: any, additionalData: IDefaultObject): void => {
+            additionalData.media = uniq([...(additionalData.media || []), ...MediaQueries.extractMediaQueries(file)]);
+          })
+        )
         .pipe(extractMediaQueries())
-        .pipe(rename(
-          (pPath: rename.ParsedPath): rename.ParsedPath => {
-            if (pPath.basename !== mainFilename) {
-              pPath.basename = `${mainFilename}.${pPath.basename}`;
-            }
+        .pipe(
+          rename(
+            (pPath: rename.ParsedPath): rename.ParsedPath => {
+              if (pPath.basename !== mainFilename) {
+                pPath.basename = `${mainFilename}.${pPath.basename}`;
+              }
 
-            return pPath;
-          }
-        ) as NodeJS.WritableStream);
+              return pPath;
+            }
+          )
+        );
 
       // Remove critical rules from original file.
       if (this._criticalActive) {

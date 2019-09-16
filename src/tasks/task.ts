@@ -7,7 +7,7 @@ import plumber from "gulp-plumber";
 import process from "process";
 
 import Config, { IGenericSettings } from "../modules/config";
-import Revision, { IRevisionOptions } from "../modules/revision";
+import Revision, { IRevisionOptions, SimpleRevisionCallback } from "../modules/revision";
 import Size from "../modules/size";
 import Browsersync from "./browsersync";
 
@@ -97,6 +97,8 @@ export default abstract class Task {
    * @protected
    */
   protected _defaultRevision: boolean = true;
+
+  protected _manifestCallback: SimpleRevisionCallback | undefined;
 
   /**
    * List of files to watch in addition to the working files.
@@ -232,7 +234,12 @@ export default abstract class Task {
             .pipe(plumber.stop())
             .pipe(browserSync.remember(taskName))
             .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)))
-            .pipe(gulpIf(this._defaultRevision && Revision.isActive(), Revision.manifest(buildSettings.revision)))
+            .pipe(
+              gulpIf(
+                this._defaultRevision && Revision.isActive(),
+                Revision.manifest(buildSettings.revision, this._manifestCallback)
+              )
+            )
             .pipe(gulpIf(this._defaultRevision && Revision.isActive(), dest(".", buildSettings.options)))
             .pipe(browserSync.sync(taskName, this._browserSyncSettings));
         }

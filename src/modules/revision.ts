@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import fs from "fs";
+import isEmpty from "lodash/isEmpty";
 import merge from "lodash/merge";
 import path from "path";
 import PluginError from "plugin-error";
@@ -17,8 +18,15 @@ enum Hash {
   SHA256 = "sha256",
 }
 
-interface IDefaultObject {
+export interface IDefaultObject {
   [name: string]: any;
+}
+
+interface IHashData {
+  contents: string | Buffer;
+  origRelFile: string;
+  revRelFile: string;
+  taskName: string;
 }
 
 interface IRevisionManifest {
@@ -39,10 +47,14 @@ interface IRevisionDefaultOption {
 }
 
 export interface IRevisionOptions extends IRevisionDefaultOption {
+  callback?: SimpleRevisionCallback;
   cwd: string;
   dst: string;
   taskName: string;
 }
+
+export type SimpleRevisionCallback = (data: IHashData, additionalInformation: IDefaultObject) => IDefaultObject;
+export type RevisionCallback = (file: any, additionalData: IDefaultObject) => void;
 
 /**
  * Collect hashes from build files.
@@ -107,7 +119,7 @@ export default class Revision {
    * @param {IRevisionOptions} options
    * @return {Transform}
    */
-  public static manifest(options: IRevisionOptions): Transform {
+  public static manifest(options: IRevisionOptions, callback?: SimpleRevisionCallback): Transform {
     const defaultOptions: IRevisionDefaultOption = {
       manifest: "rev-manifest.json",
     };
@@ -148,7 +160,15 @@ export default class Revision {
         revRelFile = path.join(options.dst, revRelFile);
 
         // Insert file and calculated hashes into the manifest.
-        Revision._pushHash(origRelFile, revRelFile, file.contents, options);
+        Revision._pushHash(
+          {
+            contents: file.contents,
+            origRelFile,
+            revRelFile,
+            taskName: options.taskName,
+          },
+          callback
+        );
 
         cb();
       },
@@ -198,6 +218,19 @@ export default class Revision {
   }
 
   /**
+   * Collect data relative to files in stream.
+   * @param {RevisionCallback} callback
+   * @return {Transform}
+   */
+  public static additionalData(callback: RevisionCallback): Transform {
+    return through.obj((file: any, encoding: string, cb: TransformCallback): void => {
+      callback(file, Revision._additionalData);
+
+      cb(null, file);
+    });
+  }
+
+  /**
    * Push arbitrary file in manifest.
    *
    * @param {string} fileName
@@ -216,7 +249,12 @@ export default class Revision {
         throw error;
       }
 
-      Revision._pushHash(origRelFile, revRelFile, data, options);
+      Revision._pushHash({
+        contents: data,
+        origRelFile,
+        revRelFile,
+        taskName: options.taskName,
+      });
 
       fs.writeFile(
         path.resolve(options.cwd, options.manifest as string),
@@ -226,6 +264,13 @@ export default class Revision {
       );
     });
   }
+
+  /**
+   * Collect data to add to manifest.
+   * @type {IDefaultObject}
+   * @private
+   */
+  private static _additionalData: IDefaultObject = {};
 
   /**
    * Collection of hashes.
@@ -267,35 +312,44 @@ export default class Revision {
 
   /**
    * Push a new file in manifest and calculate the hash of this file.
+   * Optionally, add data relative to this file via callback.
    *
-   * @param {string} origRelFile
-   * @param {string} revRelFile
-   * @param {string | Buffer} contents
-   * @param {IRevisionOptions} options
+   * @param {IHashData} data
+   * @param {SimpleRevisionCallback} callback
    * @private
    */
-  private static _pushHash(
-    origRelFile: string,
-    revRelFile: string,
-    contents: string | Buffer,
-    options: IRevisionOptions
-  ): void {
-    const { type, name } = TaskFactory.explodeTaskName(options.taskName);
-
-    Revision._manifest = Revision._sortObjectByKeys(
-      merge(Revision._manifest, {
-        [type]: {
-          [name]: {
-            [origRelFile]: {
-              md5: Revision._hash(contents, Hash.MD5),
-              revRelFile,
-              sha1: Revision._hash(contents, Hash.SHA1),
-              sha256: Revision._hash(contents, Hash.SHA256),
-            },
+  private static _pushHash(data: IHashData, callback?: SimpleRevisionCallback): void {
+    const { type, name } = TaskFactory.explodeTaskName(data.taskName);
+    let newData = {
+      [type]: {
+        [name]: {
+          [data.origRelFile]: {
+            md5: Revision._hash(data.contents, Hash.MD5),
+            revRelFile: data.revRelFile,
+            sha1: Revision._hash(data.contents, Hash.SHA1),
+            sha256: Revision._hash(data.contents, Hash.SHA256),
           },
         },
-      })
-    );
+      },
+    };
+
+    if (callback) {
+      const additionalData = callback(data, this._additionalData);
+
+      if (!isEmpty(additionalData)) {
+        newData = merge(newData, {
+          [type]: {
+            [name]: {
+              [data.origRelFile]: {
+                data: additionalData,
+              },
+            },
+          },
+        });
+      }
+    }
+
+    Revision._manifest = Revision._sortObjectByKeys(merge(Revision._manifest, newData));
   }
 
   /**
@@ -305,7 +359,7 @@ export default class Revision {
    * @return {IDefaultObject}
    * @private
    */
-  private static _sortObjectByKeys(object: IDefaultObject) {
+  private static _sortObjectByKeys(object: IDefaultObject): IDefaultObject {
     const result: IDefaultObject = {};
 
     Object.keys(object)
