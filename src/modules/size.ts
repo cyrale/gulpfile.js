@@ -183,8 +183,12 @@ export default class Size {
           }
 
           // Collect size.
+          const keySize: string =
+            this._options.minifySuffix !== "" && file.relative.indexOf(this._options.minifySuffix) >= 0
+              ? keys[1]
+              : keys[0];
           this._files[relFilename].sizes = merge(this._files[relFilename].sizes, {
-            [file.relative.indexOf(this._options.minifySuffix) >= 0 ? keys[1] : keys[0]]: size,
+            [keySize]: size,
           });
 
           // Count calculated sizes.
