@@ -170,6 +170,18 @@ export default class Config {
 
     delete this._settings.cwd;
 
+    // Get sizes settings.
+    let sizes: any =
+      typeof this._settings.sizes !== "undefined" ? this._settings.sizes : { gzipped: true, normal: true };
+    if (typeof sizes === "boolean") {
+      sizes = {
+        gzipped: sizes,
+        normal: sizes,
+      };
+    }
+
+    delete this._settings.sizes;
+
     // Merge global and local settings in each tasks.
     if (this._settings[Browsersync.taskName]) {
       this._settings[Browsersync.taskName].cwd = this._options.cwd;
@@ -187,11 +199,16 @@ export default class Config {
         const task: {
           cwd?: string;
           settings?: {};
+          sizes?: boolean;
         } = this._settings[name].tasks[taskName];
 
         task.settings = merge(globalSettings, task.settings || {});
         if (!task.cwd) {
           task.cwd = this._options.cwd;
+        }
+
+        if (!task.sizes) {
+          task.sizes = sizes;
         }
 
         this._settings[name][taskName] = task;
