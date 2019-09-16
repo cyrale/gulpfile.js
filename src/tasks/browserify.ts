@@ -1,11 +1,12 @@
 import browserify from "browserify";
 import { dest } from "gulp";
+import gulpIf from "gulp-if";
 import rename from "gulp-rename";
 import uglify from "gulp-uglify";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
 import Buffer from "vinyl-buffer";
-import Source from "vinyl-source-stream";
+import source from "vinyl-source-stream";
 import watchify from "watchify";
 
 import Browsersync from "./browsersync";
@@ -32,6 +33,9 @@ export default class Browserify extends Javascript {
   constructor(name: string, settings: object) {
     super(name, settings);
 
+    this._minifySuffix = ".min";
+
+    // Improve performance.
     this._gulpRead = false;
 
     // Merge settings with default.
@@ -63,12 +67,13 @@ export default class Browserify extends Javascript {
     return watchify(browserify(omit(this._settings.settings, ["babel"])))
       .transform("babelify", this._settings.settings.babel)
       .bundle()
-      .pipe(Source(this._settings.filename))
+      .pipe(source(this._settings.filename))
+      .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(Buffer())
       .pipe(dest(this._settings.dst, buildSettings.options))
       .pipe(browserSync.memorize(taskName))
       .pipe(uglify())
-      .pipe(rename({ suffix: ".min" }))
+      .pipe(rename({ suffix: this._minifySuffix }))
       .pipe(dest(this._settings.dst, buildSettings.options));
   }
 }

@@ -38,6 +38,9 @@ export default class Sprites extends Task {
     this._defaultDest = false;
     this._defaultRevision = false;
 
+    this._activeSizes = false;
+    this._hideGzippedSize = false;
+
     // Merge normal and retina image.
     this._settings.src = this._srcGlobs();
 
@@ -116,6 +119,7 @@ export default class Sprites extends Task {
     return mergeStream(
       sprite.img
         .pipe(dest(this._settings.dst, buildSettings.options))
+        .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
         .pipe(gulpIf(Revision.isActive(), buffer()))
         .pipe(gulpIf(Revision.isActive(), Revision.manifest(buildSettings.revision)))
         .pipe(gulpIf(Revision.isActive(), dest(".", buildSettings.options))),

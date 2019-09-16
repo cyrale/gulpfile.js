@@ -55,6 +55,8 @@ export default class Javascript extends Task {
   constructor(name: string, settings: object) {
     super(name, settings);
 
+    this._minifySuffix = ".min";
+
     // This task could build sourcemaps and sync browser with filter.
     this._gulpSourcemaps = true;
     this._browserSyncSettings = { match: "**/*.js" };
@@ -86,9 +88,10 @@ export default class Javascript extends Task {
     return stream
       .pipe(gulpIf(this._babelActive, babel(omit(this._settings.settings.babel, ["_flags"]))))
       .pipe(concat(this._settings.filename))
+      .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(browserSync.memorize(taskName))
       .pipe(uglify())
-      .pipe(rename({ suffix: ".min" }));
+      .pipe(rename({ suffix: this._minifySuffix }));
   }
 
   /**

@@ -31,6 +31,10 @@ export default class Favicon extends Task {
     this._defaultDest = false;
     this._defaultRevision = false;
 
+    // No file sizes.
+    this._activeSizes = false;
+    this._activeInitSizesAnyway = false;
+
     const defaultSettings: {} = {
       design: {
         androidChrome: {

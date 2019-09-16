@@ -3,10 +3,12 @@ import fs from "fs";
 import { dest, series, src, task as gulpTask, watch } from "gulp";
 import gulpIf from "gulp-if";
 import plumber from "gulp-plumber";
+// import size from "gulp-size";
 import process from "process";
 
 import Config, { IGenericSettings } from "../modules/config";
 import Revision, { IRevisionOptions } from "../modules/revision";
+import Size from "../modules/size";
 import Browsersync from "./browsersync";
 
 interface ITaskErrorDefinition {
@@ -24,6 +26,7 @@ export interface IGulpOptions {
 export interface IBuildSettings {
   options: IGulpOptions;
   revision: IRevisionOptions;
+  size: Size;
   taskName: string;
 }
 
@@ -133,9 +136,37 @@ export default abstract class Task {
   /**
    * Flag to define if task could build sourcemaps.
    * @type {boolean}
-   * @private
+   * @protected
    */
   protected _gulpSourcemaps: boolean = false;
+
+  /**
+   * Flag to display sizes or not.
+   * @type {boolean}
+   * @protected
+   */
+  protected _activeSizes: boolean = true;
+
+  /**
+   * Flag to init sizes anyway.
+   * @type {boolean}
+   * @protected
+   */
+  protected _activeInitSizesAnyway: boolean = true;
+
+  /**
+   * Force to hide gzipped size.
+   * @type {boolean}
+   * @protected
+   */
+  protected _hideGzippedSize: boolean = true;
+
+  /**
+   * Suffix of the minified file.
+   * @type {string}
+   * @protected
+   */
+  protected _minifySuffix: string = "";
 
   /**
    * Task constructor.
@@ -176,17 +207,28 @@ export default abstract class Task {
             manifest: typeof config.settings.revision === "string" ? config.settings.revision : "rev-manifest.json",
             taskName,
           },
+          size: new Size({
+            gzip: !this._hideGzippedSize && this._settings.sizes.gzipped,
+            minifySuffix: this._minifySuffix,
+            taskName,
+          }),
           taskName,
         };
 
         // Start new stream with the files of the task.
-        let stream: NodeJS.ReadWriteStream = src(this._settings.src, buildSettings.options as {}).pipe(
-          plumber((error: any): void => this._displayOrExitOnError(taskName, error, done))
-        );
+        let stream: NodeJS.ReadWriteStream = src(this._settings.src, buildSettings.options as {})
+          .pipe(
+            gulpIf(
+              (this._activeSizes || this._activeInitSizesAnyway) && this._settings.sizes.normal,
+              buildSettings.size.init()
+            )
+          )
+          .pipe(plumber((error: any): void => this._displayOrExitOnError(taskName, error, done)));
 
         // If there is no linter or no error, start specific logic of each task.
         if (!this._withLinter || !this._lintError) {
           stream = this._buildSpecific(stream, buildSettings, done)
+            .pipe(gulpIf(this._activeSizes && this._settings.sizes.normal, buildSettings.size.collect()))
             .pipe(plumber.stop())
             .pipe(browserSync.remember(taskName))
             .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)))

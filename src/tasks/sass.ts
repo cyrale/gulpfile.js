@@ -33,7 +33,7 @@ import removeCriticalProperties from "../modules/postcss-remove-critical-propert
 import removeCriticalRules from "../modules/postcss-remove-critical-rules";
 import Revision from "../modules/revision";
 import Browsersync from "./browsersync";
-import Task from "./task";
+import Task, { IBuildSettings } from "./task";
 
 type TPurgeCSSOptions = any[] | boolean;
 
@@ -87,6 +87,8 @@ export default class Sass extends Task {
 
     this._gulpSourcemaps = true;
     this._browserSyncSettings = { match: "**/*.css" };
+
+    this._minifySuffix = ".min";
 
     const defaultSettings: {} = {
       SVGO: {},
@@ -174,10 +176,11 @@ export default class Sass extends Task {
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadWriteStream} stream
+   * @param {IBuildSettings} buildSettings
    * @return {NodeJS.ReadWriteStream}
    * @protected
    */
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const browserSync = Browsersync.getInstance();
     const taskName = this._taskName("build");
     const streams: NodeJS.ReadWriteStream[] = [];
@@ -264,9 +267,10 @@ export default class Sass extends Task {
 
     return mergeStream(streams)
       .pipe(gulpPostCSS(postCSSPluginsIntermediate))
+      .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(browserSync.memorize(taskName))
       .pipe(gulpPostCSS(postCSSPluginsAfter))
-      .pipe(rename({ suffix: ".min" }));
+      .pipe(rename({ suffix: this._minifySuffix }));
   }
 
   /**

@@ -171,8 +171,9 @@ export default class Config {
     delete this._settings.cwd;
 
     // Get sizes settings.
+    const defaultSizes: any = { gzipped: true, normal: true };
     let sizes: any =
-      typeof this._settings.sizes !== "undefined" ? this._settings.sizes : { gzipped: true, normal: true };
+      typeof this._settings.sizes !== "undefined" ? merge(defaultSizes, this._settings.sizes) : defaultSizes;
     if (typeof sizes === "boolean") {
       sizes = {
         gzipped: sizes,

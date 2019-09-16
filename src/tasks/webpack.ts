@@ -1,5 +1,6 @@
 import { CLIEngine, Linter } from "eslint";
 import log from "fancy-log";
+import gulpIf from "gulp-if";
 import rename from "gulp-rename";
 import uglify from "gulp-uglify";
 import merge from "lodash/merge";
@@ -10,6 +11,7 @@ import webpackStream from "webpack-stream";
 
 import Browsersync from "./browsersync";
 import Javascript from "./javascript";
+import { IBuildSettings } from "./task";
 
 /**
  * Package Javascript using Webpack.
@@ -30,6 +32,8 @@ export default class Webpack extends Javascript {
   constructor(name: string, settings: object) {
     super(name, settings);
 
+    this._minifySuffix = ".min";
+
     const defaultSettings: {} = {
       module: {
         rules: [
@@ -43,6 +47,7 @@ export default class Webpack extends Javascript {
           },
         ],
       },
+      stats: "errors-only",
     };
 
     this._settings.settings =
@@ -57,10 +62,11 @@ export default class Webpack extends Javascript {
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadWriteStream} stream
+   * @param {IBuildSettings} buildSettings
    * @return {NodeJS.ReadWriteStream}
    * @protected
    */
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const browserSync = Browsersync.getInstance();
     const taskName = this._taskName("build");
 
@@ -72,9 +78,10 @@ export default class Webpack extends Javascript {
           basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),
         })
       )
+      .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(browserSync.memorize(taskName))
       .pipe(uglify())
-      .pipe(rename({ suffix: ".min" }));
+      .pipe(rename({ suffix: this._minifySuffix }));
   }
 
   /**
