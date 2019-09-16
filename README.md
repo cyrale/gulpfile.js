@@ -8,6 +8,16 @@ with a unique configuration file written in YAML.
 
 The project is inspired by [**Blendid** _(formerly known as Gulp Starter)_](https://github.com/vigetlabs/blendid).
 
+## New in 3.1.0
+- Display sizes of generated files in console. This could be deactivated by 
+adding the following to global settings or in each task:
+```yaml
+sizes:
+  normal: false
+  gzipped: false
+```
+- **Experimental**: Add media queries for CSS files in `revision`. 
+
 ## New in 3.0.0
 
 - The directory where `gulpconfig.yml` is the current working directory where
