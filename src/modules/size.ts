@@ -84,6 +84,20 @@ export default class Size {
   private _files: IFiles = {};
 
   /**
+   * Check if all files are passed through the module.
+   * @type {boolean}
+   * @private
+   */
+  private _end: boolean = false;
+
+  /**
+   * Check if sizes are already displayed.
+   * @type {boolean}
+   * @private
+   */
+  private _displayed: boolean = false;
+
+  /**
    * Calculate and display sizes of files in stream.
    *
    * @param {IOptions} options
@@ -93,56 +107,10 @@ export default class Size {
 
     // Event emitter to know when all sizes are calculated.
     this._emitter = new EventEmitter();
-    this._emitter.on("file-sizes-calculated", (): void => {
-      const calculatedCount = reduce(this._files, (count: number, file: IFile) => count + (file.calculated ? 1 : 0), 0);
-      const filesCount = Object.keys(this._files).length;
-
-      // Head of the table.
-      const head: string[] = ["Filename", "Size"];
-      if (this._options.minifySuffix !== "") {
-        head.push("Minified", "Saved");
-      }
-
-      // If all sizes are calculated, display them.
-      if (calculatedCount >= filesCount) {
-        // Collect sizes in a simple array.
-        const files: string[][] = Object.keys(this._files).map((filename: string): string[] => {
-          const file: IFile = this._files[filename];
-          const prettySizes: IPrettySizes = Size._prettyBytes(file.sizes);
-
-          const row = [
-            chalk.cyan(filename),
-            prettySizes.size + (this._options.gzip ? chalk.gray(`\n${prettySizes.sizeGzipped} gzipped`) : ""),
-          ];
-
-          // Add minified information and differential value.
-          if (this._options.minifySuffix !== "") {
-            const saved = Math.max(0, file.sizes.size - file.sizes.minified);
-            const savedPercent = file.sizes.size === 0 ? 0 : (saved * 100) / file.sizes.size;
-
-            const formatPercent = ("    " + savedPercent.toFixed(1)).slice(-4);
-
-            row.push(
-              prettySizes.minified + (this._options.gzip ? chalk.gray(`\n${prettySizes.minifiedGzipped} gzipped`) : ""),
-              `${prettyBytes(saved)} ${chalk.gray(`(${formatPercent}%)`)}`
-            );
-          }
-
-          return row;
-        });
-
-        // Create table to display.
-        const table = new Table({
-          colAligns: ["left", "right", "right", "right"],
-          head: head.map((item: string): string => chalk.blue(item)),
-        });
-
-        // Add values to display.
-        table.push(...files);
-
-        // Display sizes.
-        log(`Sizes from '${chalk.cyan(this._options.taskName)}':\n` + table.toString());
-      }
+    this._emitter.on("sizes-calculated", (): void => this._display());
+    this._emitter.on("sizes-end", (): void => {
+      this._end = true;
+      this._display();
     });
   }
 
@@ -206,7 +174,7 @@ export default class Size {
 
           // Emit event if all sizes are calculated.
           if (!calculated && this._files[relFilename].calculated) {
-            this._emitter.emit("file-sizes-calculated", { relFilename });
+            this._emitter.emit("sizes-calculated", { relFilename });
           }
         };
 
@@ -255,6 +223,7 @@ export default class Size {
         cb(null, file);
       },
       (cb: TransformCallback): void => {
+        this._emitter.emit("sizes-end");
         cb();
       }
     );
@@ -267,7 +236,72 @@ export default class Size {
    */
   public init(): Transform {
     this._files = {};
+    this._end = false;
+    this._displayed = false;
 
     return through.obj();
+  }
+
+  /**
+   * Display collected sizes.
+   *
+   * @private
+   */
+  private _display(): void {
+    if (!this._end || this._displayed) {
+      return;
+    }
+
+    const calculatedCount = reduce(this._files, (count: number, file: IFile) => count + (file.calculated ? 1 : 0), 0);
+    const filesCount = Object.keys(this._files).length;
+
+    // Head of the table.
+    const head: string[] = ["Filename".padEnd(35, " "), "Size".padStart(8, " ")];
+    if (this._options.minifySuffix !== "") {
+      head.push("Minified", "Saved".padStart(16, " "));
+    }
+
+    // If all sizes are calculated, display them.
+    if (calculatedCount >= filesCount) {
+      this._displayed = true;
+
+      // Collect sizes in a simple array.
+      const files: string[][] = Object.keys(this._files).map((filename: string): string[] => {
+        const file: IFile = this._files[filename];
+        const prettySizes: IPrettySizes = Size._prettyBytes(file.sizes);
+
+        const row = [
+          chalk.cyan(filename),
+          prettySizes.size + (this._options.gzip ? chalk.gray(`\n${prettySizes.sizeGzipped} gzipped`) : ""),
+        ];
+
+        // Add minified information and differential value.
+        if (this._options.minifySuffix !== "") {
+          const saved = Math.max(0, file.sizes.size - file.sizes.minified);
+          const savedPercent = file.sizes.size === 0 ? 0 : (saved * 100) / file.sizes.size;
+
+          const formatPercent = savedPercent.toFixed(1).padStart(4, " ");
+
+          row.push(
+            prettySizes.minified + (this._options.gzip ? chalk.gray(`\n${prettySizes.minifiedGzipped} gzipped`) : ""),
+            `${prettyBytes(saved)} ${chalk.gray(`(${formatPercent}%)`)}`
+          );
+        }
+
+        return row;
+      });
+
+      // Create table to display.
+      const table = new Table({
+        colAligns: ["left", "right", "right", "right"],
+        head: head.map((item: string, index: number): string => chalk.blue(item)),
+      });
+
+      // Add values to display.
+      table.push(...files);
+
+      // Display sizes.
+      log(`Sizes from '${chalk.cyan(this._options.taskName)}':\n` + table.toString());
+    }
   }
 }
