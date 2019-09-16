@@ -58,31 +58,54 @@ export default class Size {
     return prettyBytess;
   }
 
+  /**
+   * Options.
+   * @type {IOptions}
+   * @private
+   */
   private readonly _options: IOptions = {
     gzip: true,
     minifySuffix: "",
     taskName: "",
   };
 
-  private _emitter: EventEmitter;
+  /**
+   * Event emitter to know when all sizes are calculated.
+   * @type {IOptions}
+   * @private
+   */
+  private readonly _emitter: EventEmitter;
 
+  /**
+   * List of generated files.
+   * @type {IFiles}
+   * @private
+   */
   private _files: IFiles = {};
 
+  /**
+   * Calculate and display sizes of files in stream.
+   *
+   * @param {IOptions} options
+   */
   public constructor(options: IOptions) {
     this._options = merge(this._options, options);
 
+    // Event emitter to know when all sizes are calculated.
     this._emitter = new EventEmitter();
-    this._emitter.on("file-sizes-calculated", ({ relFilename }) => {
+    this._emitter.on("file-sizes-calculated", (): void => {
       const calculatedCount = reduce(this._files, (count: number, file: IFile) => count + (file.calculated ? 1 : 0), 0);
       const filesCount = Object.keys(this._files).length;
 
+      // Head of the table.
       const head: string[] = ["Filename", "Size"];
-
       if (this._options.minifySuffix !== "") {
         head.push("Minified", "Saved");
       }
 
+      // If all sizes are calculated, display them.
       if (calculatedCount >= filesCount) {
+        // Collect sizes in a simple array.
         const files: string[][] = Object.keys(this._files).map((filename: string): string[] => {
           const file: IFile = this._files[filename];
           const prettySizes: IPrettySizes = Size._prettyBytes(file.sizes);
@@ -92,6 +115,7 @@ export default class Size {
             prettySizes.size + (this._options.gzip ? chalk.gray(`\n${prettySizes.sizeGzipped} gzipped`) : ""),
           ];
 
+          // Add minified information and differential value.
           if (this._options.minifySuffix !== "") {
             const saved = Math.max(0, file.sizes.size - file.sizes.minified);
             const savedPercent = file.sizes.size === 0 ? 0 : (saved * 100) / file.sizes.size;
@@ -107,21 +131,27 @@ export default class Size {
           return row;
         });
 
+        // Create table to display.
         const table = new Table({
           colAligns: ["left", "right", "right", "right"],
           head: head.map((item: string): string => chalk.blue(item)),
         });
 
+        // Add values to display.
         table.push(...files);
 
+        // Display sizes.
         log(`Sizes from '${chalk.cyan(this._options.taskName)}':\n` + table.toString());
       }
     });
   }
 
+  /**
+   * Collect sizes of files in a stream.
+   *
+   * @return {Transform}
+   */
   public collect(): Transform {
-    this._files = {};
-
     return through.obj(
       (file: any, encoding: string, cb: TransformCallback): void => {
         if (file.isNull()) {
@@ -145,13 +175,14 @@ export default class Size {
           };
         }
 
-        // Get file size.
+        // Collect sizes.
         const finish = (error: any, size: number, keys: string[]): void => {
           if (error) {
             cb(new PluginError("size", error));
             return;
           }
 
+          // Collect size.
           this._files[relFilename].sizes = merge(this._files[relFilename].sizes, {
             [file.relative.indexOf(this._options.minifySuffix) >= 0 ? keys[1] : keys[0]]: size,
           });
@@ -169,20 +200,24 @@ export default class Size {
             (this._options.minifySuffix === "" && this._options.gzip && countSizes === 2) ||
             (this._options.minifySuffix !== "" && this._options.gzip && countSizes === 4);
 
+          // Emit event if all sizes are calculated.
           if (!calculated && this._files[relFilename].calculated) {
             this._emitter.emit("file-sizes-calculated", { relFilename });
           }
         };
 
+        // Collect gzipped sizes.
         const finishGzip = (error: any, size: number) => {
           finish(error, size, ["sizeGzipped", "minifiedGzipped"]);
         };
 
+        // Collect normal sizes.
         const finishSize = (error: any, size: number) => {
           finish(error, size, ["size", "minified"]);
         };
 
         if (file.isStream()) {
+          // Get file size from a stream.
           file.contents
             .pipe(new StreamCounter())
             .on("error", finishSize)
@@ -191,6 +226,7 @@ export default class Size {
               finishSize(null, this.bytes);
             });
 
+          // Get gzipped file size from a stream.
           if (this._options.gzip) {
             file.contents
               .pipe(gzipSize.stream())
@@ -201,8 +237,10 @@ export default class Size {
               });
           }
         } else {
+          // Get file size.
           finishSize(null, file.contents.length);
 
+          // Get gzipped file size.
           if (this._options.gzip) {
             gzipSize(file.contents).then((size: number): void => {
               finishGzip(null, size);
@@ -216,5 +254,16 @@ export default class Size {
         cb();
       }
     );
+  }
+
+  /**
+   * Reset files.
+   *
+   * @return {Transform}
+   */
+  public init(): Transform {
+    this._files = {};
+
+    return through.obj();
   }
 }
