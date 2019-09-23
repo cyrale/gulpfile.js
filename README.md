@@ -1,7 +1,8 @@
-[![CircleCI](https://circleci.com/gh/cyrale/gulpfile.js.svg?style=svg)](https://circleci.com/gh/cyrale/gulpfile.js)
-[![npm version](https://badge.fury.io/js/gulpfile.js.svg)](https://badge.fury.io/js/gulpfile.js)
-[![Dependency Status](https://david-dm.org/cyrale/gulpfile.js.svg?theme=shields.io)](https://david-dm.org/cyrale/gulpfile.js)
-[![devDependency Status](https://david-dm.org/cyrale/gulpfile.js/dev-status.svg?theme=shields.io)](https://david-dm.org/cyrale/gulpfile.js#info=devDependencies)
+![GitHub top language](https://img.shields.io/github/languages/top/cyrale/gulpfile.js?style=flat-square)
+![npm](https://img.shields.io/npm/v/gulpfile.js?style=flat-square)
+![David](https://img.shields.io/david/cyrale/gulpfile.js?style=flat-square)
+![David](https://img.shields.io/david/dev/cyrale/gulpfile.js?style=flat-square)
+![CircleCI](https://img.shields.io/circleci/build/github/cyrale/gulpfile.js/master?style=flat-square)
 
 Because I spent too much time redoing my gulp tasks, I make this to work
 with a unique configuration file written in YAML.
