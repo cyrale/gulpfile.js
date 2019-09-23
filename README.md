@@ -1,8 +1,9 @@
+[![Actions Status](https://github.com/cyrale/gulpfile.js/workflows/build/badge.svg)](https://github.com/cyrale/gulpfile.js/actions)
+
 ![GitHub top language](https://img.shields.io/github/languages/top/cyrale/gulpfile.js?style=flat-square)
 ![npm](https://img.shields.io/npm/v/gulpfile.js?style=flat-square)
 ![David](https://img.shields.io/david/cyrale/gulpfile.js?style=flat-square)
 ![David](https://img.shields.io/david/dev/cyrale/gulpfile.js?style=flat-square)
-![CircleCI](https://img.shields.io/circleci/build/github/cyrale/gulpfile.js/master?style=flat-square)
 
 Because I spent too much time redoing my gulp tasks, I make this to work
 with a unique configuration file written in YAML.
