@@ -16,6 +16,7 @@
     "gulpfile.js": "bin/gulpfile.js.js"
   },
   "scripts": {
+    "prepublishOnly": "npm run build",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "npx gulp --gulpfile dist/app.js --configfile test/gulpconfig.yml",
