@@ -110,7 +110,7 @@ export default class Revision {
    */
   public static isActive() {
     const config = Config.getInstance();
-    return !!config.settings.revision;
+    return !!config.options.revision;
   }
 
   /**

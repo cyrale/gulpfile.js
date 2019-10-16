@@ -140,9 +140,10 @@ export default class Config {
         configfile: process.env.CONFIG_FILE || "gulpconfig.yml",
         cwd: "",
         env: process.env.NODE_ENV || "production",
+        revision: false,
         sourcemaps: process.env.SOURCEMAPS || false,
       },
-      string: ["env", "configfile", "cwd"],
+      string: ["configfile", "cwd", "env", "revision"],
     }) as object;
 
     if (!path.isAbsolute(this._options.configfile)) {
@@ -162,13 +163,21 @@ export default class Config {
     }
 
     // Normalize current working directory.
-    if (!this._settings.cwd) {
-      this._options.cwd = path.dirname(this._options.configfile);
-    } else if (!path.isAbsolute(this._settings.cwd)) {
-      this._options.cwd = path.resolve(path.dirname(this._options.configfile), this._settings.cwd);
+    if (!this._options.cwd) {
+      if (!this._settings.cwd) {
+        this._options.cwd = path.dirname(this._options.configfile);
+      } else if (!path.isAbsolute(this._settings.cwd)) {
+        this._options.cwd = path.resolve(path.dirname(this._options.configfile), this._settings.cwd);
+      }
+
+      delete this._settings.cwd;
     }
 
-    delete this._settings.cwd;
+    // Get revision settings.
+    if (!this._options.revision && this._settings.revision) {
+      this._options.revision = this._settings.revision;
+      delete this._settings.revision;
+    }
 
     // Get sizes settings.
     const defaultSizes: any = { gzipped: true, normal: true };
