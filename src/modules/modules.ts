@@ -18,6 +18,7 @@ export const modules: IModuleList = {
   sass: { simple: false },
   sprites: { simple: false },
   svgstore: { simple: false },
+  webpack: { simple: false },
 };
 
 export const names: string[] = Object.keys(modules);
