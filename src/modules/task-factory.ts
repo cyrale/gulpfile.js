@@ -1,4 +1,3 @@
-import log from "fancy-log";
 import { parallel, series, task as gulpTask, watch } from "gulp";
 import process from "process";
 import Undertaker from "undertaker";
