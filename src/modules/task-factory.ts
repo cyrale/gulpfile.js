@@ -150,19 +150,6 @@ export default class TaskFactory {
   private _orderedGlobalTasks: string[][] = [];
 
   /**
-   * Tasks grouped by steps of execution.
-   * @type {string[][]}
-   * @private
-   */
-  private _tasksGroupAndOrder: string[][] = [
-    ["clean"],
-    ["favicon", "fonts", "sprites", "svgstore"],
-    ["browserify", "images", "webpack"],
-    ["javascript", "pug", "sass"],
-    ["browsersync"],
-  ];
-
-  /**
    * Create all tasks.
    */
   public createAllTasks(): void {
@@ -284,7 +271,7 @@ export default class TaskFactory {
       });
 
       // Sort and order global tasks.
-      this._orderedGlobalTasks = this._tasksGroupAndOrder
+      this._orderedGlobalTasks = this._tasksGroupAndOrder()
         .map((taskNames: string[]): string[] =>
           taskNames.filter((taskName: string): boolean => typeof this._globalTasks.byTypeOnly[taskName] !== "undefined")
         )
@@ -311,7 +298,7 @@ export default class TaskFactory {
 
     Object.keys(this._superGlobalTasks).forEach((step: string): void => {
       // Sort and order super global tasks.
-      this._orderedSuperGlobalTasks[step] = this._tasksGroupAndOrder
+      this._orderedSuperGlobalTasks[step] = this._tasksGroupAndOrder()
         .map((taskNames: string[]): string[] =>
           taskNames
             .map((taskName: string): string[] =>
@@ -445,5 +432,21 @@ export default class TaskFactory {
     }
 
     return this._tasks;
+  }
+
+  /**
+   * Tasks grouped by steps of execution.
+   *
+   * @return {string[][]}
+   * @private
+   */
+  private _tasksGroupAndOrder(): string[][] {
+    const orders = Object.keys(TaskFactory._modules).map((task: string) => TaskFactory._modules[task].taskOrder);
+
+    return uniq(orders.sort()).map((order: number): string[] =>
+      Object.keys(TaskFactory._modules).filter(
+        (task: string): boolean => TaskFactory._modules[task].taskOrder === order
+      )
+    );
   }
 }
