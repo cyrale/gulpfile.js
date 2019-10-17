@@ -5,12 +5,11 @@ import gulpIf from "gulp-if";
 import plumber from "gulp-plumber";
 import process from "process";
 
-import Config, { IGenericSettings } from "../modules/config";
-import Revision, { IRevisionOptions, SimpleRevisionCallback } from "../modules/revision";
+import Config from "../modules/config";
+import Revision, { SimpleRevisionCallback } from "../modules/revision";
 import Size from "../modules/size";
 import TaskFactory from "../modules/task-factory";
-import Browsersync from "./browsersync";
-import Task, { IBuildSettings, IGulpOptions } from "./task";
+import Task, { IBuildSettings } from "./task";
 
 interface ITaskErrorDefinition {
   taskName: string;
@@ -24,13 +23,6 @@ export type TaskCallback = (error?: any) => void;
  * Task class to define gulp tasks.
  */
 export default abstract class TaskExtended extends Task {
-  // /**
-  //  * Global task name.
-  //  * @type {string}
-  //  * @readonly
-  //  */
-  // public static readonly taskName: string = "";
-
   /**
    * List of errors.
    * @type {ITaskErrorDefinition[]}
@@ -65,13 +57,6 @@ export default abstract class TaskExtended extends Task {
    */
   protected _name: string = "";
 
-  // /**
-  //  * Current task settings.
-  //  * @type {IGenericSettings}
-  //  * @protected
-  //  */
-  // protected _settings: IGenericSettings = {};
-
   /**
    * Flag to define if task use the default dest to save files.
    * @type {boolean}
@@ -86,6 +71,11 @@ export default abstract class TaskExtended extends Task {
    */
   protected _defaultRevision: boolean = true;
 
+  /**
+   * Callback to add data to manifest file.
+   * @type {SimpleRevisionCallback|undefined}
+   * @protected
+   */
   protected _manifestCallback: SimpleRevisionCallback | undefined;
 
   /**

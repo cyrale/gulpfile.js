@@ -19,6 +19,13 @@ export default class Favicon extends TaskExtended {
   public static readonly taskName: string = "favicon";
 
   /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 20;
+
+  /**
    * Task constructor.
    *
    * @param {string} name

@@ -21,6 +21,13 @@ export default class Images extends TaskExtended {
   public static readonly taskName: string = "images";
 
   /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 30;
+
+  /**
    * Task constructor.
    *
    * @param {string} name

@@ -1,8 +1,7 @@
 import del from "del";
 import { task as gulpTask } from "gulp";
-import merge from "lodash/merge";
 
-import Config, { IGenericSettings } from "../modules/config";
+import Config from "../modules/config";
 import TaskSimple from "./task-simple";
 
 /**
@@ -15,6 +14,13 @@ export default class Clean extends TaskSimple {
    * @readonly
    */
   public static readonly taskName: string = "clean";
+
+  /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 10;
 
   /**
    * Start clean. Delete files and directories.

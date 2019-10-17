@@ -22,6 +22,13 @@ export default class Browsersync extends TaskSimple {
   public static readonly taskName: string = "browsersync";
 
   /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 50;
+
+  /**
    * Real Browsersync instance.
    * @type {browserSync.BrowserSyncInstance}
    * @private

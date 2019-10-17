@@ -26,6 +26,13 @@ export default class Sprites extends TaskExtended {
   public static readonly taskName: string = "sprites";
 
   /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 20;
+
+  /**
    * Task constructor.
    *
    * @param {string} name

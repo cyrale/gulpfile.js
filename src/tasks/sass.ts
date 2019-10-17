@@ -35,7 +35,6 @@ import removeCriticalProperties from "../modules/postcss-remove-critical-propert
 import removeCriticalRules from "../modules/postcss-remove-critical-rules";
 import Revision, { IDefaultObject } from "../modules/revision";
 import TaskFactory from "../modules/task-factory";
-import Browsersync from "./browsersync";
 import { IBuildSettings } from "./task";
 import TaskExtended from "./task-extended";
 
@@ -63,6 +62,13 @@ export default class Sass extends TaskExtended {
    * @readonly
    */
   public static readonly taskName: string = "sass";
+
+  /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 40;
 
   /**
    * Flag to define if critical rule is active.

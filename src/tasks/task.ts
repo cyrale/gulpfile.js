@@ -29,6 +29,13 @@ export default abstract class Task {
   public static readonly taskName: string = "";
 
   /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 0;
+
+  /**
    * Current task settings.
    * @type {IGenericSettings}
    * @protected

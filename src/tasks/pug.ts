@@ -20,6 +20,13 @@ export default class Pug extends TaskExtended {
   public static readonly taskName: string = "pug";
 
   /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 40;
+
+  /**
    * Task constructor.
    *
    * @param {string} name

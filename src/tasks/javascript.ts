@@ -11,7 +11,6 @@ import omit from "lodash/omit";
 import path from "path";
 
 import TaskFactory from "../modules/task-factory";
-import Browsersync from "./browsersync";
 import { IBuildSettings } from "./task";
 import TaskExtended from "./task-extended";
 
@@ -25,6 +24,13 @@ export default class Javascript extends TaskExtended {
    * @readonly
    */
   public static readonly taskName: string = "javascript";
+
+  /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 40;
 
   /**
    * Default settings for babel.

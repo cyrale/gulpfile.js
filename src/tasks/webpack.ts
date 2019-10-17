@@ -10,7 +10,6 @@ import webpack from "webpack";
 import webpackStream from "webpack-stream";
 
 import TaskFactory from "../modules/task-factory";
-import Browsersync from "./browsersync";
 import Javascript from "./javascript";
 import { IBuildSettings } from "./task";
 
@@ -24,6 +23,13 @@ export default class Webpack extends Javascript {
    * @readonly
    */
   public static readonly taskName: string = "webpack";
+
+  /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 30;
 
   /**
    * Task constructor.

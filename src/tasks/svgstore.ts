@@ -21,6 +21,13 @@ export default class SVGStore extends TaskExtended {
   public static readonly taskName: string = "svgstore";
 
   /**
+   * Level to order task in execution pipeline.
+   * @type {number}
+   * @readonly
+   */
+  public static readonly taskOrder: number = 20;
+
+  /**
    * Task constructor.
    *
    * @param {string} name
