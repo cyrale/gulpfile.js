@@ -71,7 +71,7 @@ export default class Config {
       Config._instance.refreshOptions();
       Config._instance.refreshSettings();
 
-      log("Configuration file loaded.");
+      log("Configuration file loaded");
     }
 
     return Config._instance;
