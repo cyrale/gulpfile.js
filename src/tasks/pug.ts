@@ -6,12 +6,12 @@ import * as yaml from "js-yaml";
 import merge from "lodash/merge";
 import pugLintStylish from "puglint-stylish";
 
-import Task from "./task";
+import TaskExtended from "./task-extended";
 
 /**
  * Build PUG files into HTML.
  */
-export default class Pug extends Task {
+export default class Pug extends TaskExtended {
   /**
    * Global task name.
    * @type {string}

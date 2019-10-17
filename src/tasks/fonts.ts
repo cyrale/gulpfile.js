@@ -11,12 +11,13 @@ import path from "path";
 import buffer from "vinyl-buffer";
 
 import Revision from "../modules/revision";
-import Task, { IBuildSettings } from "./task";
+import { IBuildSettings } from "./task";
+import TaskExtended from "./task-extended";
 
 /**
  * Build fonts based on SVG files.
  */
-export default class Fonts extends Task {
+export default class Fonts extends TaskExtended {
   /**
    * Global task name.
    * @type {string}

@@ -12,12 +12,13 @@ import path from "path";
 import buffer from "vinyl-buffer";
 
 import Revision from "../modules/revision";
-import Task, { IBuildSettings } from "./task";
+import { IBuildSettings } from "./task";
+import TaskExtended from "./task-extended";
 
 /**
  * Convert a set of images into a spritesheet.
  */
-export default class Sprites extends Task {
+export default class Sprites extends TaskExtended {
   /**
    * Global task name.
    * @readonly

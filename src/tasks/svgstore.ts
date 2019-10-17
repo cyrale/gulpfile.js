@@ -7,12 +7,12 @@ import path from "path";
 import svgo from "svgo";
 import Vinyl from "vinyl";
 
-import Task from "./task";
+import TaskExtended from "./task-extended";
 
 /**
  * Combine SVG files into one.
  */
-export default class SVGStore extends Task {
+export default class SVGStore extends TaskExtended {
   /**
    * Global task name.
    * @type {string}

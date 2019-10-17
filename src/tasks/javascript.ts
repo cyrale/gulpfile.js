@@ -10,13 +10,15 @@ import merge from "lodash/merge";
 import omit from "lodash/omit";
 import path from "path";
 
+import TaskFactory from "../modules/task-factory";
 import Browsersync from "./browsersync";
-import Task, { IBuildSettings } from "./task";
+import { IBuildSettings } from "./task";
+import TaskExtended from "./task-extended";
 
 /**
  * Concatenate Javascript files into one file. This file could be babelified.
  */
-export default class Javascript extends Task {
+export default class Javascript extends TaskExtended {
   /**
    * Global task name.
    * @type {string}
@@ -82,14 +84,14 @@ export default class Javascript extends Task {
    * @protected
    */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
-    const browserSync = Browsersync.getInstance();
+    const browserSync = TaskFactory.getUniqueInstanceOf("browsersync");
     const taskName = this._taskName("build");
 
     return stream
       .pipe(gulpIf(this._babelActive, babel(omit(this._settings.settings.babel, ["_flags"]))))
       .pipe(concat(this._settings.filename))
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(browserSync.memorize(taskName))
+      .pipe(gulpIf(browserSync, browserSync.memorize(taskName)))
       .pipe(uglify())
       .pipe(rename({ suffix: this._minifySuffix }));
   }
@@ -151,7 +153,7 @@ export default class Javascript extends Task {
       ];
 
       // Particular exit due to the comportment of gulp-babel.
-      if (Task._isBuildRun()) {
+      if (TaskExtended._isBuildRun()) {
         log.error(formatter(formattedMessage));
         process.exit(1);
       }

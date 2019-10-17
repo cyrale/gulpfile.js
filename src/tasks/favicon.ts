@@ -4,12 +4,13 @@ import merge from "lodash/merge";
 import path from "path";
 
 import Revision from "../modules/revision";
-import Task, { IBuildSettings, TaskCallback } from "./task";
+import { IBuildSettings, TaskCallback } from "./task";
+import TaskExtended from "./task-extended";
 
 /**
  * Get all needs for the favicon (different sizes, manifest... Based on https://realfavicongenerator.net).
  */
-export default class Favicon extends Task {
+export default class Favicon extends TaskExtended {
   /**
    * Global task name.
    * @type {string}

@@ -34,8 +34,10 @@ import normalizeRevision from "../modules/postcss-normalize-revision";
 import removeCriticalProperties from "../modules/postcss-remove-critical-properties";
 import removeCriticalRules from "../modules/postcss-remove-critical-rules";
 import Revision, { IDefaultObject } from "../modules/revision";
+import TaskFactory from "../modules/task-factory";
 import Browsersync from "./browsersync";
-import Task, { IBuildSettings } from "./task";
+import { IBuildSettings } from "./task";
+import TaskExtended from "./task-extended";
 
 type TPurgeCSSOptions = any[] | boolean;
 
@@ -54,7 +56,7 @@ interface IPurgeCSSOptions {
 /**
  * Build SASS files to CSS.
  */
-export default class Sass extends Task {
+export default class Sass extends TaskExtended {
   /**
    * Global task name.
    * @type {string}
@@ -194,7 +196,7 @@ export default class Sass extends Task {
    * @protected
    */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
-    const browserSync = Browsersync.getInstance();
+    const browserSync = TaskFactory.getUniqueInstanceOf("browsersync");
     const taskName = this._taskName("build");
     const streams: NodeJS.ReadWriteStream[] = [];
 
@@ -232,7 +234,6 @@ export default class Sass extends Task {
     if (this._settings.settings.extractMQ) {
       let mainFilename: string = "";
 
-      // TODO: print media queries as comment in file or in revision.
       let streamExtractMQ: NodeJS.ReadWriteStream = stream
         .pipe(
           rename(
@@ -289,7 +290,7 @@ export default class Sass extends Task {
     return mergeStream(streams)
       .pipe(gulpPostCSS(postCSSPluginsIntermediate))
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(browserSync.memorize(taskName))
+      .pipe(gulpIf(browserSync, browserSync.memorize(taskName)))
       .pipe(gulpPostCSS(postCSSPluginsAfter))
       .pipe(rename({ suffix: this._minifySuffix }));
   }
@@ -336,7 +337,7 @@ export default class Sass extends Task {
     );
 
     // Particular exit due to the comportment of Sass.
-    if (Task._isBuildRun() && error.code !== "ENOENT") {
+    if (TaskExtended._isBuildRun() && error.code !== "ENOENT") {
       process.exit(1);
     }
   }

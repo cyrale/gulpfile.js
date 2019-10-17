@@ -1,23 +1,12 @@
+import log from "fancy-log";
 import { parallel, series, task as gulpTask, watch } from "gulp";
 import process from "process";
 import Undertaker from "undertaker";
 
-import Browserify from "../tasks/browserify";
-import Browsersync from "../tasks/browsersync";
-import Clean from "../tasks/clean";
-import Favicon from "../tasks/favicon";
-import Fonts from "../tasks/fonts";
-import Images from "../tasks/images";
-import Javascript from "../tasks/javascript";
-import Pug from "../tasks/pug";
-import Sass from "../tasks/sass";
-import Sprites from "../tasks/sprites";
-import SVGStore from "../tasks/svgstore";
-import Task, { TaskCallback } from "../tasks/task";
-import Webpack from "../tasks/webpack";
+import { TaskCallback } from "../tasks/task";
+import TaskExtended from "../tasks/task-extended";
 import Config, { IGenericSettings } from "./config";
-
-type TaskRunner = Browserify | Fonts | Images | Javascript | Pug | Sass | Sprites | SVGStore | Webpack;
+import { module as taskModule, modules as taskModules, names as availableTaskNames } from "./modules";
 
 export interface ITaskNameElements {
   type: string;
@@ -32,6 +21,14 @@ interface ITaskList {
 interface IGlobalTaskList {
   [name: string]: ITaskList;
 }
+
+const modules: {
+  [name: string]: any;
+} = {};
+
+const uniqueInstances: {
+  [name: string]: any;
+} = {};
 
 /**
  * Factory that create all tasks.
@@ -57,6 +54,10 @@ export default class TaskFactory {
       step,
       type,
     };
+  }
+
+  public static getUniqueInstanceOf(name: string): any {
+    return uniqueInstances[name];
   }
 
   /**
@@ -133,34 +134,16 @@ export default class TaskFactory {
   private _orderedGlobalTasks: string[][] = [];
 
   /**
-   * List of available and supported tasks.
-   * @type {{[p: string]: Browserify | Favicon | Fonts | Images | Javascript | Pug | Sass | Sprites | SVGStore | Webpack}}
-   * @private
-   */
-  private _availableTasks: IGenericSettings = {
-    [Browserify.taskName]: Browserify,
-    [Favicon.taskName]: Favicon,
-    [Fonts.taskName]: Fonts,
-    [Images.taskName]: Images,
-    [Javascript.taskName]: Javascript,
-    [Pug.taskName]: Pug,
-    [Sass.taskName]: Sass,
-    [Sprites.taskName]: Sprites,
-    [SVGStore.taskName]: SVGStore,
-    [Webpack.taskName]: Webpack,
-  };
-
-  /**
    * Tasks grouped by steps of execution.
    * @type {string[][]}
    * @private
    */
   private _tasksGroupAndOrder: string[][] = [
-    [Clean.taskName],
-    [Favicon.taskName, Fonts.taskName, Sprites.taskName, SVGStore.taskName],
-    [Browserify.taskName, Images.taskName, Webpack.taskName],
-    [Javascript.taskName, Pug.taskName, Sass.taskName],
-    [Browsersync.taskName],
+    ["clean"],
+    ["favicon", "fonts", "sprites", "svgstore"],
+    ["browserify", "images", "webpack"],
+    ["javascript", "pug", "sass"],
+    ["browsersync"],
   ];
 
   /**
@@ -169,28 +152,10 @@ export default class TaskFactory {
   public createAllTasks(): void {
     const conf: Config = Config.getInstance();
 
-    // Initialize BrowserSync.
-    if (conf.settings.browsersync) {
-      const browserSync: Browsersync = Browsersync.getInstance();
-
-      this._pushTask(browserSync.start());
-      this._pushTask(browserSync.watch());
-    }
-
-    // Initialize clean task.
-    if (conf.settings.clean) {
-      const clean: Clean = Clean.getInstance();
-
-      this._pushTask(clean.start());
-    }
-
     // Initialize other tasks.
     Object.keys(conf.settings).forEach((task: string): void => {
       const confTasks: {} = conf.settings[task] as {};
-
-      if (this.isValidTask(task)) {
-        this._createTasks(task, confTasks);
-      }
+      this._createTasks(task, confTasks);
     });
 
     if (this._tasks.length > 0) {
@@ -216,23 +181,27 @@ export default class TaskFactory {
    * @param {string} task
    * @param {string} name
    * @param {object} settings
-   * @return {TaskRunner}
+   * @return {any}
    */
-  public createTask(task: string, name: string, settings: object): TaskRunner {
-    if (this.availableTaskNames().indexOf(task) < 0) {
+  public createTask(task: string, name: string, settings: object): any {
+    if (availableTaskNames.indexOf(task) < 0) {
       throw new Error(`Unsupported task: ${task}.`);
     }
 
-    return new this._availableTasks[task](name, settings);
-  }
+    if (typeof modules[task] === "undefined") {
+      const { default: module } = require(taskModule(task));
+      modules[task] = module;
+    }
 
-  /**
-   * Get supported task names.
-   *
-   * @return {string[]}
-   */
-  public availableTaskNames(): string[] {
-    return Object.keys(this._availableTasks);
+    if (task === "browsersync" || task === "clean") {
+      if (typeof uniqueInstances[task] === "undefined") {
+        uniqueInstances[task] = new modules[task](settings);
+      }
+
+      return uniqueInstances[task];
+    }
+
+    return new modules[task](name, settings);
   }
 
   /**
@@ -242,7 +211,7 @@ export default class TaskFactory {
    * @return {boolean}
    */
   public isValidTask(taskName: string): boolean {
-    return this.availableTaskNames().indexOf(taskName) >= 0;
+    return availableTaskNames.indexOf(taskName) >= 0;
   }
 
   /**
@@ -255,7 +224,7 @@ export default class TaskFactory {
     this._tasks.forEach((task: string): void => {
       const { type, name, step } = TaskFactory.explodeTaskName(task);
 
-      if (type === Browsersync.taskName || type === Clean.taskName) {
+      if (type === "browsersync" || type === "clean") {
         this._pushGlobalTask("byTypeOnly", type, task);
       } else {
         // Sort tasks by name.
@@ -359,13 +328,27 @@ export default class TaskFactory {
    * @private
    */
   private _createTasks(task: string, tasks: IGenericSettings): void {
-    Object.keys(tasks).forEach((name: string): void => {
-      const taskInstance: TaskRunner = this.createTask(task, name, tasks[name]);
+    if (!this.isValidTask(task)) {
+      return;
+    }
 
-      this._pushTask(taskInstance.lint());
-      this._pushTask(taskInstance.build());
-      this._pushTask(taskInstance.watch());
-    });
+    if ((taskModules[task] as any).simple) {
+      const taskInstance: any = this.createTask(task, "", tasks);
+
+      this._pushTask(taskInstance.start());
+
+      if (typeof (taskInstance as any).watch === "function") {
+        this._pushTask((taskInstance as any).watch());
+      }
+    } else {
+      Object.keys(tasks).forEach((name: string): void => {
+        const taskInstance: any = this.createTask(task, name, tasks[name]);
+
+        this._pushTask(taskInstance.lint());
+        this._pushTask(taskInstance.build());
+        this._pushTask(taskInstance.watch());
+      });
+    }
   }
 
   /**
@@ -384,7 +367,7 @@ export default class TaskFactory {
       gulpTask(errorHandler, (done: TaskCallback): void => {
         done();
 
-        if (Task.taskErrors.length > 0) {
+        if (TaskExtended.taskErrors.length > 0) {
           process.exit(1);
         }
       });

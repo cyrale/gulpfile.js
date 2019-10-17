@@ -6,8 +6,7 @@ import minimist from "minimist";
 import path from "path";
 import process from "process";
 
-import Browsersync from "../tasks/browsersync";
-import TaskFactory from "./task-factory";
+import { modules as taskModules } from "./modules";
 
 export interface IGenericSettings {
   [index: string]: any;
@@ -193,39 +192,34 @@ export default class Config {
     delete this._settings.sizes;
 
     // Merge global and local settings in each tasks.
-    if (this._settings[Browsersync.taskName]) {
-      this._settings[Browsersync.taskName].cwd = this._options.cwd;
-    }
+    Object.keys(taskModules).forEach((name: string): void => {
+      if (this._settings[name] && taskModules[name].simple) {
+        this._settings[name].cwd = this._options.cwd;
+      } else if (this._settings[name] && !taskModules[name].simple && this._settings[name].tasks) {
+        const globalSettings: {} = this._settings[name].settings || {};
 
-    const factory: TaskFactory = new TaskFactory();
-    factory.availableTaskNames().forEach((name: string): void | true => {
-      if (!this._settings[name] || !this._settings[name].tasks) {
-        return true;
+        Object.keys(this._settings[name].tasks).forEach((taskName: string): void => {
+          const task: {
+            cwd?: string;
+            settings?: {};
+            sizes?: boolean;
+          } = this._settings[name].tasks[taskName];
+
+          task.settings = merge(globalSettings, task.settings || {});
+          if (!task.cwd) {
+            task.cwd = this._options.cwd;
+          }
+
+          if (!task.sizes) {
+            task.sizes = sizes;
+          }
+
+          this._settings[name][taskName] = task;
+        });
+
+        delete this._settings[name].tasks;
+        delete this._settings[name].settings;
       }
-
-      const globalSettings: {} = this._settings[name].settings || {};
-
-      Object.keys(this._settings[name].tasks).forEach((taskName: string): void => {
-        const task: {
-          cwd?: string;
-          settings?: {};
-          sizes?: boolean;
-        } = this._settings[name].tasks[taskName];
-
-        task.settings = merge(globalSettings, task.settings || {});
-        if (!task.cwd) {
-          task.cwd = this._options.cwd;
-        }
-
-        if (!task.sizes) {
-          task.sizes = sizes;
-        }
-
-        this._settings[name][taskName] = task;
-      });
-
-      delete this._settings[name].tasks;
-      delete this._settings[name].settings;
     });
   }
 }

@@ -7,12 +7,12 @@ import newer from "gulp-newer";
 import merge from "lodash/merge";
 import path from "path";
 
-import Task from "./task";
+import TaskExtended from "./task-extended";
 
 /**
  * Minify images.
  */
-export default class Images extends Task {
+export default class Images extends TaskExtended {
   /**
    * Global task name.
    * @type {string}

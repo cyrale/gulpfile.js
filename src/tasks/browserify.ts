@@ -9,6 +9,7 @@ import Buffer from "vinyl-buffer";
 import source from "vinyl-source-stream";
 import watchify from "watchify";
 
+import TaskFactory from "../modules/task-factory";
 import Browsersync from "./browsersync";
 import Javascript from "./javascript";
 import { IBuildSettings } from "./task";
@@ -61,7 +62,7 @@ export default class Browserify extends Javascript {
    * @private
    */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
-    const browserSync = Browsersync.getInstance();
+    const browserSync = TaskFactory.getUniqueInstanceOf("browsersync");
     const taskName = this._taskName("build");
 
     return watchify(browserify(omit(this._settings.settings, ["babel"])))
@@ -71,7 +72,7 @@ export default class Browserify extends Javascript {
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(Buffer())
       .pipe(dest(this._settings.dst, buildSettings.options))
-      .pipe(browserSync.memorize(taskName))
+      .pipe(gulpIf(browserSync, browserSync.memorize(taskName)))
       .pipe(uglify())
       .pipe(rename({ suffix: this._minifySuffix }))
       .pipe(dest(this._settings.dst, buildSettings.options));

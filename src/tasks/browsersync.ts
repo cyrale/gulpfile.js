@@ -8,46 +8,18 @@ import through, { TransformCallback } from "through2";
 
 import Config, { IGenericSettings } from "../modules/config";
 import { TaskCallback } from "./task";
+import TaskSimple from "./task-simple";
 
 /**
  * Use Browsersync to reload browser on file modification.
  */
-export default class Browsersync {
+export default class Browsersync extends TaskSimple {
   /**
    * Global task name.
    * @type {string}
    * @readonly
    */
   public static readonly taskName: string = "browsersync";
-
-  /**
-   * Get Browsersync instance.
-   *
-   * @return {Browsersync}
-   */
-  public static getInstance(): Browsersync {
-    if (!Browsersync._instance) {
-      const conf: Config = Config.getInstance();
-      Browsersync._instance = new Browsersync(conf.settings.browsersync || {});
-    }
-
-    return Browsersync._instance;
-  }
-
-  /**
-   * Browsersync instance.
-   * @type {Browsersync}
-   * @private
-   */
-  private static _instance: Browsersync;
-
-  /**
-   * Browsersync settings.
-   * @type {IGenericSettings}
-   * @private
-   * @readonly
-   */
-  private readonly _settings: IGenericSettings = {};
 
   /**
    * Real Browsersync instance.
@@ -79,13 +51,14 @@ export default class Browsersync {
    *
    * @param {IGenericSettings} settings
    */
-  private constructor(settings: IGenericSettings) {
+  public constructor(settings: IGenericSettings) {
+    super(settings);
+
     const defaultSetting: {} = {
       open: false,
       ui: false,
     };
 
-    this._settings = settings;
     this._settings.settings = merge(defaultSetting, this._settings.settings || {});
   }
 
