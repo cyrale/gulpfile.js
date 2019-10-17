@@ -1,4 +1,5 @@
 import { parallel, series, task as gulpTask, watch } from "gulp";
+import uniq from "lodash/uniq";
 import process from "process";
 import Undertaker from "undertaker";
 
@@ -21,13 +22,9 @@ interface IGlobalTaskList {
   [name: string]: ITaskList;
 }
 
-const modules: {
+interface IModuleInstances {
   [name: string]: any;
-} = {};
-
-const uniqueInstances: {
-  [name: string]: any;
-} = {};
+}
 
 /**
  * Factory that create all tasks.
@@ -55,9 +52,22 @@ export default class TaskFactory {
     };
   }
 
+  /**
+   * Get unique instance of simple module.
+   *
+   * @param {string} name
+   * @return {any}
+   */
   public static getUniqueInstanceOf(name: string): any {
-    return uniqueInstances[name];
+    return TaskFactory._uniqueInstances[name];
   }
+
+  /**
+   * List of used modules.
+   * @type {IModuleInstances}
+   * @private
+   */
+  private static _modules: IModuleInstances = {};
 
   /**
    * Sort order for tasks.
@@ -65,6 +75,13 @@ export default class TaskFactory {
    * @private
    */
   private static readonly _sortOrder: string[] = ["lint", "build", "watch"];
+
+  /**
+   * List of unique instance for simple modules.
+   * @type {{}}
+   * @private
+   */
+  private static _uniqueInstances: IModuleInstances = {};
 
   /**
    * Add a task in a list.
@@ -183,24 +200,24 @@ export default class TaskFactory {
    * @return {any}
    */
   public createTask(task: string, name: string, settings: object): any {
-    if (availableTaskNames.indexOf(task) < 0) {
+    if (!this.isValidTask(task)) {
       throw new Error(`Unsupported task: ${task}.`);
     }
 
-    if (typeof modules[task] === "undefined") {
+    if (typeof TaskFactory._modules[task] === "undefined") {
       const { default: module } = require(taskModule(task));
-      modules[task] = module;
+      TaskFactory._modules[task] = module;
     }
 
     if (task === "browsersync" || task === "clean") {
-      if (typeof uniqueInstances[task] === "undefined") {
-        uniqueInstances[task] = new modules[task](settings);
+      if (typeof TaskFactory._uniqueInstances[task] === "undefined") {
+        TaskFactory._uniqueInstances[task] = new TaskFactory._modules[task](settings);
       }
 
-      return uniqueInstances[task];
+      return TaskFactory._uniqueInstances[task];
     }
 
-    return new modules[task](name, settings);
+    return new TaskFactory._modules[task](name, settings);
   }
 
   /**
