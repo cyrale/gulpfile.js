@@ -196,7 +196,7 @@ export default class TaskFactory {
       TaskFactory._modules[task] = module;
     }
 
-    if (task === "browsersync" || task === "clean") {
+    if (this.isSimpleTask(task)) {
       if (typeof TaskFactory._uniqueInstances[task] === "undefined") {
         TaskFactory._uniqueInstances[task] = new TaskFactory._modules[task](settings);
       }
@@ -205,6 +205,16 @@ export default class TaskFactory {
     }
 
     return new TaskFactory._modules[task](name, settings);
+  }
+
+  /**
+   * Check if a task is a simple task.
+   *
+   * @param {string} taskName
+   * @return {boolean}
+   */
+  public isSimpleTask(taskName: string): boolean {
+    return this.isValidTask(taskName) && taskModules[taskName].simple;
   }
 
   /**
@@ -227,7 +237,7 @@ export default class TaskFactory {
     this._tasks.forEach((task: string): void => {
       const { type, name, step } = TaskFactory.explodeTaskName(task);
 
-      if (type === "browsersync" || type === "clean") {
+      if (this.isSimpleTask(task)) {
         this._pushGlobalTask("byTypeOnly", type, task);
       } else {
         // Sort tasks by name.
