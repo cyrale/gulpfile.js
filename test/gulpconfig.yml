@@ -61,6 +61,11 @@ sass:
         - "src/sass/*.scss"
         - "src/sass/**/*.scss"
       dst: "dist/css"
+    private:
+      src:
+        - "src/sass/*.scss"
+        - "src/sass/**/*.scss"
+      dst: "dist/css"
   settings:
     sass:
       errLogToConsole: true
