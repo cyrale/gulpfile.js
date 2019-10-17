@@ -3,6 +3,7 @@ import autoprefixer from "autoprefixer";
 import CSSMQPacker from "css-mqpacker";
 import CSSNano from "cssnano";
 import log from "fancy-log";
+import Fiber from "fibers";
 import criticalCSS from "gulp-critical-css";
 import extractMediaQueries from "gulp-extract-media-queries";
 import gulpIf from "gulp-if";
@@ -23,6 +24,7 @@ import scssParser from "postcss-scss";
 import svgo from "postcss-svgo";
 import purgeCSSWithWordPress from "purgecss-with-wordpress";
 import rucksackCSS from "rucksack-css";
+import sassCompiler from "sass";
 import sassLint from "sass-lint";
 import sortCSSMediaQueries from "sort-css-media-queries";
 import { Transform } from "stream";
@@ -51,6 +53,8 @@ interface IPurgeCSSOptions {
   fontFace?: TPurgeCSSOptions;
   rejected?: TPurgeCSSOptions;
 }
+
+(sass as any).compiler = sassCompiler;
 
 /**
  * Build SASS files to CSS.
@@ -131,7 +135,8 @@ export default class Sass extends TaskExtended {
         fallbacks: true,
       },
       sass: {
-        outputStyle: "nested",
+        fiber: Fiber,
+        outputStyle: "expanded",
       },
     };
 
