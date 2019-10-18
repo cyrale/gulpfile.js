@@ -213,7 +213,6 @@ export default abstract class TaskExtended extends Task {
 
         // If there is no linter or no error, start specific logic of each task.
         if (!this._withLinter || !this._lintError) {
-          console.log(browserSync);
           stream = this._buildSpecific(stream, buildSettings, done)
             .pipe(gulpIf(this._activeSizes && this._settings.sizes.normal, buildSettings.size.collect()))
             .pipe(plumber.stop())
