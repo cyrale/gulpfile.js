@@ -37,10 +37,12 @@ export default class TaskFactory {
    * @return {ITaskNameElements}
    */
   public static explodeTaskName(task: string): ITaskNameElements {
-    const [type] = task.split(":");
-    let [, name, step] = task.split(":");
+    let [type = "", name = "", step = ""] = task.split(":");
 
-    if (typeof step === "undefined") {
+    if (TaskFactory._sortOrder.indexOf(type) >= 0) {
+      step = type;
+      type = "";
+    } else if (TaskFactory._sortOrder.indexOf(name) >= 0) {
       step = name;
       name = "";
     }
@@ -82,6 +84,19 @@ export default class TaskFactory {
    * @private
    */
   private static _uniqueInstances: IModuleInstances = {};
+
+  /**
+   * Check if current task is a global task.
+   *
+   * @return {boolean}
+   * @private
+   */
+  private static _isGlobalTask(): boolean {
+    const conf: Config = Config.getInstance();
+    const { type, step } = TaskFactory.explodeTaskName(conf.currentRun);
+
+    return type === "default" || (type === "" && TaskFactory._sortOrder.indexOf(step) >= 0);
+  }
 
   /**
    * Add a task in a list.
@@ -156,19 +171,13 @@ export default class TaskFactory {
     const conf: Config = Config.getInstance();
 
     // Sort tasks to always have simple ones on top.
-    let allTasks: string[] = Object.keys(conf.settings).sort((taskA: string, taskB: string): number => {
+    const allTasks: string[] = Object.keys(conf.settings).sort((taskA: string, taskB: string): number => {
       if (taskModules[taskA].simple !== taskModules[taskB].simple) {
         return taskModules[taskA].simple && !taskModules[taskB].simple ? -1 : 1;
       }
 
       return taskA < taskB ? -1 : taskA > taskB ? 1 : 0;
     });
-
-    if (conf.currentRun !== "default") {
-      const { type, name, step } = TaskFactory.explodeTaskName(conf.currentRun);
-
-      allTasks = allTasks.filter((task: string): boolean => task === type);
-    }
 
     // Initialize all tasks.
     allTasks.forEach((task: string): void => {
@@ -252,7 +261,7 @@ export default class TaskFactory {
     this._tasks.forEach((task: string): void => {
       const { type, name, step } = TaskFactory.explodeTaskName(task);
 
-      if (this.isSimpleTask(task)) {
+      if (this.isSimpleTask(type)) {
         this._pushGlobalTask("byTypeOnly", type, task);
       } else {
         // Sort tasks by name.
@@ -356,7 +365,11 @@ export default class TaskFactory {
    * @private
    */
   private _createTasks(task: string, tasks: IGenericSettings): void {
-    if (!this.isValidTask(task)) {
+    const conf: Config = Config.getInstance();
+    const { type: currentType, name: currentName, step: currentStep } = TaskFactory.explodeTaskName(conf.currentRun);
+
+    // Keep only valid and current tasks (useless to initialize unused tasks).
+    if (!this.isValidTask(task) || (!TaskFactory._isGlobalTask() && task !== currentType)) {
       return;
     }
 
@@ -371,6 +384,11 @@ export default class TaskFactory {
     } else {
       Object.keys(tasks).forEach((name: string): void => {
         const taskInstance: any = this.createTask(task, name, tasks[name]);
+
+        // Keep only current tasks (useless to initialize unused tasks).
+        if (currentName !== "" && currentName !== name) {
+          return;
+        }
 
         this._pushTask(taskInstance.lint());
         this._pushTask(taskInstance.build());
