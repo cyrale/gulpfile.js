@@ -178,9 +178,9 @@ export default abstract class TaskExtended extends Task {
         // All the build settings in a unique object.
         const buildSettings: IBuildSettings = {
           browserSync: {
-            memorize: browserSync ? browserSync.memorize : () => through.obj(),
-            remember: browserSync ? browserSync.remember : () => through.obj(),
-            sync: browserSync ? browserSync.sync : () => through.obj(),
+            memorize: browserSync ? browserSync.memorize.bind(browserSync) : () => through.obj(),
+            remember: browserSync ? browserSync.remember.bind(browserSync) : () => through.obj(),
+            sync: browserSync ? browserSync.sync.bind(browserSync) : () => through.obj(),
           },
           options: {
             cwd: this._settings.cwd,
@@ -218,14 +218,14 @@ export default abstract class TaskExtended extends Task {
             .pipe(plumber.stop())
             .pipe(buildSettings.browserSync.remember(taskName))
             .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)))
+            .pipe(buildSettings.browserSync.sync(taskName, this._browserSyncSettings))
             .pipe(
               gulpIf(
                 this._defaultRevision && Revision.isActive(),
                 Revision.manifest(buildSettings.revision, this._manifestCallback)
               )
             )
-            .pipe(gulpIf(this._defaultRevision && Revision.isActive(), dest(".", buildSettings.options)))
-            .pipe(buildSettings.browserSync.sync(taskName, this._browserSyncSettings));
+            .pipe(gulpIf(this._defaultRevision && Revision.isActive(), dest(".", buildSettings.options)));
         }
 
         return stream;

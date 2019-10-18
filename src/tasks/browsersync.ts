@@ -36,6 +36,8 @@ export default class Browsersync extends TaskSimple {
    */
   public static readonly taskOrder: number = 50;
 
+  public test: number = 0;
+
   /**
    * Real Browsersync instance.
    * @type {browserSync.BrowserSyncInstance}
@@ -75,6 +77,8 @@ export default class Browsersync extends TaskSimple {
     };
 
     this._settings.settings = merge(defaultSetting, this._settings.settings || {});
+
+    this.test = Math.random();
   }
 
   /**

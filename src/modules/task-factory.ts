@@ -156,13 +156,19 @@ export default class TaskFactory {
     const conf: Config = Config.getInstance();
 
     // Sort tasks to always have simple ones on top.
-    const allTasks: string[] = Object.keys(conf.settings).sort((taskA: string, taskB: string): number => {
+    let allTasks: string[] = Object.keys(conf.settings).sort((taskA: string, taskB: string): number => {
       if (taskModules[taskA].simple !== taskModules[taskB].simple) {
         return taskModules[taskA].simple && !taskModules[taskB].simple ? -1 : 1;
       }
 
       return taskA < taskB ? -1 : taskA > taskB ? 1 : 0;
     });
+
+    if (conf.currentRun !== "default") {
+      const { type, name, step } = TaskFactory.explodeTaskName(conf.currentRun);
+
+      allTasks = allTasks.filter((task: string): boolean => task === type);
+    }
 
     // Initialize all tasks.
     allTasks.forEach((task: string): void => {
