@@ -118,6 +118,8 @@ images:
         - "src/images/**/*.gif"
         - "src/images/**/*.svg"
       dst: "dist/images"
+  settings:
+    webp: true
 # ------------------------------------------
 # Sprites (https://github.com/Ensighten/spritesmith)
 # ------------------------------------------
