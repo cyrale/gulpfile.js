@@ -67,7 +67,7 @@ export default class Browserify extends Javascript {
    * @private
    */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
-    return watchify(browserify(omit(this._settings.settings, ["babel"])))
+    return browserify(omit(this._settings.settings, ["babel"]))
       .transform("babelify", this._settings.settings.babel)
       .bundle()
       .pipe(source(this._settings.filename))
