@@ -365,6 +365,7 @@ export default class TaskFactory {
    * @private
    */
   private _createTasks(task: string, tasks: IGenericSettings): void {
+    const simpleModule: boolean = (taskModules[task] as any).simple;
     const conf: Config = Config.getInstance();
     const { type: currentType, name: currentName, step: currentStep } = TaskFactory.explodeTaskName(conf.currentRun);
 
@@ -373,7 +374,8 @@ export default class TaskFactory {
       return;
     }
 
-    if ((taskModules[task] as any).simple) {
+    if (simpleModule && (currentStep === "" || currentStep === "watch")) {
+      // Add simple tasks only for global or watch call.
       const taskInstance: any = this.createTask(task, "", tasks);
 
       this._pushTask(taskInstance.start());
@@ -381,7 +383,8 @@ export default class TaskFactory {
       if (typeof (taskInstance as any).watch === "function") {
         this._pushTask((taskInstance as any).watch());
       }
-    } else {
+    } else if (!simpleModule) {
+      // Add classic tasks.
       Object.keys(tasks).forEach((name: string): void => {
         const taskInstance: any = this.createTask(task, name, tasks[name]);
 
@@ -390,9 +393,20 @@ export default class TaskFactory {
           return;
         }
 
-        this._pushTask(taskInstance.lint());
-        this._pushTask(taskInstance.build());
-        this._pushTask(taskInstance.watch());
+        // Add lint tasks only for global, lint or watch call.
+        if (currentStep === "" || currentStep === "lint" || currentStep === "watch") {
+          this._pushTask(taskInstance.lint());
+        }
+
+        // Add lint tasks only for global, build or watch call.
+        if (currentStep === "" || currentStep === "build" || currentStep === "watch") {
+          this._pushTask(taskInstance.build());
+        }
+
+        // Add lint tasks only for global or watch call.
+        if (currentStep === "" || currentStep === "watch") {
+          this._pushTask(taskInstance.watch());
+        }
       });
     }
   }
