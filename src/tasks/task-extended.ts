@@ -4,6 +4,7 @@ import { dest, series, src, task as gulpTask, watch } from "gulp";
 import gulpIf from "gulp-if";
 import plumber from "gulp-plumber";
 import process from "process";
+import through from "through2";
 
 import Config from "../modules/config";
 import Revision, { SimpleRevisionCallback } from "../modules/revision";
@@ -176,6 +177,11 @@ export default abstract class TaskExtended extends Task {
 
         // All the build settings in a unique object.
         const buildSettings: IBuildSettings = {
+          browserSync: {
+            memorize: browserSync ? browserSync.memorize : () => through.obj(),
+            remember: browserSync ? browserSync.remember : () => through.obj(),
+            sync: browserSync ? browserSync.sync : () => through.obj(),
+          },
           options: {
             cwd: this._settings.cwd,
             read: this._gulpRead,
@@ -207,10 +213,11 @@ export default abstract class TaskExtended extends Task {
 
         // If there is no linter or no error, start specific logic of each task.
         if (!this._withLinter || !this._lintError) {
+          console.log(browserSync);
           stream = this._buildSpecific(stream, buildSettings, done)
             .pipe(gulpIf(this._activeSizes && this._settings.sizes.normal, buildSettings.size.collect()))
             .pipe(plumber.stop())
-            .pipe(gulpIf(browserSync, browserSync.remember(taskName)))
+            .pipe(buildSettings.browserSync.remember(taskName))
             .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)))
             .pipe(
               gulpIf(
@@ -219,7 +226,7 @@ export default abstract class TaskExtended extends Task {
               )
             )
             .pipe(gulpIf(this._defaultRevision && Revision.isActive(), dest(".", buildSettings.options)))
-            .pipe(gulpIf(browserSync, browserSync.sync(taskName, this._browserSyncSettings)));
+            .pipe(buildSettings.browserSync.sync(taskName, this._browserSyncSettings));
         }
 
         return stream;

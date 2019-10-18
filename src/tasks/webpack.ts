@@ -9,7 +9,6 @@ import named from "vinyl-named";
 import webpack from "webpack";
 import webpackStream from "webpack-stream";
 
-import TaskFactory from "../modules/task-factory";
 import Javascript from "./javascript";
 import { IBuildSettings } from "./task";
 
@@ -74,8 +73,6 @@ export default class Webpack extends Javascript {
    * @protected
    */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
-    const browserSync = TaskFactory.getUniqueInstanceOf("browsersync");
-
     return stream
       .pipe(named())
       .pipe(webpackStream(this._settings.settings, webpack as any))
@@ -85,7 +82,7 @@ export default class Webpack extends Javascript {
         })
       )
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(gulpIf(browserSync, browserSync.memorize(buildSettings.taskName)))
+      .pipe(buildSettings.browserSync.memorize(buildSettings.taskName))
       .pipe(uglify())
       .pipe(rename({ suffix: this._minifySuffix }));
   }

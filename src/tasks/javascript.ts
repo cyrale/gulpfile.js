@@ -10,7 +10,6 @@ import merge from "lodash/merge";
 import omit from "lodash/omit";
 import path from "path";
 
-import TaskFactory from "../modules/task-factory";
 import { IBuildSettings } from "./task";
 import TaskExtended from "./task-extended";
 
@@ -90,13 +89,11 @@ export default class Javascript extends TaskExtended {
    * @protected
    */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
-    const browserSync = TaskFactory.getUniqueInstanceOf("browsersync");
-
     return stream
       .pipe(gulpIf(this._babelActive, babel(omit(this._settings.settings.babel, ["_flags"]))))
       .pipe(concat(this._settings.filename))
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(gulpIf(browserSync, browserSync.memorize(buildSettings.taskName)))
+      .pipe(buildSettings.browserSync.memorize(buildSettings.taskName))
       .pipe(uglify())
       .pipe(rename({ suffix: this._minifySuffix }));
   }

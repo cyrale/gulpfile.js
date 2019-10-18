@@ -1,6 +1,7 @@
 import { IGenericSettings } from "../modules/config";
 import { IRevisionOptions } from "../modules/revision";
 import Size from "../modules/size";
+import { IBrowserSyncMethods } from "./browsersync";
 
 export interface IGulpOptions {
   cwd: string;
@@ -9,6 +10,7 @@ export interface IGulpOptions {
 }
 
 export interface IBuildSettings {
+  browserSync: IBrowserSyncMethods;
   options: IGulpOptions;
   revision: IRevisionOptions;
   size: Size;

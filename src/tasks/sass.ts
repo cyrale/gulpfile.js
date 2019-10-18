@@ -36,7 +36,6 @@ import normalizeRevision from "../modules/postcss-normalize-revision";
 import removeCriticalProperties from "../modules/postcss-remove-critical-properties";
 import removeCriticalRules from "../modules/postcss-remove-critical-rules";
 import Revision, { IDefaultObject } from "../modules/revision";
-import TaskFactory from "../modules/task-factory";
 import { IBuildSettings } from "./task";
 import TaskExtended from "./task-extended";
 
@@ -207,8 +206,6 @@ export default class Sass extends TaskExtended {
    * @protected
    */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
-    const browserSync = TaskFactory.getUniqueInstanceOf("browsersync");
-    const taskName = this._taskName("build");
     const streams: NodeJS.ReadWriteStream[] = [];
 
     // Collect PostCSS plugins to run on global CSS file, before media queries or critical extraction.
@@ -293,7 +290,7 @@ export default class Sass extends TaskExtended {
     return mergeStream(streams)
       .pipe(gulpPostCSS(postCSSPluginsIntermediate))
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(gulpIf(browserSync, browserSync.memorize(taskName)))
+      .pipe(buildSettings.browserSync.memorize(buildSettings.taskName))
       .pipe(gulpPostCSS(postCSSPluginsAfter))
       .pipe(rename({ suffix: this._minifySuffix }));
   }

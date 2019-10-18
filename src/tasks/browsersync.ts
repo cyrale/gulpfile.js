@@ -10,6 +10,14 @@ import Config, { IGenericSettings } from "../modules/config";
 import { TaskCallback } from "./task";
 import TaskSimple from "./task-simple";
 
+type BrowserSyncTransform = ((taskName: string) => Transform) | (() => Transform);
+
+export interface IBrowserSyncMethods {
+  memorize: BrowserSyncTransform;
+  remember: BrowserSyncTransform;
+  sync: ((taskName: string, settings?: StreamOptions) => NodeJS.ReadWriteStream) | (() => Transform);
+}
+
 /**
  * Use Browsersync to reload browser on file modification.
  */
