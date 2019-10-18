@@ -39,10 +39,10 @@ export default class TaskFactory {
   public static explodeTaskName(task: string): ITaskNameElements {
     let [type = "", name = "", step = ""] = task.split(":");
 
-    if (TaskFactory._sortOrder.indexOf(type) >= 0) {
+    if (TaskFactory._sortOrder.indexOf(type) >= 0 || type === "start") {
       step = type;
       type = "";
-    } else if (TaskFactory._sortOrder.indexOf(name) >= 0) {
+    } else if (TaskFactory._sortOrder.indexOf(name) >= 0 || name === "start") {
       step = name;
       name = "";
     }
@@ -321,10 +321,12 @@ export default class TaskFactory {
   private _createSuperGlobalTasks(): void {
     // Collect and group tasks.
     this._tasks.forEach((task: string): void => {
-      const { step } = TaskFactory.explodeTaskName(task);
+      const { type, step } = TaskFactory.explodeTaskName(task);
 
       if (TaskFactory._sortOrder.indexOf(step) >= 0) {
         TaskFactory._pushTask(this._superGlobalTasks, step, task);
+      } else if (step === "start" && type === "clean") {
+        TaskFactory._pushTask(this._superGlobalTasks, "build", task);
       } else if (step === "start") {
         TaskFactory._pushTask(this._superGlobalTasks, "watch", task);
       }
