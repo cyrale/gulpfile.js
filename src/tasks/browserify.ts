@@ -69,7 +69,6 @@ export default class Browserify extends Javascript {
    */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const browserSync = TaskFactory.getUniqueInstanceOf("browsersync");
-    const taskName = this._taskName("build");
 
     return watchify(browserify(omit(this._settings.settings, ["babel"])))
       .transform("babelify", this._settings.settings.babel)
@@ -78,7 +77,7 @@ export default class Browserify extends Javascript {
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(Buffer())
       .pipe(dest(this._settings.dst, buildSettings.options))
-      .pipe(gulpIf(browserSync, browserSync.memorize(taskName)))
+      .pipe(gulpIf(browserSync, browserSync.memorize(buildSettings.taskName)))
       .pipe(uglify())
       .pipe(rename({ suffix: this._minifySuffix }))
       .pipe(dest(this._settings.dst, buildSettings.options));

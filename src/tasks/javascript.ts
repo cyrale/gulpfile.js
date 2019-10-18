@@ -91,13 +91,12 @@ export default class Javascript extends TaskExtended {
    */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const browserSync = TaskFactory.getUniqueInstanceOf("browsersync");
-    const taskName = this._taskName("build");
 
     return stream
       .pipe(gulpIf(this._babelActive, babel(omit(this._settings.settings.babel, ["_flags"]))))
       .pipe(concat(this._settings.filename))
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(gulpIf(browserSync, browserSync.memorize(taskName)))
+      .pipe(gulpIf(browserSync, browserSync.memorize(buildSettings.taskName)))
       .pipe(uglify())
       .pipe(rename({ suffix: this._minifySuffix }));
   }

@@ -247,13 +247,9 @@ export default class Sass extends TaskExtended {
 
       let streamExtractMQ: NodeJS.ReadWriteStream = stream
         .pipe(
-          rename(
-            (pPath: rename.ParsedPath): rename.ParsedPath => {
-              mainFilename = pPath.basename as string;
-
-              return pPath;
-            }
-          )
+          rename((pPath: rename.ParsedPath): void => {
+            mainFilename = pPath.basename as string;
+          })
         )
         .pipe(
           Revision.additionalData((file: any, additionalData: IDefaultObject): void => {
@@ -262,15 +258,11 @@ export default class Sass extends TaskExtended {
         )
         .pipe(extractMediaQueries())
         .pipe(
-          rename(
-            (pPath: rename.ParsedPath): rename.ParsedPath => {
-              if (pPath.basename !== mainFilename) {
-                pPath.basename = `${mainFilename}.${pPath.basename}`;
-              }
-
-              return pPath;
+          rename((pPath: rename.ParsedPath): void => {
+            if (pPath.basename !== mainFilename) {
+              pPath.basename = `${mainFilename}.${pPath.basename}`;
             }
-          )
+          })
         );
 
       // Remove critical rules from original file.

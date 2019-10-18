@@ -75,7 +75,6 @@ export default class Webpack extends Javascript {
    */
   protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
     const browserSync = TaskFactory.getUniqueInstanceOf("browsersync");
-    const taskName = this._taskName("build");
 
     return stream
       .pipe(named())
@@ -86,7 +85,7 @@ export default class Webpack extends Javascript {
         })
       )
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(gulpIf(browserSync, browserSync.memorize(taskName)))
+      .pipe(gulpIf(browserSync, browserSync.memorize(buildSettings.taskName)))
       .pipe(uglify())
       .pipe(rename({ suffix: this._minifySuffix }));
   }
