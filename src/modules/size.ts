@@ -248,12 +248,12 @@ export default class Size {
    * @private
    */
   private _display(): void {
-    if (!this._end || this._displayed) {
-      return;
-    }
-
     const calculatedCount = reduce(this._files, (count: number, file: IFile) => count + (file.calculated ? 1 : 0), 0);
     const filesCount = Object.keys(this._files).length;
+
+    if (!this._end || this._displayed || filesCount === 0) {
+      return;
+    }
 
     // Head of the table.
     const head: string[] = ["Filename".padEnd(35, " "), "Size".padStart(8, " ")];
@@ -266,30 +266,32 @@ export default class Size {
       this._displayed = true;
 
       // Collect sizes in a simple array.
-      const files: string[][] = Object.keys(this._files).map((filename: string): string[] => {
-        const file: IFile = this._files[filename];
-        const prettySizes: IPrettySizes = Size._prettyBytes(file.sizes);
+      const files: string[][] = Object.keys(this._files)
+        .sort()
+        .map((filename: string): string[] => {
+          const file: IFile = this._files[filename];
+          const prettySizes: IPrettySizes = Size._prettyBytes(file.sizes);
 
-        const row = [
-          chalk.cyan(filename),
-          prettySizes.size + (this._options.gzip ? chalk.gray(`\n${prettySizes.sizeGzipped} gzipped`) : ""),
-        ];
+          const row = [
+            chalk.cyan(filename),
+            prettySizes.size + (this._options.gzip ? chalk.gray(`\n${prettySizes.sizeGzipped} gzipped`) : ""),
+          ];
 
-        // Add minified information and differential value.
-        if (this._options.minifySuffix !== "") {
-          const saved = Math.max(0, file.sizes.size - file.sizes.minified);
-          const savedPercent = file.sizes.size === 0 ? 0 : (saved * 100) / file.sizes.size;
+          // Add minified information and differential value.
+          if (this._options.minifySuffix !== "") {
+            const saved = Math.max(0, file.sizes.size - file.sizes.minified);
+            const savedPercent = file.sizes.size === 0 ? 0 : (saved * 100) / file.sizes.size;
 
-          const formatPercent = savedPercent.toFixed(1).padStart(4, " ");
+            const formatPercent = savedPercent.toFixed(1).padStart(4, " ");
 
-          row.push(
-            prettySizes.minified + (this._options.gzip ? chalk.gray(`\n${prettySizes.minifiedGzipped} gzipped`) : ""),
-            `${prettyBytes(saved)} ${chalk.gray(`(${formatPercent}%)`)}`
-          );
-        }
+            row.push(
+              prettySizes.minified + (this._options.gzip ? chalk.gray(`\n${prettySizes.minifiedGzipped} gzipped`) : ""),
+              `${prettyBytes(saved)} ${chalk.gray(`(${formatPercent}%)`)}`
+            );
+          }
 
-        return row;
-      });
+          return row;
+        });
 
       // Create table to display.
       const table = new Table({
