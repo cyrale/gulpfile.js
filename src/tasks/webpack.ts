@@ -38,8 +38,6 @@ export default class Webpack extends Javascript {
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    this._minifySuffix = ".min";
-
     const defaultSettings: {} = {
       module: {
         rules: [
