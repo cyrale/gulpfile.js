@@ -2,7 +2,7 @@ import { CLIEngine, Linter } from "eslint";
 import log from "fancy-log";
 import gulpIf from "gulp-if";
 import rename from "gulp-rename";
-import uglify from "gulp-uglify";
+import terser from "gulp-terser";
 import merge from "lodash/merge";
 import path from "path";
 import named from "vinyl-named";
@@ -83,7 +83,7 @@ export default class Webpack extends Javascript {
       )
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(buildSettings.browserSync.memorize(buildSettings.taskName))
-      .pipe(uglify())
+      .pipe(terser())
       .pipe(rename({ suffix: this._minifySuffix }));
   }
 

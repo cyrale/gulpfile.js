@@ -2,12 +2,11 @@ import browserify from "browserify";
 import { dest } from "gulp";
 import gulpIf from "gulp-if";
 import rename from "gulp-rename";
-import uglify from "gulp-uglify";
+import terser from "gulp-terser";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
-import Buffer from "vinyl-buffer";
+import buffer from "vinyl-buffer";
 import source from "vinyl-source-stream";
-import watchify from "watchify";
 
 import Javascript from "./javascript";
 import { IBuildSettings } from "./task";
@@ -39,8 +38,6 @@ export default class Browserify extends Javascript {
   constructor(name: string, settings: object) {
     super(name, settings);
 
-    this._minifySuffix = ".min";
-
     // Improve performance.
     this._gulpRead = false;
 
@@ -51,7 +48,7 @@ export default class Browserify extends Javascript {
       insertGlobals: true,
     };
 
-    this._settings.settings = merge(watchify.args, defaultSettings, this._settings.settings || {});
+    this._settings.settings = merge(defaultSettings, this._settings.settings || {});
     this._settings.settings.babel =
       typeof this._settings.settings.babel === "object"
         ? merge(Browserify._babelDefaultSettings, this._settings.settings.babel)
@@ -72,10 +69,10 @@ export default class Browserify extends Javascript {
       .bundle()
       .pipe(source(this._settings.filename))
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(Buffer())
+      .pipe(buffer())
       .pipe(dest(this._settings.dst, buildSettings.options))
       .pipe(buildSettings.browserSync.memorize(buildSettings.taskName))
-      .pipe(uglify())
+      .pipe(terser())
       .pipe(rename({ suffix: this._minifySuffix }))
       .pipe(dest(this._settings.dst, buildSettings.options));
   }

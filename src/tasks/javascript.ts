@@ -5,7 +5,7 @@ import concat from "gulp-concat";
 import esLint from "gulp-eslint";
 import gulpIf from "gulp-if";
 import rename from "gulp-rename";
-import uglify from "gulp-uglify";
+import terser from "gulp-terser";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
 import path from "path";
@@ -94,7 +94,7 @@ export default class Javascript extends TaskExtended {
       .pipe(concat(this._settings.filename))
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(buildSettings.browserSync.memorize(buildSettings.taskName))
-      .pipe(uglify())
+      .pipe(terser())
       .pipe(rename({ suffix: this._minifySuffix }));
   }
 
@@ -160,7 +160,7 @@ export default class Javascript extends TaskExtended {
         process.exit(1);
       }
     } else if (error.message && error.loc) {
-      // Message send by gulp-uglify or other
+      // Message send by gulp-terser or other
       formattedMessage = [
         {
           errorCount: 1,
