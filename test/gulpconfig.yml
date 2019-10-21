@@ -106,6 +106,17 @@ webpack:
       dst: "dist/js"
       filename: "bundle.js"
 # ------------------------------------------
+# TypeScript
+# ------------------------------------------
+typescript:
+  tasks:
+    public:
+      src: "src/typescript/main.ts"
+      dst: "dist/js"
+      filename: "typescript.js"
+      watch:
+        - "src/typescript/**/*.ts"
+# ------------------------------------------
 # Images
 # ------------------------------------------
 images:
