@@ -23,6 +23,8 @@ export interface Options extends TaskOptions {
  * Task class to define gulp tasks.
  */
 export default abstract class TaskExtended extends Task {
+  public static readonly runInParallel: boolean = true;
+
   /**
    * Flag to define if task use the default dest to save files.
    * @type {boolean}

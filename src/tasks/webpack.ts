@@ -18,6 +18,8 @@ import { BuildSettings, Options as TaskOptions } from "./task";
  * Package Javascript using Webpack.
  */
 export default class Webpack extends Javascript {
+  public static readonly runInParallel: boolean = false;
+
   /**
    * Global task name.
    * @type {string}

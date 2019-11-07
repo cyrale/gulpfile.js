@@ -137,11 +137,11 @@ export default class TaskFactory {
   /**
    * Check if an array is empty. Used in filters.
    *
-   * @param {string[]} tasks
+   * @param {(string | string[])[]} tasks
    * @return {boolean}
    * @private
    */
-  private static _removeEmptyArrays(tasks: string[]): boolean {
+  private static _removeEmptyArrays(tasks: (string | string[])[]): boolean {
     return tasks.length > 0;
   }
 
@@ -165,7 +165,7 @@ export default class TaskFactory {
    * @private
    */
   private _orderedSuperGlobalTasks: {
-    [name: string]: string[][];
+    [name: string]: (string | string[])[][];
   } = {};
 
   /**
@@ -306,20 +306,28 @@ export default class TaskFactory {
     // Create tasks sorted by type and step.
     if (this._globalTasks.byStep) {
       Object.keys(this._globalTasks.byStep).forEach((taskName: string): void => {
-        this._defineTask(taskName, this._globalTasks.byStep[taskName], "parallel");
+        this._defineTask(
+          taskName,
+          this._globalTasks.byStep[taskName],
+          this._runInParallel(taskName) ? "parallel" : "series"
+        );
       });
     }
 
     // Create tasks sorted by type only.
     if (this._globalTasks.byTypeOnly) {
       Object.keys(this._globalTasks.byTypeOnly).forEach((taskName: string): void => {
-        this._defineTask(taskName, this._globalTasks.byTypeOnly[taskName], "parallel");
+        this._defineTask(
+          taskName,
+          this._globalTasks.byTypeOnly[taskName],
+          this._runInParallel(taskName) ? "parallel" : "series"
+        );
       });
 
       // Sort and order global tasks.
       this._orderedGlobalTasks = this._tasksGroupAndOrder()
         .map((taskNames: string[]): string[] =>
-          taskNames.filter((taskName: string): boolean => typeof this._globalTasks.byTypeOnly[taskName] !== "undefined")
+          taskNames.filter((taskName: string): boolean => !!this._globalTasks.byTypeOnly[taskName])
         )
         .filter(TaskFactory._removeEmptyArrays);
     }
@@ -344,30 +352,55 @@ export default class TaskFactory {
       }
     });
 
+    // Create super global tasks.
     Object.keys(this._superGlobalTasks).forEach((step: string): void => {
+      console.log(step);
       // Sort and order super global tasks.
       this._orderedSuperGlobalTasks[step] = this._tasksGroupAndOrder()
-        .map((taskNames: string[]): string[] =>
-          taskNames
-            .map((taskName: string): string[] =>
-              this._superGlobalTasks[step].filter((task: string): boolean => {
-                const { type } = TaskFactory.explodeTaskName(task);
-                return type === taskName;
-              })
-            )
-            .reduce((acc: string[] = [], value: string[]) => [...acc, ...value])
-        )
+        .map((taskNames: string[]): (string | string[])[] => {
+          return taskNames
+            .map((type: string): (string | string[])[] => {
+              // Extract arrays of tasks of the type `type`.
+              const currentTasks: string[] = this._superGlobalTasks[step].filter((taskName: string): boolean => {
+                const { type: currentType } = TaskFactory.explodeTaskName(taskName);
+                return type === currentType;
+              });
+
+              if (!this._isTaskSimple(type) && !this._runInParallel(type)) {
+                return [currentTasks];
+              }
+
+              return currentTasks;
+            })
+            .reduce(
+              // Merge all arrays.
+              (acc: (string | string[])[], value: (string | string[])[]): (string | string[])[] => [...acc, ...value],
+              []
+            );
+        })
         .filter(TaskFactory._removeEmptyArrays);
 
       // Define super global task.
-      this._defineTask(
-        step,
-        this._orderedSuperGlobalTasks[step].map(
-          (taskNames: string[]): Undertaker.TaskFunction => {
-            return parallel(taskNames);
-          }
-        )
-      );
+      if (this._orderedSuperGlobalTasks[step].length > 0) {
+        this._defineTask(
+          step,
+          this._orderedSuperGlobalTasks[step].map(
+            (groups: (string | string[])[]): Undertaker.TaskFunction => {
+              const tasks: Undertaker.Task[] = groups.map(
+                (task: string | string[]): Undertaker.Task => {
+                  if (typeof task === "string") {
+                    return task;
+                  }
+
+                  return series(task);
+                }
+              );
+
+              return parallel(tasks);
+            }
+          )
+        );
+      }
     });
   }
 
@@ -580,5 +613,13 @@ export default class TaskFactory {
     const { default: module } = require(`../tasks/${taskName}`);
 
     return module;
+  }
+
+  private _runInParallel(taskName: string): boolean {
+    const { type } = TaskFactory.explodeTaskName(taskName);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const module: any = this._loadModule(type);
+
+    return module.runInParallel;
   }
 }
