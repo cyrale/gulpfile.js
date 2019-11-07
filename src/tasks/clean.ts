@@ -1,8 +1,8 @@
 import del from "del";
-import { task as gulpTask } from "gulp";
 
-import Config from "../modules/config";
+import Config from "../libs/config";
 import TaskSimple from "./task-simple";
+import { TaskCallback } from "./task";
 
 /**
  * Clean task to delete files and directories.
@@ -24,19 +24,13 @@ export default class Clean extends TaskSimple {
 
   /**
    * Start clean. Delete files and directories.
+   *
    * @return {string}
    */
-  public start(): string {
-    const taskName: string = this._taskName("start");
-
-    gulpTask(
-      taskName,
-      (): Promise<string[]> => {
-        Config.chdir(this._settings.cwd);
-        return del(this._settings.files as string[]);
-      }
-    );
-
-    return taskName;
+  protected _start(done: TaskCallback): void {
+    Config.chdir(this._settings.cwd);
+    del(this._settings.files as string[]).then(() => {
+      done();
+    });
   }
 }

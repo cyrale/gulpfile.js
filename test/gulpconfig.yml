@@ -73,7 +73,7 @@ sass:
       sort: "mobile"
     inlineSVG:
       path: "assets/"
-    critical: true
+    critical: false
     extractMQ: true
     purgeCSS: false
 # ------------------------------------------
@@ -83,8 +83,8 @@ javascript:
   tasks:
     public:
       src:
-#        - "dist/js/modules.min.js"
-        - "src/js/concat/**/*.js"
+        - "src/js/concat/vendor/**/*.js"
+        - "src/js/concat/*.js"
       dst: "dist/js"
       filename: "all.js"
 # ------------------------------------------
@@ -93,18 +93,24 @@ javascript:
 browserify:
   tasks:
     public:
-      src: "src/js/modules/app.js"
+      src: "src/js/browserify/app.js"
       dst: "dist/js"
-      filename: "modules.js"
+      filename: "browserify.js"
+      settings:
+        eslint: ".eslintrc"
 # ------------------------------------------
 # Webpack
 # ------------------------------------------
 webpack:
   tasks:
     public:
-      src: "src/js/bundles/app.js"
+      src: "src/js/webpack/app.js"
       dst: "dist/js"
-      filename: "bundle.js"
+      filename: "webpack.js"
+    private:
+      src: "src/js/webpack/app.js"
+      dst: "dist/js"
+      filename: "webpackp.js"
 # ------------------------------------------
 # TypeScript
 # ------------------------------------------
@@ -114,8 +120,11 @@ typescript:
       src: "src/typescript/main.ts"
       dst: "dist/js"
       filename: "typescript.js"
-      watch:
-        - "src/typescript/**/*.ts"
+      settings:
+        eslint:
+          configFile: ".eslintrc-ts"
+          useEslintrc: false
+          ignorePath: ".eslintignore-ts"
 # ------------------------------------------
 # Images
 # ------------------------------------------

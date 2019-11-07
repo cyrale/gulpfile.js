@@ -7,6 +7,7 @@ import path from "path";
 import svgo from "svgo";
 import Vinyl from "vinyl";
 
+import { TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -30,14 +31,10 @@ export default class SVGStore extends TaskExtended {
   /**
    * Task constructor.
    *
-   * @param {string} name
-   * @param {object} settings
+   * @param {TaskOptions} options
    */
-  constructor(name: string, settings: object) {
-    super(name, settings);
-
-    // No need of linter.
-    this._withLinter = false;
+  constructor(options: TaskOptions) {
+    super(options);
 
     const defaultSettings: {} = {
       svgmin: {
@@ -82,11 +79,11 @@ export default class SVGStore extends TaskExtended {
   /**
    * Method to add specific steps for the build.
    *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @return {NodeJS.ReadWriteStream}
+   * @param {NodeJS.ReadableStream} stream
+   * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     return stream
       .pipe(
         svgMin(
@@ -105,61 +102,63 @@ export default class SVGStore extends TaskExtended {
         )
       )
       .pipe(svgStore(this._settings.settings.svgstore))
-      .pipe(cheerio({
-        parserOptions: {
-          xmlMode: true,
-        },
-        // tslint:disable-next-line:ban-types
-        run: ($: CheerioStatic, file: Vinyl, done?: Function): any => {
-          // Append view and use tags to the SVG.
-          let offsetY: number = 0;
-          let maxWidth: number = 0;
+      .pipe(
+        cheerio({
+          parserOptions: {
+            xmlMode: true,
+          },
+          run: ($: CheerioStatic, file: Vinyl, done?: Function): void => {
+            // Append view and use tags to the SVG.
+            let offsetY = 0;
+            let maxWidth = 0;
 
-          const views: Cheerio = $("<views />");
-          const uses: Cheerio = $("<uses />");
+            const views: Cheerio = $("<views />");
+            const uses: Cheerio = $("<uses />");
 
-          $("symbol")
-            .filter((index: number, symbol: CheerioElement): boolean => !!symbol.attribs.id && !!symbol.attribs.viewBox)
-            .each((index: number, symbol: CheerioElement): void => {
-              if (this._settings.settings.prefix) {
-                symbol.attribs.id = `${this._settings.settings.prefix}-${symbol.attribs.id}`;
-              }
+            $("symbol")
+              .filter(
+                (index: number, symbol: CheerioElement): boolean => !!symbol.attribs.id && !!symbol.attribs.viewBox
+              )
+              .each((index: number, symbol: CheerioElement): void => {
+                if (this._settings.settings.prefix) {
+                  symbol.attribs.id = `${this._settings.settings.prefix}-${symbol.attribs.id}`;
+                }
 
-              const [originX, , width, height] = symbol.attribs.viewBox
-                .split(" ")
-                .map((i: string): number => Number(i));
-              const name: string = `${symbol.attribs.id}-icon`;
+                const [originX, , width, height] = symbol.attribs.viewBox
+                  .split(" ")
+                  .map((i: string): number => Number(i));
+                const name = `${symbol.attribs.id}-icon`;
 
-              views.append(`<view id="${name}" viewBox="${originX} ${offsetY} ${width} ${height}" />`);
+                views.append(`<view id="${name}" viewBox="${originX} ${offsetY} ${width} ${height}" />`);
 
-              uses.append(
-                `<use
-                     xlink:href="#${symbol.attribs.id}"
-                     width="${width}"
-                     height="${height}"
-                     x="${originX}"
-                     y="${offsetY}" />`
-              );
+                uses.append(
+                  `<use
+                   xlink:href="#${symbol.attribs.id}"
+                   width="${width}"
+                   height="${height}"
+                   x="${originX}"
+                   y="${offsetY}" />`
+                );
 
-              offsetY += height;
-              maxWidth = Math.max(maxWidth, width);
-            });
+                offsetY += height;
+                maxWidth = Math.max(maxWidth, width);
+              });
 
-          $("svg")
-            .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
-            .attr("viewBox", `0 0 ${maxWidth} ${offsetY}`)
-            // @ts-ignore
-            .append(views[0].children)
-            .append(uses[0].children);
+            $("svg")
+              .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
+              .attr("viewBox", `0 0 ${maxWidth} ${offsetY}`)
+              .append("", views[0].children)
+              .append("", uses[0].children);
 
-          if (done) {
-            done();
-          }
-        },
-      }) as NodeJS.WritableStream)
-      .pipe(rename({
-        basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),
-        extname: ".svg",
-      }) as NodeJS.WritableStream);
+            if (done) done();
+          },
+        })
+      )
+      .pipe(
+        rename({
+          basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),
+          extname: ".svg",
+        })
+      );
   }
 }

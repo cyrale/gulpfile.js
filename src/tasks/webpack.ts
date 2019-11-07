@@ -1,16 +1,18 @@
 import { CLIEngine, Linter } from "eslint";
 import log from "fancy-log";
-import gulpIf from "gulp-if";
+import { sink } from "gulp-clone";
 import rename from "gulp-rename";
+import stripe from "gulp-strip-comments";
 import terser from "gulp-terser";
 import merge from "lodash/merge";
+import omit from "lodash/omit";
 import path from "path";
 import named from "vinyl-named";
 import webpack from "webpack";
 import webpackStream from "webpack-stream";
 
 import Javascript from "./javascript";
-import { IBuildSettings } from "./task";
+import { BuildSettings, TaskOptions } from "./task";
 
 /**
  * Package Javascript using Webpack.
@@ -32,11 +34,11 @@ export default class Webpack extends Javascript {
 
   /**
    * Task constructor.
-   * @param {string} name
-   * @param {object} settings
+   *
+   * @param {TaskOptions} options
    */
-  constructor(name: string, settings: object) {
-    super(name, settings);
+  constructor(options: TaskOptions) {
+    super(options);
 
     const defaultSettings: {} = {
       module: {
@@ -46,7 +48,7 @@ export default class Webpack extends Javascript {
             test: /\.m?js$/,
             use: {
               loader: "babel-loader",
-              options: Webpack._babelDefaultSettings,
+              options: merge(Webpack._babelDefaultSettings, { sourceType: "module" }),
             },
           },
         ],
@@ -54,48 +56,61 @@ export default class Webpack extends Javascript {
       stats: "errors-only",
     };
 
-    this._settings.settings =
-      typeof this._settings.settings === "string"
-        ? require(path.resolve(this._settings.cwd, this._settings.settings))
-        : merge(defaultSettings, this._settings.settings || {}, {
-            mode: "development",
-          });
+    this._settings.settings = merge(defaultSettings, this._settings.settings, {
+      mode: "production",
+      optimization: {
+        minimize: false,
+      },
+      watch: false,
+    });
   }
 
   /**
    * Method to add specific steps for the build.
    *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @param {IBuildSettings} buildSettings
-   * @return {NodeJS.ReadWriteStream}
+   * @param {NodeJS.ReadableStream} stream
+   * @param {BuildSettings} buildSettings
+   * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cloneSink: any = sink();
+
     return stream
       .pipe(named())
-      .pipe(webpackStream(this._settings.settings, webpack as any))
+      .pipe(
+        webpackStream(omit(this._settings.settings, ["eslint"])),
+        webpack as any
+      ) // eslint-disable-line @typescript-eslint/no-explicit-any
       .pipe(
         rename({
           basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),
         })
       )
-      .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(buildSettings.browserSync.memorize(buildSettings.taskName))
+      .pipe(cloneSink)
+      .pipe(stripe())
       .pipe(terser())
-      .pipe(rename({ suffix: this._minifySuffix }));
+      .pipe(
+        rename({
+          suffix: this._minifySuffix,
+        })
+      )
+      .pipe(cloneSink.tap());
   }
 
   /**
    * Display errors from Webpack.
    *
-   * @param error
+   * @param {any} error
    * @protected
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected _displayError(error: any): void {
     const cliEngine: CLIEngine = new CLIEngine({});
     const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");
 
-    if (error.plugin === "webpack-steam") {
+    if (error.plugin === "webpack-stream") {
       // Message from webpack
       const formattedMessage = [
         {

@@ -1,18 +1,18 @@
 import BrowserSync, { BrowserSyncInstance, StreamOptions } from "browser-sync";
-import { task as gulpTask, watch } from "gulp";
-import gulpIf from "gulp-if";
+import { watch } from "gulp";
 import isEmpty from "lodash/isEmpty";
 import merge from "lodash/merge";
 import { Transform } from "stream";
 import through, { TransformCallback } from "through2";
+import Vinyl from "vinyl";
 
-import Config, { IGenericSettings } from "../modules/config";
-import { TaskCallback } from "./task";
+import Config from "../libs/config";
+import { TaskOptions, TaskCallback } from "./task";
 import TaskSimple from "./task-simple";
 
 type BrowserSyncTransform = ((taskName: string) => Transform) | (() => Transform);
 
-export interface IBrowserSyncMethods {
+export interface BrowserSyncMethods {
   memorize: BrowserSyncTransform;
   remember: BrowserSyncTransform;
   sync: ((taskName: string, settings?: StreamOptions) => NodeJS.ReadWriteStream) | (() => Transform);
@@ -36,8 +36,6 @@ export default class Browsersync extends TaskSimple {
    */
   public static readonly taskOrder: number = 50;
 
-  public test: number = 0;
-
   /**
    * Real Browsersync instance.
    * @type {browserSync.BrowserSyncInstance}
@@ -50,7 +48,7 @@ export default class Browsersync extends TaskSimple {
    * @type {boolean}
    * @private
    */
-  private _started: boolean = false;
+  private _started = false;
 
   /**
    * List of modified files to sync.
@@ -59,17 +57,17 @@ export default class Browsersync extends TaskSimple {
    */
   private _syncedFiles: {
     [taskName: string]: {
-      [filename: string]: any;
+      [filename: string]: unknown;
     };
   } = {};
 
   /**
    * Browsersync constructor.
    *
-   * @param {IGenericSettings} settings
+   * @param {TaskOptions} options
    */
-  public constructor(settings: IGenericSettings) {
-    super(settings);
+  public constructor(options: TaskOptions) {
+    super(options);
 
     const defaultSetting: {} = {
       open: false,
@@ -77,28 +75,6 @@ export default class Browsersync extends TaskSimple {
     };
 
     this._settings.settings = merge(defaultSetting, this._settings.settings || {});
-
-    this.test = Math.random();
-  }
-
-  /**
-   * Start Browsersync.
-   *
-   * @return {string}
-   */
-  public start(): string {
-    const taskName: string = `${Browsersync.taskName}:start`;
-
-    gulpTask(taskName, (): void => {
-      Config.chdir(this._settings.cwd);
-
-      // Initialize Browsersync.
-      this._browserSync.init(this._settings.settings, (): void => {
-        this._started = true;
-      });
-    });
-
-    return taskName;
   }
 
   /**
@@ -108,15 +84,13 @@ export default class Browsersync extends TaskSimple {
    * @return {Transform}
    */
   public memorize(taskName: string): Transform {
-    const that = this;
-
     return through.obj(
-      (file: any, encoding: string, cb: TransformCallback): void => {
+      (file: Vinyl, encoding: string, cb: TransformCallback): void => {
         if (file.isNull() || file.isStream()) {
           return cb(null, file);
         }
 
-        that._syncedFiles = merge(that._syncedFiles, {
+        this._syncedFiles = merge(this._syncedFiles, {
           [taskName]: {
             [file.path]: file.clone(),
           },
@@ -137,20 +111,20 @@ export default class Browsersync extends TaskSimple {
    * @return {Transform}
    */
   public remember(taskName: string): Transform {
-    const that = this;
+    const self = this;
 
-    return through.obj((file: any, encoding: string, cb: TransformCallback): void => cb(null, file), function(
+    return through.obj((file: unknown, encoding: string, cb: TransformCallback): void => cb(null, file), function(
       cb: TransformCallback
     ): void {
-      if (isEmpty(that._syncedFiles[taskName])) {
+      if (isEmpty(self._syncedFiles[taskName])) {
         return cb();
       }
 
-      Object.keys(that._syncedFiles[taskName]).forEach((filename: string): void => {
-        this.push(that._syncedFiles[taskName][filename]);
+      Object.keys(self._syncedFiles[taskName]).forEach((filename: string): void => {
+        this.push(self._syncedFiles[taskName][filename]);
       });
 
-      delete that._syncedFiles[taskName];
+      delete self._syncedFiles[taskName];
 
       cb();
     });
@@ -164,31 +138,29 @@ export default class Browsersync extends TaskSimple {
    * @return {NodeJS.ReadWriteStream}
    */
   public sync(taskName: string, settings?: StreamOptions): NodeJS.ReadWriteStream {
-    return gulpIf(this._started, this._browserSync.stream(settings || {}));
-  }
-
-  /**
-   * Watch files to trigger sync.
-   *
-   * @return {string | false}
-   */
-  public watch(): string | false {
-    const taskName: string = `${Browsersync.taskName}:watch`;
-
-    if (this._settings.watch) {
-      gulpTask(taskName, (done: TaskCallback): void => {
-        watch(this._settings.watch, { cwd: this._settings.cwd }).on("change", (): void => {
-          if (this._started) {
-            this._browserSync.reload();
-          }
-        });
-
-        done();
-      });
-
-      return taskName;
+    if (!this._started) {
+      return through.obj();
     }
 
-    return false;
+    return this._browserSync.stream(settings || {});
+  }
+
+  protected _start(): void {
+    Config.chdir(this._settings.cwd);
+
+    // Initialize Browsersync.
+    this._browserSync.init(this._settings.settings, (): void => {
+      this._started = true;
+    });
+  }
+
+  protected _watch(done: TaskCallback): void {
+    watch(this._settings.watch || [], { cwd: this._settings.cwd }).on("change", (): void => {
+      if (this._started) {
+        this._browserSync.reload();
+      }
+
+      done();
+    });
   }
 }

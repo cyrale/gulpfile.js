@@ -3,6 +3,7 @@ import uniq from "lodash/uniq";
 import rework from "rework";
 import reworkMoveMedia from "rework-move-media";
 import reworkSpliteMedia from "rework-split-media";
+import Vinyl from "vinyl";
 
 export default class MediaQueries {
   /**
@@ -11,15 +12,15 @@ export default class MediaQueries {
    * @param file
    * @return {string[]}
    */
-  public static extractMediaQueries(file: any): string[] {
-    if (file.isNull()) {
-      return [];
+  public static extractMediaQueries(file: Vinyl): string[] {
+    if (file.isBuffer() || file.isStream()) {
+      const reworkData = rework(file.contents.toString()).use(reworkMoveMedia());
+      const stylesheets = reworkSpliteMedia(reworkData);
+
+      return uniq(Object.keys(stylesheets));
     }
 
-    const reworkData = rework(file.contents.toString()).use(reworkMoveMedia());
-    const stylesheets = reworkSpliteMedia(reworkData);
-
-    return uniq(Object.keys(stylesheets));
+    return [];
   }
 
   /**

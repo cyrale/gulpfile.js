@@ -2,14 +2,26 @@ import log from "fancy-log";
 import fs from "fs";
 import * as yaml from "js-yaml";
 import merge from "lodash/merge";
-import minimist from "minimist";
+import minimist, { ParsedArgs } from "minimist";
 import path from "path";
 import process from "process";
 
 import { modules as taskModules } from "./modules";
 
-export interface IGenericSettings {
-  [index: string]: any;
+export interface Options {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [name: string]: any;
+}
+
+interface SizesOptions {
+  gzipped: boolean;
+  normal: boolean;
+}
+
+interface TaskOptions {
+  cwd?: string;
+  settings?: Options;
+  sizes?: boolean | Options | SizesOptions;
 }
 
 /**
@@ -32,16 +44,16 @@ export default class Config {
   /**
    * Get options.
    *
-   * @return {IGenericSettings}
+   * @return {ParsedArgs}
    */
-  get options(): IGenericSettings {
+  get options(): ParsedArgs {
     return this._options;
   }
 
   /**
    * Get settings.
    */
-  get settings(): IGenericSettings {
+  get settings(): Options {
     return this._settings;
   }
 
@@ -86,22 +98,19 @@ export default class Config {
 
   /**
    * Global options passed in command line.
-   * @type {IGenericSettings}
+   * @type {ParsedArgs}
    * @private
    */
-  private _options: IGenericSettings = {};
+  private _options: ParsedArgs = {
+    _: [],
+  };
 
   /**
    * All settings in YAML file that define tasks.
-   * @type {IGenericSettings}
+   * @type {Options}
    * @private
    */
-  private _settings: IGenericSettings = {};
-
-  /**
-   * Config constructor.
-   */
-  private constructor() {}
+  private _settings: Options = {};
 
   /**
    * Check if current run is a build run.
@@ -109,7 +118,7 @@ export default class Config {
    * @return {boolean}
    */
   public isBuildRun(): boolean {
-    const search: string = "build";
+    const search = "build";
 
     return (
       this.currentRun !== "default" &&
@@ -143,7 +152,7 @@ export default class Config {
         sourcemaps: process.env.SOURCEMAPS || false,
       },
       string: ["configfile", "cwd", "env", "revision"],
-    }) as object;
+    });
 
     if (!path.isAbsolute(this._options.configfile)) {
       this._options.configfile = path.resolve(process.env.PWD || "", this._options.configfile);
@@ -165,8 +174,8 @@ export default class Config {
     if (!this._options.cwd) {
       if (!this._settings.cwd) {
         this._options.cwd = path.dirname(this._options.configfile);
-      } else if (!path.isAbsolute(this._settings.cwd)) {
-        this._options.cwd = path.resolve(path.dirname(this._options.configfile), this._settings.cwd);
+      } else if (!path.isAbsolute(this._settings.cwd as string)) {
+        this._options.cwd = path.resolve(path.dirname(this._options.configfile), this._settings.cwd as string);
       }
 
       delete this._settings.cwd;
@@ -179,31 +188,28 @@ export default class Config {
     }
 
     // Get sizes settings.
-    const defaultSizes: any = { gzipped: true, normal: true };
-    let sizes: any =
-      typeof this._settings.sizes !== "undefined" ? merge(defaultSizes, this._settings.sizes) : defaultSizes;
-    if (typeof sizes === "boolean") {
-      sizes = {
-        gzipped: sizes,
-        normal: sizes,
-      };
+    const defaultSizes: SizesOptions = { gzipped: true, normal: true };
+    let sizes: SizesOptions = defaultSizes;
+
+    if (typeof this._settings.sizes === "boolean") {
+      sizes = { gzipped: this._settings.sizes, normal: this._settings.sizes };
+    } else if (typeof this._settings.sizes === "object") {
+      sizes = merge(defaultSizes, this._settings.sizes);
     }
 
     delete this._settings.sizes;
 
     // Merge global and local settings in each tasks.
     Object.keys(taskModules).forEach((name: string): void => {
-      if (this._settings[name] && taskModules[name].simple) {
-        this._settings[name].cwd = this._options.cwd;
-      } else if (this._settings[name] && !taskModules[name].simple && this._settings[name].tasks) {
-        const globalSettings: {} = this._settings[name].settings || {};
+      const settings: Options = this._settings[name] as Options;
 
-        Object.keys(this._settings[name].tasks).forEach((taskName: string): void => {
-          const task: {
-            cwd?: string;
-            settings?: {};
-            sizes?: boolean;
-          } = this._settings[name].tasks[taskName];
+      if (settings && taskModules[name].simple) {
+        settings.cwd = this._options.cwd;
+      } else if (this._settings[name] && !taskModules[name].simple && settings.tasks) {
+        const globalSettings: {} = settings.settings || {};
+
+        Object.keys(settings.tasks).forEach((taskName: string): void => {
+          const task: TaskOptions = (settings.tasks as Options)[taskName] as TaskOptions;
 
           task.settings = merge(globalSettings, task.settings || {});
           if (!task.cwd) {
@@ -214,11 +220,11 @@ export default class Config {
             task.sizes = sizes;
           }
 
-          this._settings[name][taskName] = task;
+          settings[taskName] = task;
         });
 
-        delete this._settings[name].tasks;
-        delete this._settings[name].settings;
+        delete settings.tasks;
+        delete settings.settings;
       }
     });
   }

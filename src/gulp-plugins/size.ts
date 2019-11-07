@@ -3,6 +3,8 @@ import Table from "cli-table";
 import EventEmitter from "events";
 import log from "fancy-log";
 import gzipSize from "gzip-size";
+import filter from "lodash/filter";
+import mapValues from "lodash/mapValues";
 import merge from "lodash/merge";
 import reduce from "lodash/reduce";
 import PluginError from "plugin-error";
@@ -10,27 +12,28 @@ import prettyBytes from "pretty-bytes";
 import { Transform } from "stream";
 import StreamCounter from "stream-counter";
 import through, { TransformCallback } from "through2";
+import Vinyl from "vinyl";
 
-export interface IOptions {
+export interface Options {
   gzip: boolean;
   minifySuffix: string;
   taskName: string;
 }
 
-interface IFile {
+interface File {
   calculated: boolean;
-  sizes: ISizes;
+  sizes: Sizes;
 }
 
-interface IFiles {
-  [filename: string]: IFile;
+interface Files {
+  [filename: string]: File;
 }
 
-interface IPrettySizes {
+interface PrettySizes {
   [size: string]: string;
 }
 
-interface ISizes {
+interface Sizes {
   minified: number;
   minifiedGzipped: number;
   size: number;
@@ -44,26 +47,20 @@ export default class Size {
   /**
    * Format sizes in human readable form.
    *
-   * @param {ISizes} sizes
-   * @return {IPrettySizes}
+   * @param {Sizes} sizes
+   * @return {PrettySizes}
    * @private
    */
-  private static _prettyBytes(sizes: ISizes): IPrettySizes {
-    const prettyBytess: IPrettySizes = {};
-
-    Object.keys(sizes).forEach((key: string): void => {
-      prettyBytess[key] = prettyBytes((sizes as any)[key]);
-    });
-
-    return prettyBytess;
+  private static _prettyBytes(sizes: Sizes): PrettySizes {
+    return mapValues(sizes, (size: number): string => prettyBytes(size));
   }
 
   /**
    * Options.
-   * @type {IOptions}
+   * @type {Options}
    * @private
    */
-  private readonly _options: IOptions = {
+  private readonly _options: Options = {
     gzip: true,
     minifySuffix: "",
     taskName: "",
@@ -71,38 +68,38 @@ export default class Size {
 
   /**
    * Event emitter to know when all sizes are calculated.
-   * @type {IOptions}
+   * @type {Options}
    * @private
    */
   private readonly _emitter: EventEmitter;
 
   /**
    * List of generated files.
-   * @type {IFiles}
+   * @type {Files}
    * @private
    */
-  private _files: IFiles = {};
+  private _files: Files = {};
 
   /**
    * Check if all files are passed through the module.
    * @type {boolean}
    * @private
    */
-  private _end: boolean = false;
+  private _end = false;
 
   /**
    * Check if sizes are already displayed.
    * @type {boolean}
    * @private
    */
-  private _displayed: boolean = false;
+  private _displayed = false;
 
   /**
    * Calculate and display sizes of files in stream.
    *
-   * @param {IOptions} options
+   * @param {Options} options
    */
-  public constructor(options: IOptions) {
+  public constructor(options: Options) {
     this._options = merge(this._options, options);
 
     // Event emitter to know when all sizes are calculated.
@@ -121,7 +118,7 @@ export default class Size {
    */
   public collect(): Transform {
     return through.obj(
-      (file: any, encoding: string, cb: TransformCallback): void => {
+      (file: Vinyl, encoding: string, cb: TransformCallback): void => {
         if (file.isNull()) {
           cb(null, file);
           return;
@@ -144,7 +141,7 @@ export default class Size {
         }
 
         // Collect sizes.
-        const finish = (error: any, size: number, keys: string[]): void => {
+        const finish = (error: Error | null, size: number, keys: string[]): void => {
           if (error) {
             cb(new PluginError("size", error));
             return;
@@ -160,9 +157,8 @@ export default class Size {
           });
 
           // Count calculated sizes.
-          const countSizes = (Object.keys(this._files[relFilename].sizes) as any[]).filter(
-            (key: string): boolean => (this._files[relFilename].sizes as any)[key] >= 0
-          ).length;
+          const countSizes: number = filter(this._files[relFilename].sizes).filter((size: number): boolean => size >= 0)
+            .length;
 
           // Determine if all sizes is here.
           const calculated = this._files[relFilename].calculated;
@@ -179,12 +175,12 @@ export default class Size {
         };
 
         // Collect gzipped sizes.
-        const finishGzip = (error: any, size: number) => {
+        const finishGzip = (error: Error | null, size: number): void => {
           finish(error, size, ["sizeGzipped", "minifiedGzipped"]);
         };
 
         // Collect normal sizes.
-        const finishSize = (error: any, size: number) => {
+        const finishSize = (error: Error | null, size: number): void => {
           finish(error, size, ["size", "minified"]);
         };
 
@@ -193,8 +189,8 @@ export default class Size {
           file.contents
             .pipe(new StreamCounter())
             .on("error", finishSize)
-            .on("finish", function() {
-              // @ts-ignore
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .on("finish", function(this: any) {
               finishSize(null, this.bytes);
             });
 
@@ -203,14 +199,14 @@ export default class Size {
             file.contents
               .pipe(gzipSize.stream())
               .on("error", finishGzip)
-              .on("end", function() {
-                // @ts-ignore
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              .on("end", function(this: any) {
                 finishGzip(null, this.gzipSize);
               });
           }
-        } else {
+        } else if (file.isBuffer()) {
           // Get file size.
-          finishSize(null, file.contents.length);
+          finishSize(null, file.contents ? file.contents.length : 0);
 
           // Get gzipped file size.
           if (this._options.gzip) {
@@ -248,7 +244,7 @@ export default class Size {
    * @private
    */
   private _display(): void {
-    const calculatedCount = reduce(this._files, (count: number, file: IFile) => count + (file.calculated ? 1 : 0), 0);
+    const calculatedCount = reduce(this._files, (count: number, file: File) => count + (file.calculated ? 1 : 0), 0);
     const filesCount = Object.keys(this._files).length;
 
     if (!this._end || this._displayed || filesCount === 0) {
@@ -269,8 +265,8 @@ export default class Size {
       const files: string[][] = Object.keys(this._files)
         .sort()
         .map((filename: string): string[] => {
-          const file: IFile = this._files[filename];
-          const prettySizes: IPrettySizes = Size._prettyBytes(file.sizes);
+          const file: File = this._files[filename];
+          const prettySizes: PrettySizes = Size._prettyBytes(file.sizes);
 
           const row = [
             chalk.cyan(filename),
@@ -296,7 +292,7 @@ export default class Size {
       // Create table to display.
       const table = new Table({
         colAligns: ["left", "right", "right", "right"],
-        head: head.map((item: string, index: number): string => chalk.blue(item)),
+        head: head.map((item: string): string => chalk.blue(item)),
       });
 
       // Add values to display.

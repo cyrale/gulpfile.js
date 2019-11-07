@@ -6,13 +6,11 @@ import sort from "gulp-sort";
 import spriteSmith from "gulp.spritesmith";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
-import mergeStream from "merge-stream";
 import minimatch from "minimatch";
 import path from "path";
 import buffer from "vinyl-buffer";
 
-import Revision from "../modules/revision";
-import { IBuildSettings } from "./task";
+import { BuildSettings, TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -35,19 +33,10 @@ export default class Sprites extends TaskExtended {
   /**
    * Task constructor.
    *
-   * @param {string} name
-   * @param {object} settings
+   * @param {TaskOptions} options
    */
-  constructor(name: string, settings: object) {
-    super(name, settings);
-
-    // No need of linter, default save method and revision.
-    this._withLinter = false;
-    this._defaultDest = false;
-    this._defaultRevision = false;
-
-    this._activeSizes = false;
-    this._hideGzippedSize = false;
+  constructor(options: TaskOptions) {
+    super(options);
 
     // Merge normal and retina image.
     this._settings.src = this._srcGlobs();
@@ -62,12 +51,12 @@ export default class Sprites extends TaskExtended {
   /**
    * Method to add specific steps for the build.
    *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @param {IBuildSettings} buildSettings
-   * @return {NodeJS.ReadWriteStream}
+   * @param {NodeJS.ReadableStream} stream
+   * @param {BuildSettings} buildSettings
+   * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
     const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
     const sanitizedTaskName: string = changeCase.paramCase(this._taskName().replace("sprites:", prefix));
 
@@ -78,11 +67,12 @@ export default class Sprites extends TaskExtended {
     const spritesmithDefaultSettings: {} = {
       cssName: "_" + sanitizedTaskName + ".scss",
       cssSpritesheetName: "spritesheet-" + sanitizedTaskName,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cssVarMap: (spriteImg: any): void => {
         spriteImg.name = `${sanitizedTaskName}-${spriteImg.name}`;
 
         if (this._settings["src-2x"]) {
-          let match: boolean = false;
+          let match = false;
 
           this._settings["src-2x"]
             .map((pattern: string): string => `**/${pattern}`.replace("//", "/"))
@@ -120,21 +110,16 @@ export default class Sprites extends TaskExtended {
       this._settings.algorithmOpts.sort !== false;
 
     const sprite: {
-      css: NodeJS.ReadWriteStream;
-      img: NodeJS.ReadWriteStream;
+      css: NodeJS.ReadableStream;
+      img: NodeJS.ReadableStream;
     } = stream.pipe(gulpIf(sortFiles, sort())).pipe(spriteSmith(spritesmithSettings));
 
-    return mergeStream(
-      sprite.img
-        .pipe(dest(this._settings.dst, buildSettings.options))
-        .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-        .pipe(gulpIf(Revision.isActive(), buffer()))
-        .pipe(gulpIf(Revision.isActive(), Revision.manifest(buildSettings.revision)))
-        .pipe(gulpIf(Revision.isActive(), dest(".", buildSettings.options))),
-      sprite.css
-        .pipe(header("// sass-lint:disable-all\n\n"))
-        .pipe(dest(this._settings.settings.sass.dst, buildSettings.options))
-    );
+    // Write SASS file
+    sprite.css
+      .pipe(header("// sass-lint:disable-all\n\n"))
+      .pipe(dest(this._settings.settings.sass.dst, buildSettings.options));
+
+    return sprite.img.pipe(buffer());
   }
 
   /**

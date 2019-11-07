@@ -12,7 +12,7 @@ import mergeStream from "merge-stream";
 import minimatch from "minimatch";
 import path from "path";
 
-import { IBuildSettings } from "./task";
+import { TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -44,14 +44,10 @@ export default class Images extends TaskExtended {
   /**
    * Task constructor.
    *
-   * @param {string} name
-   * @param {object} settings
+   * @param {TaskOptions} options
    */
-  constructor(name: string, settings: object) {
-    super(name, settings);
-
-    // No need of linter.
-    this._withLinter = false;
+  constructor(options: TaskOptions) {
+    super(options);
 
     const defaultSettings: {} = {
       gifsicle: {
@@ -83,12 +79,11 @@ export default class Images extends TaskExtended {
   /**
    * Method to add specific steps for the build.
    *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @param {IBuildSettings} buildSettings
-   * @return {NodeJS.ReadWriteStream}
+   * @param {NodeJS.ReadableStream} stream
+   * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     const streams: NodeJS.ReadWriteStream[] = [];
 
     stream = stream.pipe(newer(path.resolve(this._settings.cwd, this._settings.dst)));
@@ -138,8 +133,8 @@ export default class Images extends TaskExtended {
       const dstFilename: string = path.resolve(this._settings.cwd, this._settings.dst);
       const dstParts: string[] = dstFilename.split("/");
 
-      let newFilename: string = "/";
-      let index: number = 0;
+      let newFilename = "/";
+      let index = 0;
 
       while (srcParts[index] === dstParts[index] && (index < srcParts.length || index < dstParts.length)) {
         newFilename = path.join(newFilename, srcParts[index]);
@@ -181,8 +176,8 @@ export default class Images extends TaskExtended {
    * @private
    */
   private _webPSupportedFile(filename: string): boolean {
-    return (this._webPSupportedExtension as any[]).reduce(
-      (acc: boolean, ext: string): boolean => acc || minimatch(filename, ext),
+    return (this._webPSupportedExtension as unknown[]).reduce(
+      (acc: boolean, ext: unknown): boolean => acc || minimatch(filename, ext as string),
       false
     );
   }

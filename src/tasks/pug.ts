@@ -7,6 +7,7 @@ import merge from "lodash/merge";
 import pugLintStylish from "puglint-stylish";
 
 import TaskExtended from "./task-extended";
+import { TaskOptions } from "./task";
 
 /**
  * Build PUG files into HTML.
@@ -29,11 +30,10 @@ export default class Pug extends TaskExtended {
   /**
    * Task constructor.
    *
-   * @param {string} name
-   * @param {object} settings
+   * @param {TaskOptions} options
    */
-  constructor(name: string, settings: object) {
-    super(name, settings);
+  constructor(options: TaskOptions) {
+    super(options);
 
     // Add data files to files to watch.
     if (typeof this._settings.settings.data === "string") {
@@ -46,12 +46,12 @@ export default class Pug extends TaskExtended {
   /**
    * Method to add specific steps for the build.
    *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @return {NodeJS.ReadWriteStream}
+   * @param {NodeJS.ReadableStream} stream
+   * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
-    let data: any[] = [];
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
+    let data: unknown[] = [];
 
     // Load data from YAML files.
     if (typeof this._settings.settings.data === "string") {
@@ -72,10 +72,10 @@ export default class Pug extends TaskExtended {
    * @return {NodeJS.ReadWriteStream}
    * @protected
    */
-  protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _hookLint(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
     return stream.pipe(
       pugLinter({
-        reporter: (errors: any[]): void => {
+        reporter: (errors: unknown[]): void => {
           if (errors.length > 0) {
             this._lintError = true;
             pugLintStylish(errors);
@@ -91,7 +91,7 @@ export default class Pug extends TaskExtended {
    * @param error
    * @protected
    */
-  protected _displayError(error: any): void {
+  protected _displayError(error: unknown): void {
     pugLintStylish([error]);
   }
 }

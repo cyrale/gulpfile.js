@@ -14,7 +14,7 @@ try {
   log.error(`chdir: ${err}`);
 }
 
-import TaskFactory from "./modules/task-factory";
+import TaskFactory from "./libs/task-factory";
 
 // Load all tasks.
 const factory: TaskFactory = new TaskFactory();

@@ -1,23 +1,36 @@
-import { IGenericSettings } from "../modules/config";
-import { IRevisionOptions } from "../modules/revision";
-import Size from "../modules/size";
-import { IBrowserSyncMethods } from "./browsersync";
+import { task as gulpTask, TaskFunction } from "gulp";
 
-export interface IGulpOptions {
-  cwd: string;
+import Config, { Options } from "../libs/config";
+import { RevisionOptions } from "../gulp-plugins/revision";
+import Size from "../gulp-plugins/size";
+import { BrowserSyncMethods } from "./browsersync";
+
+interface TaskErrorDefinition {
+  taskName: string;
+  error: unknown;
+  done?: TaskCallback;
+}
+
+export interface TaskOptions {
+  name?: string;
+  settings: Options;
+}
+
+export interface GulpOptions {
+  cwd?: string;
   read?: boolean;
   sourcemaps?: true | string;
 }
 
-export interface IBuildSettings {
-  browserSync: IBrowserSyncMethods;
-  options: IGulpOptions;
-  revision: IRevisionOptions;
+export interface BuildSettings {
+  browserSync: BrowserSyncMethods;
+  options: GulpOptions;
+  revision: RevisionOptions;
   size: Size;
   taskName: string;
 }
 
-export type TaskCallback = (error?: any) => void;
+export type TaskCallback = (error?: unknown) => void;
 
 /**
  * Task class to define gulp tasks.
@@ -38,19 +51,62 @@ export default abstract class Task {
   public static readonly taskOrder: number = 0;
 
   /**
-   * Current task settings.
-   * @type {IGenericSettings}
+   * List of errors.
+   * @type {TaskErrorDefinition[]}
+   */
+  public static taskErrors: TaskErrorDefinition[] = [];
+
+  /**
+   * Check if current run is a build run.
+   *
+   * @return {boolean}
    * @protected
    */
-  protected _settings: IGenericSettings = {};
+  protected static _isBuildRun(): boolean {
+    return Config.getInstance().isBuildRun();
+  }
+
+  /**
+   * Check if a task is the current run.
+   *
+   * @param {string} taskName
+   * @return {boolean}
+   * @protected
+   */
+  protected static _isCurrentRun(taskName: string): boolean {
+    return Config.getInstance().isCurrentRun(taskName);
+  }
+
+  /**
+   * Name of the current task.
+   * @type {string}
+   * @protected
+   */
+  protected _name = "";
+
+  /**
+   * Current task settings.
+   * @type {Options}
+   * @protected
+   */
+  protected _settings: Options = {};
 
   /**
    * Task constructor.
    *
-   * @param {object} settings
+   * @param {TaskOptions} options
    */
-  public constructor(settings: object) {
-    this._settings = settings;
+  public constructor(options: TaskOptions) {
+    this._name = options.name || "";
+    this._settings = options.settings || {};
+  }
+
+  protected _defineTask(step: string, task: TaskFunction): string {
+    const taskName: string = this._taskName(step);
+
+    gulpTask(taskName, task);
+
+    return taskName;
   }
 
   /**
@@ -61,10 +117,13 @@ export default abstract class Task {
    * @protected
    */
   protected _taskName(step?: string): string {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const base: string = (this.constructor as any).taskName + (this._name ? `:${this._name}` : "");
+
     if (!step) {
-      return (this.constructor as any).taskName;
+      return base;
     }
 
-    return `${(this.constructor as any).taskName}:${step}`;
+    return `${base}:${step}`;
   }
 }

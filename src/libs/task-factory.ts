@@ -1,29 +1,30 @@
-import { parallel, series, task as gulpTask, watch } from "gulp";
+import { parallel, series, task as gulpTask } from "gulp";
+import map from "lodash/map";
 import uniq from "lodash/uniq";
 import process from "process";
 import Undertaker from "undertaker";
 
-import { TaskCallback } from "../tasks/task";
+import Task, { TaskCallback, TaskOptions } from "../tasks/task";
 import TaskExtended from "../tasks/task-extended";
-import Config, { IGenericSettings } from "./config";
+import Config, { Options } from "./config";
 import { module as taskModule, modules as taskModules, names as availableTaskNames } from "./modules";
 
-export interface ITaskNameElements {
+export interface TaskNameElements {
   type: string;
   name: string;
   step: string;
 }
 
-interface ITaskList {
+interface TaskList {
   [name: string]: string[];
 }
 
-interface IGlobalTaskList {
-  [name: string]: ITaskList;
+interface GlobalTaskList {
+  [name: string]: TaskList;
 }
 
-interface IModuleInstances {
-  [name: string]: any;
+interface ModuleInstances {
+  [name: string]: unknown;
 }
 
 /**
@@ -34,9 +35,9 @@ export default class TaskFactory {
    * Explode name separated by two points in 3 elements.
    *
    * @param {string} task
-   * @return {ITaskNameElements}
+   * @return {TaskNameElements}
    */
-  public static explodeTaskName(task: string): ITaskNameElements {
+  public static explodeTaskName(task: string): TaskNameElements {
     let [type = "", name = "", step = ""] = task.split(":");
 
     if (TaskFactory._sortOrder.indexOf(type) >= 0 || type === "start") {
@@ -60,16 +61,16 @@ export default class TaskFactory {
    * @param {string} name
    * @return {any}
    */
-  public static getUniqueInstanceOf(name: string): any {
+  public static getUniqueInstanceOf(name: string): unknown {
     return TaskFactory._uniqueInstances[name];
   }
 
   /**
    * List of used modules.
-   * @type {IModuleInstances}
+   * @type {ModuleInstances}
    * @private
    */
-  private static _modules: IModuleInstances = {};
+  private static _modules: ModuleInstances = {};
 
   /**
    * Sort order for tasks.
@@ -83,7 +84,7 @@ export default class TaskFactory {
    * @type {{}}
    * @private
    */
-  private static _uniqueInstances: IModuleInstances = {};
+  private static _uniqueInstances: ModuleInstances = {};
 
   /**
    * Check if current task is a global task.
@@ -101,13 +102,13 @@ export default class TaskFactory {
   /**
    * Add a task in a list.
    *
-   * @param {ITaskList} list
+   * @param {TaskList} list
    * @param {string} key
    * @param {string} task
-   * @return {ITaskList}
+   * @return {TaskList}
    * @private
    */
-  private static _pushTask(list: ITaskList, key: string, task: string): ITaskList {
+  private static _pushTask(list: TaskList, key: string, task: string): TaskList {
     list[key] = list[key] || [];
     if (list[key].indexOf(task) < 0) {
       list[key].push(task);
@@ -136,10 +137,10 @@ export default class TaskFactory {
 
   /**
    * List of super global tasks (lint, build, watch).
-   * @type {ITaskList}
+   * @type {TaskList}
    * @private
    */
-  private _superGlobalTasks: ITaskList = {};
+  private _superGlobalTasks: TaskList = {};
 
   /**
    * Ordered super global tasks group by step (lint, build, watch).
@@ -152,10 +153,10 @@ export default class TaskFactory {
 
   /**
    * Global tasks grouped by step, name and type.
-   * @type {IGlobalTaskList}
+   * @type {GlobalTaskList}
    * @private
    */
-  private _globalTasks: IGlobalTaskList = {};
+  private _globalTasks: GlobalTaskList = {};
 
   /**
    * Existing tasks grouped by steps of execution.
@@ -208,27 +209,36 @@ export default class TaskFactory {
    * @param {string} task
    * @param {string} name
    * @param {object} settings
-   * @return {any}
+   * @return {Task}
    */
-  public createTask(task: string, name: string, settings: object): any {
+  public createTask(task: string, name: string, settings: Options): Task {
     if (!this.isValidTask(task)) {
       throw new Error(`Unsupported task: ${task}.`);
     }
 
     if (typeof TaskFactory._modules[task] === "undefined") {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { default: module } = require(taskModule(task));
       TaskFactory._modules[task] = module;
     }
 
-    if (this.isSimpleTask(task)) {
-      if (typeof TaskFactory._uniqueInstances[task] === "undefined") {
-        TaskFactory._uniqueInstances[task] = new TaskFactory._modules[task](settings);
-      }
+    const options: TaskOptions = {
+      name,
+      settings,
+    };
 
-      return TaskFactory._uniqueInstances[task];
+    if (this.isSimpleTask(task)) {
+      delete options.name;
     }
 
-    return new TaskFactory._modules[task](name, settings);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const instance: any = new (TaskFactory._modules[task] as any)(options);
+
+    if (this.isSimpleTask(task) && typeof TaskFactory._uniqueInstances[task] === "undefined") {
+      TaskFactory._uniqueInstances[task] = instance;
+    }
+
+    return instance;
   }
 
   /**
@@ -265,11 +275,11 @@ export default class TaskFactory {
         this._pushGlobalTask("byTypeOnly", type, task);
       } else {
         // Sort tasks by name.
-        const sortedByName: string = `${type}:${name}`;
+        const sortedByName = `${type}:${name}`;
         this._pushGlobalTask("byName", sortedByName, task);
 
         // Sort tasks by step.
-        const sortedByStep: string = `${type}:${step}`;
+        const sortedByStep = `${type}:${step}`;
         this._pushGlobalTask("byStep", sortedByStep, task);
 
         // Sort tasks by type only.
@@ -363,11 +373,11 @@ export default class TaskFactory {
    * Create all tasks: lint, build and watch.
    *
    * @param {string} task
-   * @param {IGenericSettings} tasks
+   * @param {Options} tasks
    * @private
    */
-  private _createTasks(task: string, tasks: IGenericSettings): void {
-    const simpleModule: boolean = (taskModules[task] as any).simple;
+  private _createTasks(task: string, tasks: Options): void {
+    const simpleModule: boolean = this.isSimpleTask(task);
     const conf: Config = Config.getInstance();
     const { type: currentType, name: currentName, step: currentStep } = TaskFactory.explodeTaskName(conf.currentRun);
 
@@ -378,17 +388,16 @@ export default class TaskFactory {
 
     if (simpleModule && (currentStep === "" || currentStep === "watch")) {
       // Add simple tasks only for global or watch call.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const taskInstance: any = this.createTask(task, "", tasks);
 
-      this._pushTask(taskInstance.start());
-
-      if (typeof (taskInstance as any).watch === "function") {
-        this._pushTask((taskInstance as any).watch());
-      }
+      this._pushTask(taskInstance.taskStart());
+      this._pushTask(taskInstance.taskWatch());
     } else if (!simpleModule) {
       // Add classic tasks.
       Object.keys(tasks).forEach((name: string): void => {
-        const taskInstance: any = this.createTask(task, name, tasks[name]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const taskInstance: any = this.createTask(task, name, tasks[name] as Options);
 
         // Keep only current tasks (useless to initialize unused tasks).
         if (currentName !== "" && currentName !== name) {
@@ -397,17 +406,17 @@ export default class TaskFactory {
 
         // Add lint tasks only for global, lint or watch call.
         if (currentStep === "" || currentStep === "lint" || currentStep === "watch") {
-          this._pushTask(taskInstance.lint());
+          this._pushTask(taskInstance.taskLint());
         }
 
         // Add lint tasks only for global, build or watch call.
         if (currentStep === "" || currentStep === "build" || currentStep === "watch") {
-          this._pushTask(taskInstance.build());
+          this._pushTask(taskInstance.taskBuild());
         }
 
         // Add lint tasks only for global or watch call.
         if (currentStep === "" || currentStep === "watch") {
-          this._pushTask(taskInstance.watch());
+          this._pushTask(taskInstance.taskWatch());
         }
       });
     }
@@ -421,8 +430,8 @@ export default class TaskFactory {
    * @param {string} type
    * @private
    */
-  private _defineTask(taskName: string, tasks: Undertaker.Task[], type: string = "series"): void {
-    const errorHandler: string = `${taskName}:error`;
+  private _defineTask(taskName: string, tasks: Undertaker.Task[], type = "series"): void {
+    const errorHandler = `${taskName}:error`;
 
     // Define gulp task to catch error in build run to exit with error code.
     if (Config.getInstance().isBuildRun() && Config.getInstance().isCurrentRun(taskName)) {
@@ -439,7 +448,7 @@ export default class TaskFactory {
 
     if (Config.getInstance().isBuildRun() && Config.getInstance().isCurrentRun(taskName)) {
       // Add error handler to the tasks.
-      let tasksWithHandler: any[] = [];
+      let tasksWithHandler: Undertaker.Task[] = [];
 
       if (type === "series") {
         tasksWithHandler = [...tasks, errorHandler];
@@ -468,10 +477,10 @@ export default class TaskFactory {
    * @param {string} sort
    * @param {string} key
    * @param {string} task
-   * @return {IGlobalTaskList}
+   * @return {GlobalTaskList}
    * @private
    */
-  private _pushGlobalTask(sort: string, key: string, task: string): IGlobalTaskList {
+  private _pushGlobalTask(sort: string, key: string, task: string): GlobalTaskList {
     this._globalTasks[sort] = this._globalTasks[sort] || {};
     TaskFactory._pushTask(this._globalTasks[sort], key, task);
 
@@ -481,12 +490,12 @@ export default class TaskFactory {
   /**
    * Add task to the list.
    *
-   * @param {string | false} name
+   * @param {string} name
    * @return {string[]}
    * @private
    */
-  private _pushTask(name: string | false): string[] {
-    if (name !== false) {
+  private _pushTask(name: string): string[] {
+    if (name !== "") {
       this._tasks.push(name);
     }
 
@@ -500,11 +509,13 @@ export default class TaskFactory {
    * @private
    */
   private _tasksGroupAndOrder(): string[][] {
-    const orders = Object.keys(TaskFactory._modules).map((task: string) => TaskFactory._modules[task].taskOrder);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orders: number[] = map(TaskFactory._modules, (module: any): number => module.taskOrder);
 
     return uniq(orders.sort()).map((order: number): string[] =>
       Object.keys(TaskFactory._modules).filter(
-        (task: string): boolean => TaskFactory._modules[task].taskOrder === order
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (task: string): boolean => (TaskFactory._modules[task] as any).taskOrder === order
       )
     );
   }

@@ -3,8 +3,8 @@ import favicon from "gulp-real-favicon";
 import merge from "lodash/merge";
 import path from "path";
 
-import Revision from "../modules/revision";
-import { IBuildSettings, TaskCallback } from "./task";
+import Revision from "../gulp-plugins/revision";
+import { BuildSettings, TaskOptions, TaskCallback } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -28,20 +28,10 @@ export default class Favicon extends TaskExtended {
   /**
    * Task constructor.
    *
-   * @param {string} name
-   * @param {object} settings
+   * @param {TaskOptions} options
    */
-  constructor(name: string, settings: object) {
-    super(name, settings);
-
-    // No need of linter.
-    this._withLinter = false;
-    this._defaultDest = false;
-    this._defaultRevision = false;
-
-    // No file sizes.
-    this._activeSizes = false;
-    this._activeInitSizesAnyway = false;
+  constructor(options: TaskOptions) {
+    super(options);
 
     const defaultSettings: {} = {
       design: {
@@ -144,17 +134,12 @@ export default class Favicon extends TaskExtended {
   /**
    * Method to add specific steps for the build.
    *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @param {IBuildSettings} buildSettings
+   * @param {BuildSettings} buildSettings
    * @param {TaskCallback} done
-   * @return {NodeJS.ReadWriteStream}
+   * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _buildSpecific(
-    stream: NodeJS.ReadWriteStream,
-    buildSettings: IBuildSettings,
-    done: TaskCallback
-  ): NodeJS.ReadWriteStream {
+  protected _hookOverrideBuild(buildSettings: BuildSettings, done: TaskCallback): void {
     favicon.generateFavicon(this._settings.settings, () => {
       const markupFile = path.resolve(this._settings.cwd, this._settings.settings.markupFile);
 
@@ -176,6 +161,7 @@ export default class Favicon extends TaskExtended {
               const fileName = path.resolve(this._settings.dst, base);
               const rev = Revision.getHashRevision(buildSettings.taskName, fileName);
 
+              // eslint-disable-next-line @typescript-eslint/camelcase
               decodedData.favicon.html_code = decodedData.favicon.html_code.replace(url, `${url}?rev=${rev}`);
             });
 
@@ -194,7 +180,7 @@ export default class Favicon extends TaskExtended {
           }
 
           // Check for new version of favicon.
-          favicon.checkForUpdates(decodedData.version, (errorUpdate: any): void => {
+          favicon.checkForUpdates(decodedData.version, (errorUpdate: unknown): void => {
             if (errorUpdate) {
               throw errorUpdate;
             }
@@ -206,7 +192,5 @@ export default class Favicon extends TaskExtended {
 
       done();
     });
-
-    return stream;
   }
 }

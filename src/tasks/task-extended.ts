@@ -1,76 +1,37 @@
 import log from "fancy-log";
 import fs from "fs";
-import { dest, series, src, task as gulpTask, watch } from "gulp";
+import { dest, series, src, watch } from "gulp";
 import gulpIf from "gulp-if";
 import plumber from "gulp-plumber";
 import process from "process";
+import { Transform } from "stream";
 import through from "through2";
+import Undertaker from "undertaker";
 
-import Config from "../modules/config";
-import Revision, { SimpleRevisionCallback } from "../modules/revision";
-import Size from "../modules/size";
-import TaskFactory from "../modules/task-factory";
-import Task, { IBuildSettings } from "./task";
-
-interface ITaskErrorDefinition {
-  taskName: string;
-  error: any;
-  done: TaskCallback;
-}
-
-export type TaskCallback = (error?: any) => void;
+import Config from "../libs/config";
+import Revision, { SimpleRevisionCallback } from "../gulp-plugins/revision";
+import Size from "../gulp-plugins/size";
+import TaskFactory from "../libs/task-factory";
+import Task, { BuildSettings, TaskCallback } from "./task";
+import Browsersync from "./browsersync";
 
 /**
  * Task class to define gulp tasks.
  */
 export default abstract class TaskExtended extends Task {
   /**
-   * List of errors.
-   * @type {ITaskErrorDefinition[]}
-   */
-  public static taskErrors: ITaskErrorDefinition[] = [];
-
-  /**
-   * Check if current run is a build run.
-   *
-   * @return {boolean}
-   * @protected
-   */
-  protected static _isBuildRun(): boolean {
-    return Config.getInstance().isBuildRun();
-  }
-
-  /**
-   * Check if a task is the current run.
-   *
-   * @param {string} taskName
-   * @return {boolean}
-   * @protected
-   */
-  protected static _isCurrentRun(taskName: string): boolean {
-    return Config.getInstance().isCurrentRun(taskName);
-  }
-
-  /**
-   * Name of the current task.
-   * @type {string}
-   * @protected
-   */
-  protected _name: string = "";
-
-  /**
    * Flag to define if task use the default dest to save files.
    * @type {boolean}
    * @protected
    */
-  protected _defaultDest: boolean = true;
+  protected _defaultDest = true;
 
   /**
    * Flag to define if task use the default revision system.
    * @type {boolean}
    * @protected
    */
-  protected _defaultRevision: boolean = true;
+  protected _defaultRevision = true;
 
   /**
    * Callback to add data to manifest file.
@@ -94,171 +55,76 @@ export default abstract class TaskExtended extends Task {
   protected _browserSyncSettings: {} = {};
 
   /**
-   * Flag to define if task use a linter or not.
-   * @type {boolean}
-   * @protected
-   */
-  protected _withLinter: boolean = true;
-
-  /**
    * Flag to define if there is a lint error or not to block build.
    * @type {boolean}
    * @protected
    */
-  protected _lintError: boolean = false;
+  protected _lintError = false;
 
   /**
    * Flag to avoid read of file on load of gulp task.
    * @type {boolean}
    * @protected
    */
-  protected _gulpRead: boolean = true;
+  protected _gulpRead = true;
 
   /**
    * Flag to define if task could build sourcemaps.
    * @type {boolean}
    * @protected
    */
-  protected _gulpSourcemaps: boolean = false;
+  protected _gulpSourcemaps = false;
 
   /**
    * Flag to display sizes or not.
    * @type {boolean}
    * @protected
    */
-  protected _activeSizes: boolean = true;
+  protected _activeSizes = true;
 
   /**
    * Flag to init sizes anyway.
    * @type {boolean}
    * @protected
    */
-  protected _activeInitSizesAnyway: boolean = true;
+  protected _activeInitSizesAnyway = true;
 
   /**
    * Force to hide gzipped size.
    * @type {boolean}
    * @protected
    */
-  protected _hideGzippedSize: boolean = true;
+  protected _hideGzippedSize = true;
 
   /**
    * Suffix of the minified file.
    * @type {string}
    * @protected
    */
-  protected _minifySuffix: string = "";
-
-  /**
-   * Task constructor.
-   *
-   * @param {string} name
-   * @param {object} settings
-   */
-  protected constructor(name: string, settings: object) {
-    super(settings);
-    this._name = name;
-  }
+  protected _minifySuffix = "";
 
   /**
    * Basic task that run all tasks.
    *
    * @return {string}
    */
-  public build(): string {
-    const browserSync = TaskFactory.getUniqueInstanceOf("browsersync");
-    const config = Config.getInstance();
-    const taskName: string = this._taskName("build");
-
-    gulpTask(
-      taskName,
-      (done: TaskCallback): NodeJS.ReadWriteStream => {
-        Config.chdir(this._settings.cwd);
-
-        // All the build settings in a unique object.
-        const buildSettings: IBuildSettings = {
-          browserSync: {
-            memorize: browserSync ? browserSync.memorize.bind(browserSync) : () => through.obj(),
-            remember: browserSync ? browserSync.remember.bind(browserSync) : () => through.obj(),
-            sync: browserSync ? browserSync.sync.bind(browserSync) : () => through.obj(),
-          },
-          options: {
-            cwd: this._settings.cwd,
-            read: this._gulpRead,
-            sourcemaps: this._gulpSourcemaps && this._settings.settings.sourcemaps,
-          },
-          revision: {
-            cwd: config.options.cwd,
-            dst: this._settings.dst,
-            manifest: typeof config.options.revision === "string" ? config.options.revision : "rev-manifest.json",
-            taskName,
-          },
-          size: new Size({
-            gzip: !this._hideGzippedSize && this._settings.sizes.gzipped,
-            minifySuffix: this._minifySuffix,
-            taskName,
-          }),
-          taskName,
-        };
-
-        // Start new stream with the files of the task.
-        let stream: NodeJS.ReadWriteStream = src(this._settings.src, buildSettings.options as {})
-          .pipe(
-            gulpIf(
-              (this._activeSizes || this._activeInitSizesAnyway) && this._settings.sizes.normal,
-              buildSettings.size.init()
-            )
-          )
-          .pipe(plumber((error: any): void => this._displayOrExitOnError(taskName, error, done)));
-
-        // If there is no linter or no error, start specific logic of each task.
-        if (!this._withLinter || !this._lintError) {
-          stream = this._buildSpecific(stream, buildSettings, done)
-            .pipe(gulpIf(this._activeSizes && this._settings.sizes.normal, buildSettings.size.collect()))
-            .pipe(plumber.stop())
-            .pipe(buildSettings.browserSync.remember(taskName))
-            .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)))
-            .pipe(buildSettings.browserSync.sync(taskName, this._browserSyncSettings))
-            .pipe(
-              gulpIf(
-                this._defaultRevision && Revision.isActive(),
-                Revision.manifest(buildSettings.revision, this._manifestCallback)
-              )
-            )
-            .pipe(gulpIf(this._defaultRevision && Revision.isActive(), dest(".", buildSettings.options)));
-        }
-
-        return stream;
-      }
-    );
-
-    return taskName;
+  public taskBuild(): string {
+    return this._defineTask("build", this._build.bind(this));
   }
 
   /**
    * Lint task run after build to check files validity.
    *
-   * @return {string | false}
+   * @return {string}
    */
-  public lint(): string | false {
-    const taskName: string = this._taskName("lint");
-
-    if (!this._withLinter) {
-      return false;
+  public taskLint(): string | false {
+    if (!this._haveLinter) {
+      return "";
     }
 
     this._lintError = false;
 
-    gulpTask(
-      taskName,
-      (): NodeJS.ReadWriteStream => {
-        Config.chdir(this._settings.cwd);
-
-        return this._lintSpecific(src(this._settings.src, { cwd: this._settings.cwd }));
-      }
-    );
-
-    return taskName;
+    return this._defineTask("lint", this._lint.bind(this));
   }
 
   /**
@@ -266,29 +132,13 @@ export default abstract class TaskExtended extends Task {
    *
    * @return {string}
    */
-  public watch(): string {
-    const taskName: string = this._taskName("watch");
-
-    gulpTask(taskName, (done: TaskCallback): void => {
-      const srcWatch: string[] = [
-        ...(typeof this._settings.src === "object" ? this._settings.src : [this._settings.src]),
-        ...(this._settings.watch || []),
-        ...this._watchingFiles,
-      ];
-      const tasks: string[] = [this._taskName("build")];
-
-      if (this._withLinter) {
-        tasks.unshift(this._taskName("lint"));
-      }
-
-      const watcher: fs.FSWatcher = watch(srcWatch, { cwd: this._settings.cwd }, series(tasks));
-      this._bindEventsToWatcher(watcher);
-
-      done();
-    });
-
-    return taskName;
+  public taskWatch(): string {
+    return this._defineTask("watch", this._watch.bind(this));
   }
+
+  protected _bindEventsToBuilder?(builder: NodeJS.ReadableStream): void;
+
+  protected _bindEventsToLinter?(linter: NodeJS.ReadableStream): void;
 
   /**
    * Bind events to file watcher.
@@ -296,31 +146,15 @@ export default abstract class TaskExtended extends Task {
    * @param {fs.FSWatcher} watcher
    * @protected
    */
-  // tslint:disable-next-line:no-empty
-  protected _bindEventsToWatcher(watcher: fs.FSWatcher): void {}
-
-  /**
-   * Method to add specific steps for the build.
-   *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @param {IBuildSettings} buildSettings
-   * @param {TaskCallback} done
-   * @return {NodeJS.ReadWriteStream}
-   * @protected
-   */
-  protected abstract _buildSpecific(
-    stream: NodeJS.ReadWriteStream,
-    buildSettings?: IBuildSettings,
-    done?: TaskCallback
-  ): NodeJS.ReadWriteStream;
+  protected _bindEventsToWatcher?(watcher: fs.FSWatcher): void;
 
   /**
    * Display error.
    *
-   * @param {any} error
+   * @param {unknown} error
    * @protected
    */
-  protected _displayError(error: any): void {
+  protected _displayError(error: unknown): void {
     log.error(error);
   }
 
@@ -328,11 +162,11 @@ export default abstract class TaskExtended extends Task {
    * Display error and exit if current task is a build task.
    *
    * @param {string} taskName
-   * @param error
+   * @param {unknown} error
    * @param {TaskCallback} done
    * @protected
    */
-  protected _displayOrExitOnError(taskName: string, error: any, done: TaskCallback): void {
+  protected _displayOrExitOnError(taskName: string, error: unknown, done?: TaskCallback): void {
     this._displayError(error);
 
     TaskExtended.taskErrors.push({
@@ -342,34 +176,178 @@ export default abstract class TaskExtended extends Task {
     });
 
     if (TaskExtended._isBuildRun() && TaskExtended._isCurrentRun(taskName)) {
-      done();
+      if (!!done) {
+        done();
+      }
+
       process.exit(1);
     }
   }
 
+  protected get _haveLinter(): boolean {
+    return !!this._hookLint;
+  }
+
+  protected _hookBuildSrc?(attributes: BuildSettings): NodeJS.ReadableStream;
+
+  protected _hookLintSrc?(): NodeJS.ReadableStream;
+
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadableStream} stream
+   * @param {BuildSettings} buildSettings
+   * @return {NodeJS.ReadableStream}
+   * @protected
+   */
+  protected _hookBuildBefore?(stream: NodeJS.ReadableStream, buildSettings?: BuildSettings): NodeJS.ReadableStream;
+
   /**
    * Method to add specific steps for the lint.
    *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @return {NodeJS.ReadWriteStream}
+   * @param {NodeJS.ReadableStream} stream
+   * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _hookLint?(stream: NodeJS.ReadableStream): NodeJS.ReadableStream;
+
+  protected _hookOverrideBuild?(buildSettings: BuildSettings, done?: TaskCallback): NodeJS.ReadableStream | void;
+
+  protected _hookOverrideLint?(done?: TaskCallback): NodeJS.ReadableStream | void;
+
+  protected _hookOverrideWatch?(done?: TaskCallback): NodeJS.ReadableStream | void;
+
+  protected _lint(done?: TaskCallback): NodeJS.ReadableStream | void {
+    Config.chdir(this._settings.cwd);
+
+    if (this._hookOverrideLint) {
+      return this._hookOverrideLint(done);
+    }
+
+    let stream: NodeJS.ReadableStream = this._hookLintSrc
+      ? this._hookLintSrc()
+      : src(this._settings.src, { cwd: this._settings.cwd });
+
+    if (this._hookLint) {
+      stream = this._hookLint(stream);
+    }
+
+    if (this._bindEventsToLinter) {
+      this._bindEventsToLinter(stream);
+    }
+
     return stream;
   }
 
-  /**
-   * Build complete task name based on current task, name and step.
-   *
-   * @param {string} step
-   * @return {string}
-   * @protected
-   */
-  protected _taskName(step?: string): string {
-    if (!step) {
-      return `${(this.constructor as any).taskName}:${this._name}`;
+  protected _build(done?: TaskCallback): NodeJS.ReadableStream | void {
+    Config.chdir(this._settings.cwd);
+
+    const taskName: string = this._taskName("build");
+    const browserSync: Browsersync = TaskFactory.getUniqueInstanceOf("browsersync") as Browsersync;
+    const config = Config.getInstance();
+
+    // All the build settings in a unique object.
+    const buildSettings: BuildSettings = {
+      browserSync: {
+        memorize: browserSync ? browserSync.memorize : (): Transform => through.obj(),
+        remember: browserSync ? browserSync.remember : (): Transform => through.obj(),
+        sync: browserSync ? browserSync.sync : (): Transform => through.obj(),
+      },
+      options: {
+        cwd: this._settings.cwd,
+        read: this._gulpRead,
+        sourcemaps: this._gulpSourcemaps && this._settings.settings.sourcemaps,
+      },
+      revision: {
+        cwd: config.options.cwd,
+        dst: this._settings.dst,
+        manifest: typeof config.options.revision === "string" ? config.options.revision : "rev-manifest.json",
+        taskName,
+      },
+      size: new Size({
+        gzip: !this._hideGzippedSize && this._settings.sizes.gzipped,
+        minifySuffix: this._minifySuffix,
+        taskName,
+      }),
+      taskName,
+    };
+
+    if (this._hookOverrideBuild) {
+      return this._hookOverrideBuild(buildSettings, done);
     }
 
-    return `${(this.constructor as any).taskName}:${this._name}:${step}`;
+    // Start new stream with the files of the task.
+    let stream: NodeJS.ReadableStream = this._hookBuildSrc
+      ? this._hookBuildSrc(buildSettings)
+      : src(this._settings.src, buildSettings.options as {});
+
+    // Add plumber to avoid exit on error.
+    stream = stream.pipe(plumber((error: unknown): void => this._displayOrExitOnError(taskName, error, done)));
+
+    // Init collection of file sizes.
+    const activeSizes: boolean = (this._activeSizes || this._activeInitSizesAnyway) && this._settings.sizes.normal;
+    if (activeSizes) {
+      stream = stream.pipe(buildSettings.size.init());
+    }
+
+    // If there is no linter or no error, start specific logic of each task.
+    if (!this._haveLinter || !this._lintError) {
+      if (this._hookBuildBefore) {
+        stream = this._hookBuildBefore(stream, buildSettings);
+      }
+
+      // Collect file sizes and display them.
+      if (activeSizes) {
+        stream = stream.pipe(buildSettings.size.collect());
+      }
+
+      stream = stream
+        .pipe(plumber.stop())
+        .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)));
+      // .pipe(buildSettings.browserSync.remember(taskName))
+
+      if (browserSync) {
+        stream = stream.pipe(browserSync.sync(taskName, this._browserSyncSettings));
+      }
+
+      if (this._defaultRevision && Revision.isActive()) {
+        stream = stream
+          .pipe(Revision.manifest(buildSettings.revision, this._manifestCallback))
+          .pipe(dest(".", buildSettings.options));
+      }
+
+      if (this._bindEventsToBuilder) {
+        this._bindEventsToBuilder(stream);
+      }
+    }
+
+    return stream;
+  }
+
+  protected _watch(done?: TaskCallback): void {
+    const tasks: Undertaker.Task[] = [];
+
+    if (this._haveLinter) {
+      tasks.push(this._taskName("lint"));
+    }
+
+    if (this._hookOverrideWatch) {
+      this._hookOverrideWatch(done);
+    } else {
+      const srcWatch: string[] = [
+        ...(typeof this._settings.src === "object" ? this._settings.src : [this._settings.src]),
+        ...(this._settings.watch || []),
+        ...this._watchingFiles,
+      ];
+      tasks.push(this._taskName("build"));
+
+      const watcher: fs.FSWatcher = watch(srcWatch, { cwd: this._settings.cwd }, series(tasks));
+
+      if (this._bindEventsToWatcher) {
+        this._bindEventsToWatcher(watcher);
+      }
+    }
+
+    if (done) done();
   }
 }

@@ -4,8 +4,10 @@ import CSSMQPacker from "css-mqpacker";
 import CSSNano from "cssnano";
 import log from "fancy-log";
 import Fiber from "fibers";
+import { sink } from "gulp-clone";
 import criticalCSS from "gulp-critical-css";
 import extractMediaQueries from "gulp-extract-media-queries";
+import filter from "gulp-filter";
 import gulpIf from "gulp-if";
 import gulpPostCSS from "gulp-postcss";
 import rename from "gulp-rename";
@@ -29,30 +31,32 @@ import sassLint from "sass-lint";
 import sortCSSMediaQueries from "sort-css-media-queries";
 import { Transform } from "stream";
 import through, { TransformCallback } from "through2";
+import Vinyl from "vinyl";
 
-import MediaQueries from "../modules/media-queries";
-import hierarchicalCriticalCSS from "../modules/postcss-hierarchical-critical-css";
-import normalizeRevision from "../modules/postcss-normalize-revision";
-import removeCriticalProperties from "../modules/postcss-remove-critical-properties";
-import removeCriticalRules from "../modules/postcss-remove-critical-rules";
-import Revision, { IDefaultObject } from "../modules/revision";
-import { IBuildSettings } from "./task";
+import MediaQueries from "../gulp-plugins/media-queries";
+import hierarchicalCriticalCSS from "../postcss/hierarchical-critical-css";
+import normalizeRevision from "../postcss/normalize-revision";
+import removeCriticalProperties from "../postcss/remove-critical-properties";
+import removeCriticalRules from "../postcss/remove-critical-rules";
+import Revision, { DefaultObject } from "../gulp-plugins/revision";
+import { BuildSettings, TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
-type TPurgeCSSOptions = any[] | boolean;
+type PurgeCSSParam = unknown[] | boolean;
 
-interface IPurgeCSSOptions {
-  content: TPurgeCSSOptions;
-  css: TPurgeCSSOptions;
-  extractors?: TPurgeCSSOptions;
-  whitelist?: TPurgeCSSOptions;
-  whitelistPatterns?: TPurgeCSSOptions;
-  whitelistPatternsChildren?: TPurgeCSSOptions;
-  keyframes?: TPurgeCSSOptions;
-  fontFace?: TPurgeCSSOptions;
-  rejected?: TPurgeCSSOptions;
+interface PurgeCSSOptions {
+  content: PurgeCSSParam;
+  css: PurgeCSSParam;
+  extractors?: PurgeCSSParam;
+  whitelist?: PurgeCSSParam;
+  whitelistPatterns?: PurgeCSSParam;
+  whitelistPatternsChildren?: PurgeCSSParam;
+  keyframes?: PurgeCSSParam;
+  fontFace?: PurgeCSSParam;
+  rejected?: PurgeCSSParam;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (sass as any).compiler = sassCompiler;
 
 /**
@@ -92,11 +96,10 @@ export default class Sass extends TaskExtended {
   /**
    * Task constructor.
    *
-   * @param {string} name
-   * @param {object} settings
+   * @param {TaskOptions} options
    */
-  constructor(name: string, settings: object) {
-    super(name, settings);
+  constructor(options: TaskOptions) {
+    super(options);
 
     this._gulpSourcemaps = true;
     this._browserSyncSettings = { match: "**/*.css" };
@@ -158,7 +161,7 @@ export default class Sass extends TaskExtended {
       typeof this._settings.settings.purgeCSS === "string" ||
       (typeof this._settings.settings.purgeCSS === "boolean" && this._settings.settings.purgeCSS);
 
-    const purgeCSSDefaultSettings: IPurgeCSSOptions = {
+    const purgeCSSDefaultSettings: PurgeCSSOptions = {
       content: ["**/*.html", "**/*.php", "**/*.twig"],
       css: ["**/*.css"],
       extractors: [],
@@ -185,10 +188,10 @@ export default class Sass extends TaskExtended {
       this._settings.settings.purgeCSS = purgeCSSDefaultSettings;
     }
 
-    this._manifestCallback = (data, additionalInformation) => {
+    this._manifestCallback = (data, additionalInformation): {} => {
       const media: string = MediaQueries.mediaQuery(
         data.origRelFile.replace(this._minifySuffix, ""),
-        additionalInformation.media || []
+        (additionalInformation.media as string[]) || []
       );
 
       return {
@@ -200,13 +203,13 @@ export default class Sass extends TaskExtended {
   /**
    * Method to add specific steps for the build.
    *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @param {IBuildSettings} buildSettings
-   * @return {NodeJS.ReadWriteStream}
+   * @param {NodeJS.ReadableStream} stream
+   * @param {BuildSettings} buildSettings
+   * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
-    const streams: NodeJS.ReadWriteStream[] = [];
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
+    const streams: NodeJS.ReadableStream[] = [];
 
     // Collect PostCSS plugins to run on global CSS file, before media queries or critical extraction.
     const postCSSPluginsBefore: postcss.AcceptedPlugin[] = [
@@ -240,7 +243,7 @@ export default class Sass extends TaskExtended {
 
     // Extract media queries to saves it to separated files.
     if (this._settings.settings.extractMQ) {
-      let mainFilename: string = "";
+      let mainFilename = "";
 
       let streamExtractMQ: NodeJS.ReadWriteStream = stream
         .pipe(
@@ -249,8 +252,11 @@ export default class Sass extends TaskExtended {
           })
         )
         .pipe(
-          Revision.additionalData((file: any, additionalData: IDefaultObject): void => {
-            additionalData.media = uniq([...(additionalData.media || []), ...MediaQueries.extractMediaQueries(file)]);
+          Revision.additionalData((file: unknown, additionalData: DefaultObject): void => {
+            additionalData.media = uniq([
+              ...((additionalData.media as string[]) || []),
+              ...MediaQueries.extractMediaQueries(file as Vinyl),
+            ]);
           })
         )
         .pipe(extractMediaQueries())
@@ -272,12 +278,13 @@ export default class Sass extends TaskExtended {
 
     // Extract critical rules to saves it to separated files.
     if (this._criticalActive) {
-      const streamCriticalCSS: NodeJS.ReadWriteStream = stream.pipe(criticalCSS(this._settings.settings.critical));
+      let streamCriticalCSS: NodeJS.ReadableStream = stream
+        .pipe(criticalCSS(this._settings.settings.critical))
+        .pipe(filter(["**/*.critical.css"]));
 
       // Remove critical rules from original file.
       if (!this._settings.settings.extractMQ) {
-        stream = stream.pipe(gulpPostCSS([removeCriticalRules()]));
-        streams.push(stream);
+        streamCriticalCSS = mergeStream(streamCriticalCSS, stream.pipe(gulpPostCSS([removeCriticalRules()])));
       }
 
       streams.push(streamCriticalCSS);
@@ -287,12 +294,16 @@ export default class Sass extends TaskExtended {
       streams.push(stream);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cloneSink: any = sink();
+
     return mergeStream(streams)
       .pipe(gulpPostCSS(postCSSPluginsIntermediate))
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(buildSettings.browserSync.memorize(buildSettings.taskName))
+      .pipe(cloneSink)
       .pipe(gulpPostCSS(postCSSPluginsAfter))
-      .pipe(rename({ suffix: this._minifySuffix }));
+      .pipe(rename({ suffix: this._minifySuffix }))
+      .pipe(cloneSink.tap());
   }
 
   /**
@@ -302,21 +313,20 @@ export default class Sass extends TaskExtended {
    * @return {NodeJS.ReadWriteStream}
    * @protected
    */
-  protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
-    stream
+  protected _hookLint(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+    return stream
       .pipe(gulpSassLint({ configFile: path.join(this._settings.cwd, ".sass-lint.yml") }))
       .pipe(gulpSassLint.format())
       .pipe(this._lintNotifier());
-
-    return stream;
   }
 
   /**
    * Display error from SASS.
    *
-   * @param error
+   * @param {any} error
    * @protected
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected _displayError(error: any): void {
     log.error(
       sassLint.format([
@@ -349,12 +359,10 @@ export default class Sass extends TaskExtended {
    * @private
    */
   private _lintNotifier(): Transform {
-    const that = this;
-
     return through.obj(
-      (file: any, encoding: string, cb: TransformCallback): void => {
+      (file: Vinyl, encoding: string, cb: TransformCallback): void => {
         if (!file.isNull() && !file.isStream() && file.sassLint[0].errorCount > 0) {
-          that._lintError = true;
+          this._lintError = true;
         }
 
         cb();

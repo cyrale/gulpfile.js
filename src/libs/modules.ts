@@ -1,12 +1,12 @@
-interface IModuleDefinition {
+interface ModuleDefinition {
   simple: boolean;
 }
 
-interface IModuleList {
-  [name: string]: IModuleDefinition;
+interface ModuleList {
+  [name: string]: ModuleDefinition;
 }
 
-export const modules: IModuleList = {
+export const modules: ModuleList = {
   browserify: { simple: false },
   browsersync: { simple: true },
   clean: { simple: true },

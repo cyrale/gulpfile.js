@@ -1,17 +1,15 @@
-import async from "async";
 import changeCase from "change-case";
 import consolidate from "consolidate";
 import fs from "fs";
 import { dest } from "gulp";
 import gulpFile from "gulp-file";
 import iconfont from "gulp-iconfont";
-import gulpIf from "gulp-if";
 import merge from "lodash/merge";
 import path from "path";
 import buffer from "vinyl-buffer";
 
-import Revision from "../modules/revision";
-import { IBuildSettings } from "./task";
+import Revision from "../gulp-plugins/revision";
+import { BuildSettings, GulpOptions, TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -32,19 +30,19 @@ export default class Fonts extends TaskExtended {
    */
   public static readonly taskOrder: number = 20;
 
+  private readonly _sanitizedTaskName: string = "";
+
+  private _glyphs: object[] = [];
+
+  private _savedBuildOptions: BuildSettings | undefined;
+
   /**
    * Task constructor.
    *
-   * @param {string} name
-   * @param {object} settings
+   * @param {TaskOptions} options
    */
-  constructor(name: string, settings: object) {
-    super(name, settings);
-
-    // No need of linter, default save method and revision.
-    this._withLinter = false;
-    this._defaultDest = false;
-    this._defaultRevision = false;
+  constructor(options: TaskOptions) {
+    super(options);
 
     const defaultSettings: {} = {
       prefix: "font",
@@ -52,92 +50,83 @@ export default class Fonts extends TaskExtended {
     };
 
     this._settings.settings = merge(defaultSettings, this._settings.settings || {});
+
+    const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
+    this._sanitizedTaskName = changeCase.paramCase(this._taskName().replace("fonts:", prefix));
   }
 
   /**
    * Method to add specific steps for the build.
    *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @param {IBuildSettings} buildSettings
-   * @return {NodeJS.ReadWriteStream}
+   * @param {NodeJS.ReadableStream} stream
+   * @param {BuildSettings} buildSettings
+   * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
-    const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
-    const sanitizedTaskName: string = changeCase.paramCase(this._taskName().replace("fonts:", prefix));
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
+    this._savedBuildOptions = buildSettings;
 
     // Build font based on SVG files.
-    const iconfontStream = stream.pipe(
-      iconfont({
-        centerHorizontally: true,
-        fontName: sanitizedTaskName,
-        formats: ["ttf", "eot", "woff", "woff2", "svg"],
-        normalize: true,
-      })
-    );
+    return stream
+      .pipe(
+        iconfont({
+          centerHorizontally: true,
+          fontName: this._sanitizedTaskName,
+          formats: ["ttf", "eot", "woff", "woff2", "svg"],
+          normalize: true,
+        })
+      )
+      .pipe(buffer())
+      .on("glyphs", (glyphs: object[]): void => {
+        this._glyphs = glyphs;
+      });
+  }
 
-    async.parallel(
-      {
-        fonts: (cb: any): void => {
-          // Save fonts and revision.
-          iconfontStream
-            .pipe(dest(this._settings.dst, buildSettings.options))
-            .pipe(gulpIf(Revision.isActive(), buffer()))
-            .pipe(gulpIf(Revision.isActive(), Revision.manifest(buildSettings.revision)))
-            .pipe(gulpIf(Revision.isActive(), dest(".", buildSettings.options)))
-            .on("finish", cb);
-        },
-        glyphs: (cb: any): void => {
-          // Memorize glyphs to generate SASS file.
-          iconfontStream.on("glyphs", (glyphs: any[]): void => {
-            cb(null, glyphs);
-          });
-        },
-      },
-      (error: any, results: async.Dictionary<any>): void => {
-        // Generate SASS file with all glyphs.
-        if (error) {
-          throw error;
+  protected _bindEventsToBuilder(builder: NodeJS.ReadableStream): void {
+    builder.on("finish", () => {
+      if (this._savedBuildOptions) {
+        return;
+      }
+
+      const file: string = path.resolve(__dirname, `../../src/templates/${this._settings.settings.template}.lodash`);
+
+      // Load template file to build SASS file.
+      fs.readFile(file, (err: NodeJS.ErrnoException | null, data: Buffer): void => {
+        if (err) {
+          throw err;
         }
 
-        const file: string = path.resolve(__dirname, `../../src/templates/${this._settings.settings.template}.lodash`);
+        const taskName: string = this._savedBuildOptions ? this._savedBuildOptions.taskName : "";
+        const options: GulpOptions = this._savedBuildOptions ? this._savedBuildOptions.options : {};
 
-        // Load template file to build SASS file.
-        fs.readFile(file, (err: NodeJS.ErrnoException | null, data: Buffer): void => {
-          if (err) {
-            throw err;
-          }
+        // Get all variables used in template.
+        const templateVars: {} = {
+          className: this._sanitizedTaskName,
+          fontName: this._sanitizedTaskName,
+          fontPath: path.normalize(`${this._settings.settings.sass.rel}/`),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          glyphs: this._glyphs.map((glyph: any): {} => ({
+            codepoint: glyph.unicode[0].charCodeAt(0),
+            name: glyph.name,
+          })),
+          hash: {
+            eot: Revision.getHashRevision(taskName, `${this._sanitizedTaskName}.eot`),
+            svg: Revision.getHashRevision(taskName, `${this._sanitizedTaskName}.svg`),
+            ttf: Revision.getHashRevision(taskName, `${this._sanitizedTaskName}.ttf`),
+            woff: Revision.getHashRevision(taskName, `${this._sanitizedTaskName}.woff`),
+            woff2: Revision.getHashRevision(taskName, `${this._sanitizedTaskName}.woff2`),
+          },
+        };
 
-          // Get all variables used in template.
-          const templateVars: {} = {
-            className: sanitizedTaskName,
-            fontName: sanitizedTaskName,
-            fontPath: path.normalize(`${this._settings.settings.sass.rel}/`),
-            glyphs: results.glyphs.map((glyph: any): any => ({
-              codepoint: glyph.unicode[0].charCodeAt(0),
-              name: glyph.name,
-            })),
-            hash: {
-              eot: Revision.getHashRevision(buildSettings.taskName, `${sanitizedTaskName}.eot`),
-              svg: Revision.getHashRevision(buildSettings.taskName, `${sanitizedTaskName}.svg`),
-              ttf: Revision.getHashRevision(buildSettings.taskName, `${sanitizedTaskName}.ttf`),
-              woff: Revision.getHashRevision(buildSettings.taskName, `${sanitizedTaskName}.woff`),
-              woff2: Revision.getHashRevision(buildSettings.taskName, `${sanitizedTaskName}.woff2`),
-            },
-          };
+        // Generate and save SASS file.
+        consolidate.lodash.render(data.toString(), templateVars).then((stylesheet: string): void => {
+          stylesheet = `// sass-lint:disable-all\n\n${stylesheet}`;
 
-          // Generate and save SASS file.
-          consolidate.lodash.render(data.toString(), templateVars).then((stylesheet: string): void => {
-            stylesheet = `// sass-lint:disable-all\n\n${stylesheet}`;
-
-            gulpFile(`_${sanitizedTaskName}.scss`, stylesheet, { src: true }).pipe(
-              dest(this._settings.settings.sass.dst, buildSettings.options)
-            );
-          });
+          gulpFile(`_${this._sanitizedTaskName}.scss`, stylesheet, { src: true }).pipe(
+            dest(this._settings.settings.sass.dst, options)
+          );
         });
-      }
-    );
-
-    return iconfontStream;
+      });
+    });
   }
 }

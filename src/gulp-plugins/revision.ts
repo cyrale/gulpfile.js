@@ -9,8 +9,8 @@ import through, { TransformCallback } from "through2";
 import Vinyl from "vinyl";
 import vinylFile from "vinyl-file";
 
-import Config from "./config";
-import TaskFactory from "./task-factory";
+import Config from "../libs/config";
+import TaskFactory from "../libs/task-factory";
 
 enum Hash {
   MD5 = "md5",
@@ -18,18 +18,18 @@ enum Hash {
   SHA256 = "sha256",
 }
 
-export interface IDefaultObject {
-  [name: string]: any;
+export interface DefaultObject {
+  [name: string]: unknown;
 }
 
-interface IHashData {
+interface HashData {
   contents: string | Buffer;
   origRelFile: string;
   revRelFile: string;
   taskName: string;
 }
 
-interface IRevisionManifest {
+interface RevisionManifest {
   [type: string]: {
     [name: string]: {
       [origRelFile: string]: {
@@ -42,19 +42,19 @@ interface IRevisionManifest {
   };
 }
 
-interface IRevisionDefaultOption {
+interface RevisionDefaultOption {
   manifest?: string;
 }
 
-export interface IRevisionOptions extends IRevisionDefaultOption {
+export interface RevisionOptions extends RevisionDefaultOption {
   callback?: SimpleRevisionCallback;
   cwd: string;
   dst: string;
   taskName: string;
 }
 
-export type SimpleRevisionCallback = (data: IHashData, additionalInformation: IDefaultObject) => IDefaultObject;
-export type RevisionCallback = (file: any, additionalData: IDefaultObject) => void;
+export type SimpleRevisionCallback = (data: HashData, additionalInformation: DefaultObject) => DefaultObject;
+export type RevisionCallback = (file: unknown, additionalData: DefaultObject) => void;
 
 /**
  * Collect hashes from build files.
@@ -108,7 +108,7 @@ export default class Revision {
    *
    * @return {boolean}
    */
-  public static isActive() {
+  public static isActive(): boolean {
     const config = Config.getInstance();
     return !!config.options.revision;
   }
@@ -116,11 +116,12 @@ export default class Revision {
   /**
    * Collect hashes from build files.
    *
-   * @param {IRevisionOptions} options
+   * @param {RevisionOptions} options
+   * @param {SimpleRevisionCallback} callback
    * @return {Transform}
    */
-  public static manifest(options: IRevisionOptions, callback?: SimpleRevisionCallback): Transform {
-    const defaultOptions: IRevisionDefaultOption = {
+  public static manifest(options: RevisionOptions, callback?: SimpleRevisionCallback): Transform {
+    const defaultOptions: RevisionDefaultOption = {
       manifest: "rev-manifest.json",
     };
 
@@ -132,7 +133,7 @@ export default class Revision {
     }
 
     return through.obj(
-      (file: any, encoding: string, cb: TransformCallback): void => {
+      (file: Vinyl, encoding: string, cb: TransformCallback): void => {
         // Collect files and calculate hash from the stream.
 
         // Exclude null, stream and MAP files, only Buffer works.
@@ -144,7 +145,7 @@ export default class Revision {
         const revBase: string = path.resolve(file.cwd, file.base).replace(/\\/g, "/");
         const revPath: string = path.resolve(file.cwd, file.path).replace(/\\/g, "/");
 
-        let revRelFile: string = "";
+        let revRelFile = "";
 
         if (!revPath.startsWith(revBase)) {
           revRelFile = revPath;
@@ -162,7 +163,7 @@ export default class Revision {
         // Insert file and calculated hashes into the manifest.
         Revision._pushHash(
           {
-            contents: file.contents,
+            contents: file.contents ? file.contents.toString() : "",
             origRelFile,
             revRelFile,
             taskName: options.taskName,
@@ -181,6 +182,7 @@ export default class Revision {
           .read(manifestFile, options)
           .catch(
             // File not exists, create new one.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (error: any): Vinyl => {
               if (error.code === "ENOENT") {
                 return new Vinyl({
@@ -204,7 +206,7 @@ export default class Revision {
             }
 
             // Merge memory and file. Sort it by keys to improve reading and file versioning.
-            Revision._manifest = Revision._sortObjectByKeys(merge(oldManifest, Revision._manifest));
+            Revision._manifest = Revision._sortObjectByKeys(merge(oldManifest, Revision._manifest)) as RevisionManifest;
 
             // Send manifest in stream.
             manifest.contents = Buffer.from(JSON.stringify(Revision._manifest, null, "  "));
@@ -223,7 +225,7 @@ export default class Revision {
    * @return {Transform}
    */
   public static additionalData(callback: RevisionCallback): Transform {
-    return through.obj((file: any, encoding: string, cb: TransformCallback): void => {
+    return through.obj((file: unknown, encoding: string, cb: TransformCallback): void => {
       callback(file, Revision._additionalData);
 
       cb(null, file);
@@ -234,9 +236,9 @@ export default class Revision {
    * Push arbitrary file in manifest.
    *
    * @param {string} fileName
-   * @param {IRevisionOptions} options
+   * @param {RevisionOptions} options
    */
-  public static pushAndWrite(fileName: string, options: IRevisionOptions): void {
+  public static pushAndWrite(fileName: string, options: RevisionOptions): void {
     if (!Revision.isActive() || !path.isAbsolute(fileName)) {
       return;
     }
@@ -259,7 +261,6 @@ export default class Revision {
       fs.writeFile(
         path.resolve(options.cwd, options.manifest as string),
         JSON.stringify(Revision._manifest, null, "  "),
-        // tslint:disable-next-line:no-empty
         (): void => {}
       );
     });
@@ -267,17 +268,17 @@ export default class Revision {
 
   /**
    * Collect data to add to manifest.
-   * @type {IDefaultObject}
+   * @type {DefaultObject}
    * @private
    */
-  private static _additionalData: IDefaultObject = {};
+  private static _additionalData: DefaultObject = {};
 
   /**
    * Collection of hashes.
-   * @type {IRevisionManifest}
+   * @type {RevisionManifest}
    * @private
    */
-  private static _manifest: IRevisionManifest = {};
+  private static _manifest: RevisionManifest = {};
 
   /**
    * Calculate the hash from a string or a Buffer.
@@ -314,11 +315,11 @@ export default class Revision {
    * Push a new file in manifest and calculate the hash of this file.
    * Optionally, add data relative to this file via callback.
    *
-   * @param {IHashData} data
+   * @param {HashData} data
    * @param {SimpleRevisionCallback} callback
    * @private
    */
-  private static _pushHash(data: IHashData, callback?: SimpleRevisionCallback): void {
+  private static _pushHash(data: HashData, callback?: SimpleRevisionCallback): void {
     const { type, name } = TaskFactory.explodeTaskName(data.taskName);
     let newData = {
       [type]: {
@@ -349,23 +350,24 @@ export default class Revision {
       }
     }
 
-    Revision._manifest = Revision._sortObjectByKeys(merge(Revision._manifest, newData));
+    Revision._manifest = Revision._sortObjectByKeys(merge(Revision._manifest, newData)) as RevisionManifest;
   }
 
   /**
    * Sort object by keys.
    *
-   * @param {IDefaultObject} object
-   * @return {IDefaultObject}
+   * @param {DefaultObject} object
+   * @return {DefaultObject}
    * @private
    */
-  private static _sortObjectByKeys(object: IDefaultObject): IDefaultObject {
-    const result: IDefaultObject = {};
+  private static _sortObjectByKeys(object: DefaultObject): DefaultObject {
+    const result: DefaultObject = {};
 
     Object.keys(object)
       .sort()
       .forEach((key: string) => {
-        result[key] = typeof object[key] === "object" ? Revision._sortObjectByKeys(object[key]) : object[key];
+        result[key] =
+          typeof object[key] === "object" ? Revision._sortObjectByKeys(object[key] as DefaultObject) : object[key];
       });
 
     return result;

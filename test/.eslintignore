@@ -1,2 +1,5 @@
+**/node_modules/**/*.js
+**/node_modules/**/*.jsx
+
 **/src/js/concat/vendor/**/*.js
 **/dist/js/**/*.js

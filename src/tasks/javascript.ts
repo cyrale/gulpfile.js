@@ -1,16 +1,19 @@
 import { CLIEngine, Linter } from "eslint";
 import log from "fancy-log";
 import babel from "gulp-babel";
+import { sink } from "gulp-clone";
 import concat from "gulp-concat";
 import esLint from "gulp-eslint";
 import gulpIf from "gulp-if";
+import order from "gulp-order";
 import rename from "gulp-rename";
+import stripe from "gulp-strip-comments";
 import terser from "gulp-terser";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
 import path from "path";
 
-import { IBuildSettings } from "./task";
+import { BuildSettings, TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -39,10 +42,9 @@ export default class Javascript extends TaskExtended {
    * @readonly
    */
   protected static readonly _babelDefaultSettings: {
-    [name: string]: any;
+    [name: string]: unknown;
   } = {
     presets: ["@babel/preset-env"],
-    sourceType: "unambiguous",
   };
 
   /**
@@ -56,11 +58,10 @@ export default class Javascript extends TaskExtended {
   /**
    * Task constructor.
    *
-   * @param {string} name
-   * @param {object} settings
+   * @param {TaskOptions} options
    */
-  constructor(name: string, settings: object) {
-    super(name, settings);
+  constructor(options: TaskOptions) {
+    super(options);
 
     this._minifySuffix = ".min";
 
@@ -78,24 +79,49 @@ export default class Javascript extends TaskExtended {
 
       this._babelActive = typeof this._settings.settings.babel === "object" || this._settings.settings.babel !== false;
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let eslintSettings: any = {};
+
+    if (typeof this._settings.settings.eslint === "string") {
+      eslintSettings = {
+        configFile: this._settings.settings.eslint,
+        cwd: this._settings.cwd,
+        useEslintrc: false,
+      };
+    } else if (typeof this._settings.settings.eslint === "object") {
+      eslintSettings = this._settings.settings.eslint;
+
+      if (!eslintSettings.cwd) {
+        eslintSettings.cwd = this._settings.cwd;
+      }
+    }
+
+    this._settings.settings.eslint = eslintSettings;
   }
 
   /**
    * Method to add specific steps for the build.
    *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @param {IBuildSettings} buildSettings
-   * @return {NodeJS.ReadWriteStream}
+   * @param {NodeJS.ReadableStream} stream
+   * @param {BuildSettings} buildSettings
+   * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _buildSpecific(stream: NodeJS.ReadWriteStream, buildSettings: IBuildSettings): NodeJS.ReadWriteStream {
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cloneSink: any = sink();
+
     return stream
+      .pipe(order(this._settings.src))
       .pipe(gulpIf(this._babelActive, babel(omit(this._settings.settings.babel, ["_flags"]))))
       .pipe(concat(this._settings.filename))
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
-      .pipe(buildSettings.browserSync.memorize(buildSettings.taskName))
+      .pipe(cloneSink)
+      .pipe(stripe())
       .pipe(terser())
-      .pipe(rename({ suffix: this._minifySuffix }));
+      .pipe(rename({ suffix: this._minifySuffix }))
+      .pipe(cloneSink.tap());
   }
 
   /**
@@ -105,17 +131,15 @@ export default class Javascript extends TaskExtended {
    * @return {NodeJS.ReadWriteStream}
    * @protected
    */
-  protected _lintSpecific(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
-    stream
-      .pipe(esLint())
+  protected _hookLint(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+    return stream
+      .pipe(esLint(this._settings.settings.eslint))
       .pipe(esLint.format())
       .pipe(
         esLint.results((filesWithErrors: { errorCount: number }): void => {
           this._lintError = filesWithErrors.errorCount > 0;
         })
       );
-
-    return stream;
   }
 
   /**
@@ -124,6 +148,7 @@ export default class Javascript extends TaskExtended {
    * @param error
    * @protected
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected _displayError(error: any): void {
     const cliEngine: CLIEngine = new CLIEngine({});
     const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");
