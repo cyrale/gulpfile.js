@@ -1,3 +1,4 @@
+import log from "fancy-log";
 import { parallel, series, task as gulpTask } from "gulp";
 import map from "lodash/map";
 import uniq from "lodash/uniq";
@@ -6,6 +7,7 @@ import Undertaker from "undertaker";
 
 import Task, { TaskCallback, TaskOptions } from "../tasks/task";
 import TaskExtended from "../tasks/task-extended";
+import TaskSimple from "../tasks/task-simple";
 import Config, { Options } from "./config";
 import { module as taskModule, modules as taskModules, names as availableTaskNames } from "./modules";
 
@@ -23,7 +25,7 @@ interface GlobalTaskList {
   [name: string]: TaskList;
 }
 
-interface ModuleInstances {
+interface ModuleClasses {
   [name: string]: unknown;
 }
 
@@ -67,10 +69,10 @@ export default class TaskFactory {
 
   /**
    * List of used modules.
-   * @type {ModuleInstances}
+   * @type {ModuleClasses}
    * @private
    */
-  private static _modules: ModuleInstances = {};
+  private static _modules: ModuleClasses = {};
 
   /**
    * Sort order for tasks.
@@ -84,7 +86,7 @@ export default class TaskFactory {
    * @type {{}}
    * @private
    */
-  private static _uniqueInstances: ModuleInstances = {};
+  private static _uniqueInstances: ModuleClasses = {};
 
   /**
    * Check if current task is a global task.
@@ -171,6 +173,9 @@ export default class TaskFactory {
   public createAllTasks(): void {
     const conf: Config = Config.getInstance();
 
+    // Load all modules.
+    TaskFactory._loadModules(conf.settings);
+
     // Sort tasks to always have simple ones on top.
     const allTasks: string[] = Object.keys(conf.settings).sort((taskA: string, taskB: string): number => {
       if (taskModules[taskA].simple !== taskModules[taskB].simple) {
@@ -216,12 +221,7 @@ export default class TaskFactory {
       throw new Error(`Unsupported task: ${task}.`);
     }
 
-    if (typeof TaskFactory._modules[task] === "undefined") {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { default: module } = require(taskModule(task));
-      TaskFactory._modules[task] = module;
-    }
-
+    const module: unknown = TaskFactory._loadModule(task);
     const options: TaskOptions = {
       name,
       settings,
@@ -232,7 +232,7 @@ export default class TaskFactory {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const instance: any = new (TaskFactory._modules[task] as any)(options);
+    const instance: any = new (module as any)(options);
 
     if (this.isSimpleTask(task) && typeof TaskFactory._uniqueInstances[task] === "undefined") {
       TaskFactory._uniqueInstances[task] = instance;
@@ -518,5 +518,33 @@ export default class TaskFactory {
         (task: string): boolean => (TaskFactory._modules[task] as any).taskOrder === order
       )
     );
+  }
+
+  private static _loadModules(settings: Options): ModuleClasses {
+    log("Loading modules...");
+
+    Object.keys(settings).forEach((task: string): void => {
+      TaskFactory._loadModule(task);
+    });
+
+    log("Modules loaded");
+
+    return TaskFactory._modules;
+  }
+
+  private static _loadModule(task: string): unknown {
+    if (typeof TaskFactory._modules[task] === "undefined") {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { default: module } = require(taskModule(task));
+      TaskFactory._modules[task] = module;
+    }
+
+    return TaskFactory._modules[task];
+  }
+
+  private static _isTaskSimple(task: string): boolean {
+    const module: unknown = TaskFactory._loadModule(task);
+
+    return (module as any).prototype instanceof TaskSimple;
   }
 }
