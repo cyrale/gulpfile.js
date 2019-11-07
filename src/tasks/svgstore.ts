@@ -7,7 +7,7 @@ import path from "path";
 import svgo from "svgo";
 import Vinyl from "vinyl";
 
-import { TaskOptions } from "./task";
+import { Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**

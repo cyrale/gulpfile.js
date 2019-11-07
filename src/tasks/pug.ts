@@ -7,7 +7,7 @@ import merge from "lodash/merge";
 import pugLintStylish from "puglint-stylish";
 
 import TaskExtended from "./task-extended";
-import { TaskOptions } from "./task";
+import { Options as TaskOptions } from "./task";
 
 /**
  * Build PUG files into HTML.

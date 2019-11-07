@@ -7,7 +7,7 @@ import through, { TransformCallback } from "through2";
 import Vinyl from "vinyl";
 
 import Config from "../libs/config";
-import { TaskOptions, TaskCallback } from "./task";
+import { Options as TaskOptions, TaskCallback } from "./task";
 import TaskSimple from "./task-simple";
 
 type BrowserSyncTransform = ((taskName: string) => Transform) | (() => Transform);

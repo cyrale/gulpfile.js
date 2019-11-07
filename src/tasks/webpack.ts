@@ -12,7 +12,7 @@ import webpack from "webpack";
 import webpackStream from "webpack-stream";
 
 import Javascript from "./javascript";
-import { BuildSettings, TaskOptions } from "./task";
+import { BuildSettings, Options as TaskOptions } from "./task";
 
 /**
  * Package Javascript using Webpack.

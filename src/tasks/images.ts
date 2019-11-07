@@ -12,7 +12,7 @@ import mergeStream from "merge-stream";
 import minimatch from "minimatch";
 import path from "path";
 
-import { TaskOptions } from "./task";
+import { Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**

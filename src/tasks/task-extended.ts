@@ -12,8 +12,12 @@ import Config from "../libs/config";
 import Revision, { SimpleRevisionCallback } from "../gulp-plugins/revision";
 import Size from "../gulp-plugins/size";
 import TaskFactory from "../libs/task-factory";
-import Task, { BuildSettings, TaskCallback } from "./task";
 import Browsersync from "./browsersync";
+import Task, { BuildSettings, TaskCallback, Options as TaskOptions } from "./task";
+
+export interface Options extends TaskOptions {
+  browsersync?: Browsersync;
+}
 
 /**
  * Task class to define gulp tasks.
@@ -46,6 +50,8 @@ export default abstract class TaskExtended extends Task {
    * @protected
    */
   protected _watchingFiles: string[] = [];
+
+  protected _browserSync: Browsersync | undefined;
 
   /**
    * Browsersync settings.
@@ -102,6 +108,17 @@ export default abstract class TaskExtended extends Task {
    * @protected
    */
   protected _minifySuffix = "";
+
+  /**
+   * Task constructor.
+   *
+   * @param {Options} options
+   */
+  public constructor(options: Options) {
+    super(options);
+
+    this._browserSync = options.browsersync;
+  }
 
   /**
    * Basic task that run all tasks.
@@ -243,15 +260,14 @@ export default abstract class TaskExtended extends Task {
     Config.chdir(this._settings.cwd);
 
     const taskName: string = this._taskName("build");
-    const browserSync: Browsersync = TaskFactory.getUniqueInstanceOf("browsersync") as Browsersync;
     const config = Config.getInstance();
 
     // All the build settings in a unique object.
     const buildSettings: BuildSettings = {
       browserSync: {
-        memorize: browserSync ? browserSync.memorize : (): Transform => through.obj(),
-        remember: browserSync ? browserSync.remember : (): Transform => through.obj(),
-        sync: browserSync ? browserSync.sync : (): Transform => through.obj(),
+        memorize: this._browserSync ? this._browserSync.memorize : (): Transform => through.obj(),
+        remember: this._browserSync ? this._browserSync.remember : (): Transform => through.obj(),
+        sync: this._browserSync ? this._browserSync.sync : (): Transform => through.obj(),
       },
       options: {
         cwd: this._settings.cwd,
@@ -306,8 +322,8 @@ export default abstract class TaskExtended extends Task {
         .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)));
       // .pipe(buildSettings.browserSync.remember(taskName))
 
-      if (browserSync) {
-        stream = stream.pipe(browserSync.sync(taskName, this._browserSyncSettings));
+      if (this._browserSync) {
+        stream = stream.pipe(this._browserSync.sync(taskName, this._browserSyncSettings));
       }
 
       if (this._defaultRevision && Revision.isActive()) {

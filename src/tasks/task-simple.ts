@@ -1,4 +1,4 @@
-import Task, { TaskOptions, TaskCallback } from "./task";
+import Task, { Options as TaskOptions, TaskCallback } from "./task";
 
 /**
  * Task class to define gulp tasks.

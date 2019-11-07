@@ -39,7 +39,7 @@ import normalizeRevision from "../postcss/normalize-revision";
 import removeCriticalProperties from "../postcss/remove-critical-properties";
 import removeCriticalRules from "../postcss/remove-critical-rules";
 import Revision, { DefaultObject } from "../gulp-plugins/revision";
-import { BuildSettings, TaskOptions } from "./task";
+import { BuildSettings, Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 type PurgeCSSParam = unknown[] | boolean;

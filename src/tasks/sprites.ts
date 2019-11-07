@@ -10,7 +10,7 @@ import minimatch from "minimatch";
 import path from "path";
 import buffer from "vinyl-buffer";
 
-import { BuildSettings, TaskOptions } from "./task";
+import { BuildSettings, Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**

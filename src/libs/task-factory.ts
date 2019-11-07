@@ -5,11 +5,10 @@ import uniq from "lodash/uniq";
 import process from "process";
 import Undertaker from "undertaker";
 
-import Task, { TaskCallback, TaskOptions } from "../tasks/task";
+import Task, { TaskCallback, Options as TaskOptions } from "../tasks/task";
 import TaskExtended from "../tasks/task-extended";
 import TaskSimple from "../tasks/task-simple";
-import Config, { Options } from "./config";
-import { module as taskModule, modules as taskModules, names as availableTaskNames } from "./modules";
+import Config, { Options as ConfigOptions } from "./config";
 
 export interface TaskNameElements {
   type: string;
@@ -61,10 +60,10 @@ export default class TaskFactory {
    * Get unique instance of simple module.
    *
    * @param {string} name
-   * @return {any}
+   * @return {unknown | undefined}
    */
-  public static getUniqueInstanceOf(name: string): unknown {
-    return TaskFactory._uniqueInstances[name];
+  private _getUniqueInstanceOf(name: string): unknown | undefined {
+    return this._uniqueInstances[name];
   }
 
   /**
@@ -72,7 +71,23 @@ export default class TaskFactory {
    * @type {ModuleClasses}
    * @private
    */
-  private static _modules: ModuleClasses = {};
+  private _modules: ModuleClasses = {};
+
+  public static readonly moduleNames: string[] = [
+    "browserify",
+    "browsersync",
+    "clean",
+    "favicon",
+    "fonts",
+    "images",
+    "javascript",
+    "pug",
+    "sass",
+    "sprites",
+    "svgstore",
+    "typescript",
+    "webpack",
+  ];
 
   /**
    * Sort order for tasks.
@@ -86,7 +101,7 @@ export default class TaskFactory {
    * @type {{}}
    * @private
    */
-  private static _uniqueInstances: ModuleClasses = {};
+  private _uniqueInstances: ModuleClasses = {};
 
   /**
    * Check if current task is a global task.
@@ -174,12 +189,15 @@ export default class TaskFactory {
     const conf: Config = Config.getInstance();
 
     // Load all modules.
-    TaskFactory._loadModules(conf.settings);
+    this._loadModules(conf.settings);
 
     // Sort tasks to always have simple ones on top.
     const allTasks: string[] = Object.keys(conf.settings).sort((taskA: string, taskB: string): number => {
-      if (taskModules[taskA].simple !== taskModules[taskB].simple) {
-        return taskModules[taskA].simple && !taskModules[taskB].simple ? -1 : 1;
+      const isSimpleA: boolean = this._isTaskSimple(taskA);
+      const isSimpleB: boolean = this._isTaskSimple(taskB);
+
+      if (isSimpleA !== isSimpleB) {
+        return isSimpleA && !isSimpleB ? -1 : 1;
       }
 
       return taskA < taskB ? -1 : taskA > taskB ? 1 : 0;
@@ -213,52 +231,36 @@ export default class TaskFactory {
    *
    * @param {string} task
    * @param {string} name
-   * @param {object} settings
+   * @param {TaskOptions} settings
    * @return {Task}
    */
-  public createTask(task: string, name: string, settings: Options): Task {
-    if (!this.isValidTask(task)) {
+  public createTask(task: string, name: string, settings: TaskOptions): Task {
+    if (!TaskFactory._isValidTask(task)) {
       throw new Error(`Unsupported task: ${task}.`);
     }
 
-    const module: unknown = TaskFactory._loadModule(task);
-    const options: TaskOptions = {
-      name,
-      settings,
-    };
+    const module: unknown = this._loadModule(task);
 
-    if (this.isSimpleTask(task)) {
-      delete options.name;
+    let instance: Task;
+
+    if (this._isTaskSimple(task)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      instance = new (module as any)({
+        settings,
+      });
+
+      if (!this._uniqueInstances[task]) {
+        this._uniqueInstances[task] = instance;
+      }
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      instance = new (module as any)({
+        name,
+        settings,
+        browsersync: this._getUniqueInstanceOf("browsersync"),
+      });
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const instance: any = new (module as any)(options);
-
-    if (this.isSimpleTask(task) && typeof TaskFactory._uniqueInstances[task] === "undefined") {
-      TaskFactory._uniqueInstances[task] = instance;
-    }
-
     return instance;
-  }
-
-  /**
-   * Check if a task is a simple task.
-   *
-   * @param {string} taskName
-   * @return {boolean}
-   */
-  public isSimpleTask(taskName: string): boolean {
-    return this.isValidTask(taskName) && taskModules[taskName].simple;
-  }
-
-  /**
-   * Check if a task is valid (exists in supported tasks).
-   *
-   * @param {string} taskName
-   * @return {boolean}
-   */
-  public isValidTask(taskName: string): boolean {
-    return availableTaskNames.indexOf(taskName) >= 0;
   }
 
   /**
@@ -271,7 +273,7 @@ export default class TaskFactory {
     this._tasks.forEach((task: string): void => {
       const { type, name, step } = TaskFactory.explodeTaskName(task);
 
-      if (this.isSimpleTask(type)) {
+      if (this._isTaskSimple(type)) {
         this._pushGlobalTask("byTypeOnly", type, task);
       } else {
         // Sort tasks by name.
@@ -373,31 +375,31 @@ export default class TaskFactory {
    * Create all tasks: lint, build and watch.
    *
    * @param {string} task
-   * @param {Options} tasks
+   * @param {ConfigOptions} tasks
    * @private
    */
-  private _createTasks(task: string, tasks: Options): void {
-    const simpleModule: boolean = this.isSimpleTask(task);
+  private _createTasks(task: string, tasks: ConfigOptions): void {
+    const isSimple: boolean = this._isTaskSimple(task);
     const conf: Config = Config.getInstance();
     const { type: currentType, name: currentName, step: currentStep } = TaskFactory.explodeTaskName(conf.currentRun);
 
     // Keep only valid and current tasks (useless to initialize unused tasks).
-    if (!this.isValidTask(task) || (!TaskFactory._isGlobalTask() && task !== currentType)) {
+    if (!TaskFactory._isValidTask(task) || (!TaskFactory._isGlobalTask() && task !== currentType)) {
       return;
     }
 
-    if (simpleModule && (currentStep === "" || currentStep === "watch")) {
+    if (isSimple && (currentStep === "" || currentStep === "watch")) {
       // Add simple tasks only for global or watch call.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const taskInstance: any = this.createTask(task, "", tasks);
+      const taskInstance: any = this.createTask(task, "", tasks as TaskOptions);
 
       this._pushTask(taskInstance.taskStart());
       this._pushTask(taskInstance.taskWatch());
-    } else if (!simpleModule) {
+    } else if (!isSimple) {
       // Add classic tasks.
       Object.keys(tasks).forEach((name: string): void => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const taskInstance: any = this.createTask(task, name, tasks[name] as Options);
+        const taskInstance: any = this.createTask(task, name, tasks[name] as TaskOptions);
 
         // Keep only current tasks (useless to initialize unused tasks).
         if (currentName !== "" && currentName !== name) {
@@ -510,41 +512,73 @@ export default class TaskFactory {
    */
   private _tasksGroupAndOrder(): string[][] {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orders: number[] = map(TaskFactory._modules, (module: any): number => module.taskOrder);
+    const orders: number[] = map(this._modules, (module: any): number => module.taskOrder);
 
     return uniq(orders.sort()).map((order: number): string[] =>
-      Object.keys(TaskFactory._modules).filter(
+      Object.keys(this._modules).filter(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (task: string): boolean => (TaskFactory._modules[task] as any).taskOrder === order
+        (task: string): boolean => (this._modules[task] as any).taskOrder === order
       )
     );
   }
 
-  private static _loadModules(settings: Options): ModuleClasses {
+  /**
+   * Check if a task is a simple one.
+   *
+   * @param {string} taskName
+   * @return {boolean}
+   */
+  private _isTaskSimple(taskName: string): boolean {
+    const module: unknown = this._loadModule(taskName);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (module as any).prototype instanceof TaskSimple;
+  }
+
+  /**
+   * Check if a task is valid (exists in supported tasks).
+   *
+   * @param {string} taskName
+   * @return {boolean}
+   */
+  private static _isValidTask(taskName: string): boolean {
+    return TaskFactory.moduleNames.indexOf(taskName) >= 0;
+  }
+
+  private _loadModules(settings: ConfigOptions): ModuleClasses {
     log("Loading modules...");
 
     Object.keys(settings).forEach((task: string): void => {
-      TaskFactory._loadModule(task);
+      this._loadModule(task);
     });
 
     log("Modules loaded");
 
-    return TaskFactory._modules;
+    return this._modules;
   }
 
-  private static _loadModule(task: string): unknown {
-    if (typeof TaskFactory._modules[task] === "undefined") {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { default: module } = require(taskModule(task));
-      TaskFactory._modules[task] = module;
+  private _loadModule(taskName: string): unknown | void {
+    if (!this._modules[taskName]) {
+      const module: unknown = TaskFactory._requireModule(taskName);
+
+      if (!module) {
+        return;
+      }
+
+      this._modules[taskName] = module;
     }
 
-    return TaskFactory._modules[task];
+    return this._modules[taskName];
   }
 
-  private static _isTaskSimple(task: string): boolean {
-    const module: unknown = TaskFactory._loadModule(task);
+  private static _requireModule(taskName: string): unknown | void {
+    if (!TaskFactory._isValidTask(taskName)) {
+      return;
+    }
 
-    return (module as any).prototype instanceof TaskSimple;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { default: module } = require(`../tasks/${taskName}`);
+
+    return module;
   }
 }

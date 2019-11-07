@@ -6,7 +6,7 @@ import omit from "lodash/omit";
 import path from "path";
 
 import Browserify from "./browserify";
-import { TaskOptions } from "./task";
+import { Options as TaskOptions } from "./task";
 
 /**
  * Build TypeScript files.

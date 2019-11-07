@@ -13,7 +13,7 @@ import merge from "lodash/merge";
 import omit from "lodash/omit";
 import path from "path";
 
-import { BuildSettings, TaskOptions } from "./task";
+import { BuildSettings, Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**

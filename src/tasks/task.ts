@@ -1,6 +1,6 @@
 import { task as gulpTask, TaskFunction } from "gulp";
 
-import Config, { Options } from "../libs/config";
+import Config, { Options as ConfigOptions } from "../libs/config";
 import { RevisionOptions } from "../gulp-plugins/revision";
 import Size from "../gulp-plugins/size";
 import { BrowserSyncMethods } from "./browsersync";
@@ -11,9 +11,9 @@ interface TaskErrorDefinition {
   done?: TaskCallback;
 }
 
-export interface TaskOptions {
+export interface Options {
   name?: string;
-  settings: Options;
+  settings: ConfigOptions;
 }
 
 export interface GulpOptions {
@@ -89,14 +89,14 @@ export default abstract class Task {
    * @type {Options}
    * @protected
    */
-  protected _settings: Options = {};
+  protected _settings: ConfigOptions = {};
 
   /**
    * Task constructor.
    *
-   * @param {TaskOptions} options
+   * @param {Options} options
    */
-  public constructor(options: TaskOptions) {
+  public constructor(options: Options) {
     this._name = options.name || "";
     this._settings = options.settings || {};
   }

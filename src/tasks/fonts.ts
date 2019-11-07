@@ -9,7 +9,7 @@ import path from "path";
 import buffer from "vinyl-buffer";
 
 import Revision from "../gulp-plugins/revision";
-import { BuildSettings, GulpOptions, TaskOptions } from "./task";
+import { BuildSettings, GulpOptions, Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**

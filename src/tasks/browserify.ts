@@ -17,7 +17,7 @@ import source from "vinyl-source-stream";
 import watchify from "watchify";
 
 import Javascript from "./javascript";
-import { BuildSettings, TaskCallback, TaskOptions } from "./task";
+import { BuildSettings, TaskCallback, Options as TaskOptions } from "./task";
 
 /**
  * Package Javascript using Browserify.

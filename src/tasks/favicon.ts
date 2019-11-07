@@ -4,7 +4,7 @@ import merge from "lodash/merge";
 import path from "path";
 
 import Revision from "../gulp-plugins/revision";
-import { BuildSettings, TaskOptions, TaskCallback } from "./task";
+import { BuildSettings, Options as TaskOptions, TaskCallback } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
