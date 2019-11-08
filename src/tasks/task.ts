@@ -1,8 +1,8 @@
 import { task as gulpTask, TaskFunction } from "gulp";
 
-import Config, { Options as ConfigOptions } from "../libs/config";
 import { RevisionOptions } from "../gulp-plugins/revision";
 import Size from "../gulp-plugins/size";
+import Config, { Options as ConfigOptions } from "../libs/config";
 import { BrowserSyncMethods } from "./browsersync";
 
 interface TaskErrorDefinition {

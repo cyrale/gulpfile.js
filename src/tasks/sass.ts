@@ -31,14 +31,14 @@ import sassLint from "sass-lint";
 import sortCSSMediaQueries from "sort-css-media-queries";
 import { Transform } from "stream";
 import through, { TransformCallback } from "through2";
-import Vinyl from "vinyl";
+import File from "vinyl";
 
 import MediaQueries from "../gulp-plugins/media-queries";
+import Revision, { DefaultObject } from "../gulp-plugins/revision";
 import hierarchicalCriticalCSS from "../postcss/hierarchical-critical-css";
 import normalizeRevision from "../postcss/normalize-revision";
 import removeCriticalProperties from "../postcss/remove-critical-properties";
 import removeCriticalRules from "../postcss/remove-critical-rules";
-import Revision, { DefaultObject } from "../gulp-plugins/revision";
 import { BuildSettings, Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
@@ -255,7 +255,7 @@ export default class Sass extends TaskExtended {
           Revision.additionalData((file: unknown, additionalData: DefaultObject): void => {
             additionalData.media = uniq([
               ...((additionalData.media as string[]) || []),
-              ...MediaQueries.extractMediaQueries(file as Vinyl),
+              ...MediaQueries.extractMediaQueries(file as File),
             ]);
           })
         )
@@ -360,7 +360,7 @@ export default class Sass extends TaskExtended {
    */
   private _lintNotifier(): Transform {
     return through.obj(
-      (file: Vinyl, encoding: string, cb: TransformCallback): void => {
+      (file: File, encoding: string, cb: TransformCallback): void => {
         if (!file.isNull() && !file.isStream() && file.sassLint[0].errorCount > 0) {
           this._lintError = true;
         }

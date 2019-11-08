@@ -13,7 +13,6 @@ import TaskExtended from "../tasks/task-extended";
 import TaskSimple from "../tasks/task-simple";
 import Config, { Options as ConfigOptions } from "./config";
 import { explodeTaskName, modules, steps } from "./utils";
-import { type } from "os";
 
 interface TaskList {
   [name: string]: string[];

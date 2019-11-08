@@ -8,9 +8,9 @@ import { Transform } from "stream";
 import through from "through2";
 import Undertaker from "undertaker";
 
-import Config from "../libs/config";
 import Revision, { SimpleRevisionCallback } from "../gulp-plugins/revision";
 import Size from "../gulp-plugins/size";
+import Config from "../libs/config";
 import Browsersync from "./browsersync";
 import Task, { BuildSettings, TaskCallback, Options as TaskOptions } from "./task";
 

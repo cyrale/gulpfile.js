@@ -4,7 +4,7 @@ import isEmpty from "lodash/isEmpty";
 import merge from "lodash/merge";
 import { Transform } from "stream";
 import through, { TransformCallback } from "through2";
-import Vinyl from "vinyl";
+import File from "vinyl";
 
 import Config from "../libs/config";
 import { Options as TaskOptions, TaskCallback } from "./task";
@@ -85,7 +85,7 @@ export default class Browsersync extends TaskSimple {
    */
   public memorize(taskName: string): Transform {
     return through.obj(
-      (file: Vinyl, encoding: string, cb: TransformCallback): void => {
+      (file: File, encoding: string, cb: TransformCallback): void => {
         if (file.isNull() || file.isStream()) {
           return cb(null, file);
         }

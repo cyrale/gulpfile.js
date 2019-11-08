@@ -12,7 +12,7 @@ import prettyBytes from "pretty-bytes";
 import { Transform } from "stream";
 import StreamCounter from "stream-counter";
 import through, { TransformCallback } from "through2";
-import Vinyl from "vinyl";
+import File from "vinyl";
 
 export interface Options {
   gzip: boolean;
@@ -20,13 +20,13 @@ export interface Options {
   taskName: string;
 }
 
-interface File {
+interface FileSize {
   calculated: boolean;
   sizes: Sizes;
 }
 
-interface Files {
-  [filename: string]: File;
+interface FileSizes {
+  [filename: string]: FileSize;
 }
 
 interface PrettySizes {
@@ -75,10 +75,10 @@ export default class Size {
 
   /**
    * List of generated files.
-   * @type {Files}
+   * @type {FileSizes}
    * @private
    */
-  private _files: Files = {};
+  private _files: FileSizes = {};
 
   /**
    * Check if all files are passed through the module.
@@ -118,7 +118,7 @@ export default class Size {
    */
   public collect(): Transform {
     return through.obj(
-      (file: Vinyl, encoding: string, cb: TransformCallback): void => {
+      (file: File, encoding: string, cb: TransformCallback): void => {
         if (file.isNull()) {
           cb(null, file);
           return;
@@ -244,7 +244,11 @@ export default class Size {
    * @private
    */
   private _display(): void {
-    const calculatedCount = reduce(this._files, (count: number, file: File) => count + (file.calculated ? 1 : 0), 0);
+    const calculatedCount = reduce(
+      this._files,
+      (count: number, file: FileSize) => count + (file.calculated ? 1 : 0),
+      0
+    );
     const filesCount = Object.keys(this._files).length;
 
     if (!this._end || this._displayed || filesCount === 0) {
@@ -265,7 +269,7 @@ export default class Size {
       const files: string[][] = Object.keys(this._files)
         .sort()
         .map((filename: string): string[] => {
-          const file: File = this._files[filename];
+          const file: FileSize = this._files[filename];
           const prettySizes: PrettySizes = Size._prettyBytes(file.sizes);
 
           const row = [

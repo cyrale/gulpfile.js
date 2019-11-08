@@ -3,10 +3,10 @@ import del from "del";
 import log from "fancy-log";
 import fs from "fs";
 import filter from "gulp-filter";
-import imagemin from "gulp-imagemin";
+import imageMin from "gulp-imagemin";
 import newer from "gulp-newer";
 import rename from "gulp-rename";
-import imageminWebP from "imagemin-webp";
+import imageMinWebP from "imagemin-webp";
 import merge from "lodash/merge";
 import mergeStream from "merge-stream";
 import minimatch from "minimatch";
@@ -89,12 +89,12 @@ export default class Images extends TaskExtended {
     stream = stream.pipe(newer(path.resolve(this._settings.cwd, this._settings.dst)));
 
     const streamImageMin = stream.pipe(
-      imagemin(
+      imageMin(
         [
-          imagemin.jpegtran(this._settings.settings.jpegtran || {}),
-          imagemin.optipng(this._settings.settings.optipng || {}),
-          imagemin.gifsicle(this._settings.settings.gifsicle || {}),
-          imagemin.svgo(this._settings.settings.svgo || {}),
+          imageMin.jpegtran(this._settings.settings.jpegtran || {}),
+          imageMin.optipng(this._settings.settings.optipng || {}),
+          imageMin.gifsicle(this._settings.settings.gifsicle || {}),
+          imageMin.svgo(this._settings.settings.svgo || {}),
         ],
         { verbose: true }
       )
@@ -105,7 +105,7 @@ export default class Images extends TaskExtended {
     if (this._settings.settings.webp) {
       const streamWebP = stream
         .pipe(filter(this._webPSupportedExtension))
-        .pipe(imagemin([imageminWebP(this._settings.settings.webp)]))
+        .pipe(imageMin([imageMinWebP(this._settings.settings.webp)]))
         .pipe(
           rename((pPath: rename.ParsedPath): void => {
             pPath.extname += ".webp";

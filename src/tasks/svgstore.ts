@@ -5,7 +5,7 @@ import svgStore from "gulp-svgstore";
 import merge from "lodash/merge";
 import path from "path";
 import svgo from "svgo";
-import Vinyl from "vinyl";
+import File from "vinyl";
 
 import { Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
@@ -87,7 +87,7 @@ export default class SVGStore extends TaskExtended {
     return stream
       .pipe(
         svgMin(
-          (file: Vinyl): svgo.Options =>
+          (file: File): svgo.Options =>
             merge(this._settings.settings.svgmin, {
               plugins: [
                 {
@@ -107,7 +107,7 @@ export default class SVGStore extends TaskExtended {
           parserOptions: {
             xmlMode: true,
           },
-          run: ($: CheerioStatic, file: Vinyl, done?: Function): void => {
+          run: ($: CheerioStatic, file: File, done?: Function): void => {
             // Append view and use tags to the SVG.
             let offsetY = 0;
             let maxWidth = 0;

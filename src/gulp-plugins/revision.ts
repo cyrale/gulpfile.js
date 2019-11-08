@@ -6,7 +6,7 @@ import path from "path";
 import PluginError from "plugin-error";
 import { Transform } from "stream";
 import through, { TransformCallback } from "through2";
-import Vinyl from "vinyl";
+import File from "vinyl";
 import vinylFile from "vinyl-file";
 
 import Config from "../libs/config";
@@ -133,7 +133,7 @@ export default class Revision {
     }
 
     return through.obj(
-      (file: Vinyl, encoding: string, cb: TransformCallback): void => {
+      (file: File, encoding: string, cb: TransformCallback): void => {
         // Collect files and calculate hash from the stream.
 
         // Exclude null, stream and MAP files, only Buffer works.
@@ -183,9 +183,9 @@ export default class Revision {
           .catch(
             // File not exists, create new one.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (error: any): Vinyl => {
+            (error: any): File => {
               if (error.code === "ENOENT") {
-                return new Vinyl({
+                return new File({
                   path: manifestFile,
                 });
               }
@@ -193,7 +193,7 @@ export default class Revision {
               throw error;
             }
           )
-          .then((manifest: Vinyl): void => {
+          .then((manifest: File): void => {
             let oldManifest = {};
 
             // Read manifest file.

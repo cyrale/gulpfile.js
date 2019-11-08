@@ -2,8 +2,8 @@ import cleanUpString from "clean-up-string";
 import uniq from "lodash/uniq";
 import rework from "rework";
 import reworkMoveMedia from "rework-move-media";
-import reworkSpliteMedia from "rework-split-media";
-import Vinyl from "vinyl";
+import reworkSplitMedia from "rework-split-media";
+import File from "vinyl";
 
 export default class MediaQueries {
   /**
@@ -12,10 +12,10 @@ export default class MediaQueries {
    * @param file
    * @return {string[]}
    */
-  public static extractMediaQueries(file: Vinyl): string[] {
+  public static extractMediaQueries(file: File): string[] {
     if (file.isBuffer() || file.isStream()) {
       const reworkData = rework(file.contents.toString()).use(reworkMoveMedia());
-      const stylesheets = reworkSpliteMedia(reworkData);
+      const stylesheets = reworkSplitMedia(reworkData);
 
       return uniq(Object.keys(stylesheets));
     }

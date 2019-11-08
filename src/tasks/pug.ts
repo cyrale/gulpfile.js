@@ -6,8 +6,8 @@ import * as yaml from "js-yaml";
 import merge from "lodash/merge";
 import pugLintStylish from "puglint-stylish";
 
-import TaskExtended from "./task-extended";
 import { Options as TaskOptions } from "./task";
+import TaskExtended from "./task-extended";
 
 /**
  * Build PUG files into HTML.
