@@ -9,12 +9,7 @@ import Task, { TaskCallback, Options as TaskOptions } from "../tasks/task";
 import TaskExtended from "../tasks/task-extended";
 import TaskSimple from "../tasks/task-simple";
 import Config, { Options as ConfigOptions } from "./config";
-
-export interface TaskNameElements {
-  type: string;
-  name: string;
-  step: string;
-}
+import { explodeTaskName, modules, steps } from "./utils";
 
 interface TaskList {
   [name: string]: string[];
@@ -33,30 +28,6 @@ interface ModuleClasses {
  */
 export default class TaskFactory {
   /**
-   * Explode name separated by two points in 3 elements.
-   *
-   * @param {string} task
-   * @return {TaskNameElements}
-   */
-  public static explodeTaskName(task: string): TaskNameElements {
-    let [type = "", name = "", step = ""] = task.split(":");
-
-    if (TaskFactory._sortOrder.indexOf(type) >= 0 || type === "start") {
-      step = type;
-      type = "";
-    } else if (TaskFactory._sortOrder.indexOf(name) >= 0 || name === "start") {
-      step = name;
-      name = "";
-    }
-
-    return {
-      name,
-      step,
-      type,
-    };
-  }
-
-  /**
    * Get unique instance of simple module.
    *
    * @param {string} name
@@ -73,48 +44,12 @@ export default class TaskFactory {
    */
   private _modules: ModuleClasses = {};
 
-  public static readonly moduleNames: string[] = [
-    "browserify",
-    "browsersync",
-    "clean",
-    "favicon",
-    "fonts",
-    "images",
-    "javascript",
-    "pug",
-    "sass",
-    "sprites",
-    "svgstore",
-    "typescript",
-    "webpack",
-  ];
-
-  /**
-   * Sort order for tasks.
-   * @type {string[]}
-   * @private
-   */
-  private static readonly _sortOrder: string[] = ["lint", "build", "watch"];
-
   /**
    * List of unique instance for simple modules.
    * @type {{}}
    * @private
    */
   private _uniqueInstances: ModuleClasses = {};
-
-  /**
-   * Check if current task is a global task.
-   *
-   * @return {boolean}
-   * @private
-   */
-  private static _isGlobalTask(): boolean {
-    const conf: Config = Config.getInstance();
-    const { type, step } = TaskFactory.explodeTaskName(conf.currentRun);
-
-    return type === "default" || (type === "" && TaskFactory._sortOrder.indexOf(step) >= 0);
-  }
 
   /**
    * Add a task in a list.
@@ -137,11 +72,19 @@ export default class TaskFactory {
   /**
    * Check if an array is empty. Used in filters.
    *
-   * @param {(string | string[])[]} tasks
+   * @param {unknown[]} tasks
    * @return {boolean}
    * @private
    */
-  private static _removeEmptyArrays(tasks: (string | string[])[]): boolean {
+  private static _removeEmptyArrays(tasks: unknown[]): boolean {
+    if (!Array.isArray(tasks)) {
+      return true;
+    }
+
+    tasks = tasks.map((task: unknown): unknown =>
+      Array.isArray(task) ? task.filter(TaskFactory._removeEmptyArrays) : task
+    );
+
     return tasks.length > 0;
   }
 
@@ -271,7 +214,7 @@ export default class TaskFactory {
   private _createGlobalTasks(): void {
     // Group tasks by step, name and type.
     this._tasks.forEach((task: string): void => {
-      const { type, name, step } = TaskFactory.explodeTaskName(task);
+      const { type, name, step } = explodeTaskName(task);
 
       if (this._isTaskSimple(type)) {
         this._pushGlobalTask("byTypeOnly", type, task);
@@ -293,10 +236,10 @@ export default class TaskFactory {
     if (this._globalTasks.byName) {
       Object.keys(this._globalTasks.byName).forEach((taskName: string): void => {
         this._globalTasks.byName[taskName].sort((itemA: string, itemB: string): number => {
-          const { step: stepA } = TaskFactory.explodeTaskName(itemA);
-          const { step: stepB } = TaskFactory.explodeTaskName(itemB);
+          const { step: stepA } = explodeTaskName(itemA);
+          const { step: stepB } = explodeTaskName(itemB);
 
-          return TaskFactory._sortOrder.indexOf(stepA) - TaskFactory._sortOrder.indexOf(stepB);
+          return steps.indexOf(stepA) - steps.indexOf(stepB);
         });
 
         this._defineTask(taskName, this._globalTasks.byName[taskName]);
@@ -341,9 +284,9 @@ export default class TaskFactory {
   private _createSuperGlobalTasks(): void {
     // Collect and group tasks.
     this._tasks.forEach((task: string): void => {
-      const { type, step } = TaskFactory.explodeTaskName(task);
+      const { type, step } = explodeTaskName(task);
 
-      if (TaskFactory._sortOrder.indexOf(step) >= 0) {
+      if (steps.indexOf(step) >= 0) {
         TaskFactory._pushTask(this._superGlobalTasks, step, task);
       } else if (step === "start" && type === "clean") {
         TaskFactory._pushTask(this._superGlobalTasks, "build", task);
@@ -362,7 +305,7 @@ export default class TaskFactory {
             .map((type: string): (string | string[])[] => {
               // Extract arrays of tasks of the type `type`.
               const currentTasks: string[] = this._superGlobalTasks[step].filter((taskName: string): boolean => {
-                const { type: currentType } = TaskFactory.explodeTaskName(taskName);
+                const { type: currentType } = explodeTaskName(taskName);
                 return type === currentType;
               });
 
@@ -414,12 +357,7 @@ export default class TaskFactory {
   private _createTasks(task: string, tasks: ConfigOptions): void {
     const isSimple: boolean = this._isTaskSimple(task);
     const conf: Config = Config.getInstance();
-    const { type: currentType, name: currentName, step: currentStep } = TaskFactory.explodeTaskName(conf.currentRun);
-
-    // Keep only valid and current tasks (useless to initialize unused tasks).
-    if (!TaskFactory._isValidTask(task) || (!TaskFactory._isGlobalTask() && task !== currentType)) {
-      return;
-    }
+    const { step: currentStep } = explodeTaskName(conf.currentRun);
 
     if (isSimple && (currentStep === "" || currentStep === "watch")) {
       // Add simple tasks only for global or watch call.
@@ -433,11 +371,6 @@ export default class TaskFactory {
       Object.keys(tasks).forEach((name: string): void => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const taskInstance: any = this.createTask(task, name, tasks[name] as TaskOptions);
-
-        // Keep only current tasks (useless to initialize unused tasks).
-        if (currentName !== "" && currentName !== name) {
-          return;
-        }
 
         // Add lint tasks only for global, lint or watch call.
         if (currentStep === "" || currentStep === "lint" || currentStep === "watch") {
@@ -575,7 +508,7 @@ export default class TaskFactory {
    * @return {boolean}
    */
   private static _isValidTask(taskName: string): boolean {
-    return TaskFactory.moduleNames.indexOf(taskName) >= 0;
+    return modules.indexOf(taskName) >= 0;
   }
 
   private _loadModules(settings: ConfigOptions): ModuleClasses {
@@ -616,7 +549,7 @@ export default class TaskFactory {
   }
 
   private _runInParallel(taskName: string): boolean {
-    const { type } = TaskFactory.explodeTaskName(taskName);
+    const { type } = explodeTaskName(taskName);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const module: any = this._loadModule(type);
 

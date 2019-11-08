@@ -6,7 +6,7 @@ import minimist, { ParsedArgs } from "minimist";
 import path from "path";
 import process from "process";
 
-import TaskFactory from "./task-factory";
+import { explodeTaskName, filterObject, modules } from "./utils";
 
 export interface Options {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,6 +54,20 @@ export default class Config {
    * Get settings.
    */
   get settings(): Options {
+    if (this.currentRun !== "default") {
+      const { type, name } = explodeTaskName(this.currentRun);
+
+      return filterObject(this._settings, (obj: unknown, key: string): boolean => {
+        const valid: boolean = key === type;
+
+        if (valid && name !== "") {
+          this._settings[key] = filterObject(this._settings[key], (o: unknown, k: string) => k === name);
+        }
+
+        return valid;
+      });
+    }
+
     return this._settings;
   }
 
@@ -200,7 +214,7 @@ export default class Config {
     delete this._settings.sizes;
 
     // Merge global and local settings in each tasks.
-    TaskFactory.moduleNames.forEach((name: string): void => {
+    modules.forEach((name: string): void => {
       const settings: Options = this._settings[name] as Options;
 
       if (settings && !settings.tasks) {
