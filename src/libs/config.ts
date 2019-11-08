@@ -7,7 +7,6 @@ import path from "path";
 import process from "process";
 
 import { explodeTaskName, filterObject, modules } from "./utils";
-import set = Reflect.set;
 
 export interface Options {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

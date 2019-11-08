@@ -89,7 +89,7 @@ export default class Browserify extends Javascript {
     return this._bundlerOnly;
   }
 
-  protected _collectFilesForLint(absolute: string, relative: string): void {
+  protected _collectFilesForLint(absolute: string): void {
     if (this._bundleFiles.indexOf(absolute) < 0) this._bundleFiles.push(absolute);
   }
 

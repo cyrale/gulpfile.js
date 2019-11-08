@@ -1,10 +1,8 @@
 import BrowserSync, { BrowserSyncInstance, StreamOptions } from "browser-sync";
 import { watch } from "gulp";
-import isEmpty from "lodash/isEmpty";
 import merge from "lodash/merge";
 import { Transform } from "stream";
-import through, { TransformCallback } from "through2";
-import File from "vinyl";
+import through from "through2";
 
 import Config from "../libs/config";
 import { Options as TaskOptions, TaskCallback } from "./task";
