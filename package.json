@@ -19,9 +19,9 @@
     "prepublishOnly": "npm run build",
     "build": "tsc --build ./tsconfig.json",
     "watch": "tsc --watch ./tsconfig.json",
-    "test": "npx gulp --gulpfile dist/app.js --configfile test/gulpconfig.yml",
     "lint": "eslint \"src/**/*.ts?(x)\"",
-    "pretty": "prettier --write \"src/**/*.ts?(x)\""
+    "pretty": "prettier --write \"src/**/*.ts?(x)\"",
+    "examples": "npx gulp --gulpfile dist/app.js --configfile examples/gulpconfig.yml"
   },
   "dependencies": {
     "@babel/core": "^7.7.2",

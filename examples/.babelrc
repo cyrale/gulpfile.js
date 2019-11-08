@@ -1,0 +1,10 @@
+{
+  "presets": [
+    "@babel/preset-env",
+  ],
+  "ignore": [
+    "**/src/js/concat/vendor/**/*.js",
+    "**/dist/**/*.js"
+  ],
+  "sourceType": "script"
+}
