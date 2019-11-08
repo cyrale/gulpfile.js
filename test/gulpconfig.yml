@@ -107,10 +107,9 @@ webpack:
       src: "src/js/webpack/app.js"
       dst: "dist/js"
       filename: "webpack.js"
-    private:
-      src: "src/js/webpack/app.js"
-      dst: "dist/js"
-      filename: "webpackp.js"
+      settings:
+        babel:
+          sourceType: "module"
 # ------------------------------------------
 # TypeScript
 # ------------------------------------------

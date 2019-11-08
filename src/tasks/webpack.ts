@@ -12,7 +12,7 @@ import webpack from "webpack";
 import webpackStream from "webpack-stream";
 
 import Javascript from "./javascript";
-import { BuildSettings, Options as TaskOptions } from "./task";
+import { Options as TaskOptions } from "./task";
 
 /**
  * Package Javascript using Webpack.
@@ -42,22 +42,29 @@ export default class Webpack extends Javascript {
   constructor(options: TaskOptions) {
     super(options);
 
-    const defaultSettings: {} = {
-      module: {
-        rules: [
-          {
-            exclude: /(node_modules|bower_components)/,
-            test: /\.m?js$/,
-            use: {
-              loader: "babel-loader",
-              options: merge(Webpack._babelDefaultSettings, { sourceType: "module" }),
-            },
-          },
-        ],
-      },
+    let defaultSettings: {} = {
       stats: "errors-only",
     };
 
+    // Babel configuration for Webpack.
+    if (this._settings.settings.babel !== false) {
+      defaultSettings = merge(defaultSettings, {
+        module: {
+          rules: [
+            {
+              exclude: /(node_modules|bower_components)/,
+              test: /\.m?js$/,
+              use: {
+                loader: "babel-loader",
+                options: this._settings.settings.babel,
+              },
+            },
+          ],
+        },
+      });
+    }
+
+    // Force some of settings.
     this._settings.settings = merge(defaultSettings, this._settings.settings, {
       mode: "production",
       optimization: {
@@ -71,20 +78,19 @@ export default class Webpack extends Javascript {
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadableStream} stream
-   * @param {BuildSettings} buildSettings
    * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cloneSink: any = sink();
 
     return stream
       .pipe(named())
       .pipe(
-        webpackStream(omit(this._settings.settings, ["eslint"])),
-        webpack as any
-      ) // eslint-disable-line @typescript-eslint/no-explicit-any
+        webpackStream(omit(this._settings.settings, ["babel", "eslint"])),
+        webpack as any // eslint-disable-line @typescript-eslint/no-explicit-any
+      )
       .pipe(
         rename({
           basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),

@@ -26,7 +26,7 @@ export default class Typescript extends Browserify {
    */
   public static readonly taskOrder: number = 30;
 
-  protected _esLintIgnore: Ignore;
+  protected _esLintIgnore: Ignore | undefined;
 
   /**
    * Task constructor.
@@ -36,8 +36,22 @@ export default class Typescript extends Browserify {
   constructor(options: TaskOptions) {
     super(options);
 
-    this._settings.settings.babel = merge(this._settings.settings.babel, { extensions: [".ts", ".tsx"] });
+    // Babel configuration for TypeScript.
+    if (
+      typeof this._settings.settings.babel === "undefined" ||
+      (typeof this._settings.settings.babel === "object" && !this._settings.settings.babel.extensions)
+    ) {
+      this._settings.settings.babel = merge(this._settings.settings.babel || {}, { extensions: [".ts", ".tsx"] });
+    }
 
+    // TypeScript configuration.
+    if (typeof this._settings.settings.typescript === "string") {
+      this._settings.settings.typescript = {
+        project: this._settings.settings.typescript,
+      };
+    }
+
+    // Determine name of the .eslintignore file.
     let esLintIgnoreFilename: string = path.resolve(this._settings.cwd, ".eslintignore");
     if (this._settings.settings.eslint.ignorePath) {
       esLintIgnoreFilename = path.isAbsolute(this._settings.settings.eslint.ignorePath)
@@ -45,7 +59,10 @@ export default class Typescript extends Browserify {
         : path.resolve(this._settings.cwd, this._settings.settings.eslint.ignorePath);
     }
 
-    this._esLintIgnore = ignore().add(fs.readFileSync(esLintIgnoreFilename).toString());
+    // Read ignore file.
+    if (fs.existsSync(esLintIgnoreFilename)) {
+      this._esLintIgnore = ignore().add(fs.readFileSync(esLintIgnoreFilename).toString());
+    }
   }
 
   protected get bundlerOnly(): BrowserifyObject {
@@ -53,7 +70,7 @@ export default class Typescript extends Browserify {
     if (!this._bundlerOnly) {
       const browserifyOptions: Options = omit(this._settings.settings, ["babel", "eslint", "typescript"]);
 
-      this._bundlerOnly = browserify(browserifyOptions).plugin("tsify");
+      this._bundlerOnly = browserify(browserifyOptions).plugin("tsify", this._settings.settings.typescript);
     }
 
     return this._bundlerOnly;
@@ -62,10 +79,14 @@ export default class Typescript extends Browserify {
   protected _collectFilesForLint(absolute: string, relative: string): void {
     let ignored = true;
 
-    try {
-      ignored = this._esLintIgnore.ignores(relative);
-    } catch (e) {}
+    if (!this._esLintIgnore) {
+      this._bundleFiles.push(absolute);
+    } else {
+      try {
+        ignored = this._esLintIgnore.ignores(relative);
+      } catch (e) {}
 
-    if (!ignored && this._bundleFiles.indexOf(absolute) < 0) this._bundleFiles.push(absolute);
+      if (!ignored && this._bundleFiles.indexOf(absolute) < 0) this._bundleFiles.push(absolute);
+    }
   }
 }

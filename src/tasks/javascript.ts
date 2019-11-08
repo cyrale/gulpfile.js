@@ -48,14 +48,6 @@ export default class Javascript extends TaskExtended {
   };
 
   /**
-   * Flag to define if Babel is active or not.
-   * @type {boolean}
-   * @private
-   * @readonly
-   */
-  private readonly _babelActive: boolean = false;
-
-  /**
    * Task constructor.
    *
    * @param {TaskOptions} options
@@ -69,35 +61,38 @@ export default class Javascript extends TaskExtended {
     this._gulpSourcemaps = true;
     this._browserSyncSettings = { match: "**/*.js" };
 
-    // Merge settings only for an object of type of Javascript, not for children.
-    if (this.constructor.name === "Javascript") {
-      const defaultSettings: {} = {
-        babel: Javascript._babelDefaultSettings,
-      };
+    this._settings.settings = this._settings.settings || {};
 
-      this._settings.settings = merge(defaultSettings, this._settings.settings || {});
+    // Babel configuration.
+    if (typeof this._settings.settings.babel !== "undefined") {
+      if (typeof this._settings.settings.babel === "object") {
+        this._settings.settings.babel = merge(
+          (this.constructor as any)._babelDefaultSettings, // eslint-disable-line @typescript-eslint/no-explicit-any
+          this._settings.settings.babel
+        );
 
-      this._babelActive = typeof this._settings.settings.babel === "object" || this._settings.settings.babel !== false;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let eslintSettings: any = {};
-
-    if (typeof this._settings.settings.eslint === "string") {
-      eslintSettings = {
-        configFile: this._settings.settings.eslint,
-        cwd: this._settings.cwd,
-        useEslintrc: false,
-      };
-    } else if (typeof this._settings.settings.eslint === "object") {
-      eslintSettings = this._settings.settings.eslint;
-
-      if (!eslintSettings.cwd) {
-        eslintSettings.cwd = this._settings.cwd;
+        this._settings.settings.babel = omit(this._settings.settings.babel, ["_flags"]);
+      } else if (typeof this._settings.settings.babel === "string") {
+        this._settings.settings.babel = {
+          configFile: this._settings.settings.babel,
+        };
       }
     }
 
-    this._settings.settings.eslint = eslintSettings;
+    // ESLint configuration.
+    if (typeof this._settings.settings.eslint !== "undefined") {
+      if (typeof this._settings.settings.eslint === "object") {
+        if (!this._settings.settings.eslint.cwd) {
+          this._settings.settings.eslint.cwd = this._settings.cwd;
+        }
+      } else if (typeof this._settings.settings.eslint === "string") {
+        this._settings.settings.eslint = {
+          configFile: this._settings.settings.eslint,
+          cwd: this._settings.cwd,
+          useEslintrc: false,
+        };
+      }
+    }
   }
 
   /**
@@ -114,7 +109,7 @@ export default class Javascript extends TaskExtended {
 
     return stream
       .pipe(order(this._settings.src))
-      .pipe(gulpIf(this._babelActive, babel(omit(this._settings.settings.babel, ["_flags"]))))
+      .pipe(gulpIf(this._settings.settings.babel !== false, babel(this._settings.settings.babel)))
       .pipe(concat(this._settings.filename))
       .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(cloneSink)

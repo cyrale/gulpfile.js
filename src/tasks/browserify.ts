@@ -59,16 +59,16 @@ export default class Browserify extends Javascript {
     };
 
     this._settings.settings = merge(defaultSettings, this._settings.settings, watchify.args);
-    this._settings.settings.babel =
-      typeof this._settings.settings.babel === "object"
-        ? merge(Browserify._babelDefaultSettings, { sourceType: "module" }, this._settings.settings.babel)
-        : { sourceType: "module" };
   }
 
   protected get bundler(): BrowserifyObject {
     // Initialize Browserify bundler.
     if (!this._bundler) {
-      this._bundler = this.bundlerOnly.transform("babelify", this._settings.settings.babel);
+      this._bundler = this.bundlerOnly;
+
+      if (this._settings.settings.babel !== false) {
+        this._bundler.transform("babelify", this._settings.settings.babel);
+      }
 
       if (!Browserify._isBuildRun()) {
         this._bundler.plugin("watchify");
