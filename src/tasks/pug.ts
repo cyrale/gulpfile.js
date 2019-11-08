@@ -25,7 +25,7 @@ export default class Pug extends TaskExtended {
    * @type {number}
    * @readonly
    */
-  public static readonly taskOrder: number = 40;
+  public static readonly taskOrder: number = 50;
 
   /**
    * Task constructor.

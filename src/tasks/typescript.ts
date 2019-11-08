@@ -24,7 +24,7 @@ export default class Typescript extends Browserify {
    * @type {number}
    * @readonly
    */
-  public static readonly taskOrder: number = 30;
+  public static readonly taskOrder: number = 40;
 
   protected _esLintIgnore: Ignore | undefined;
 

@@ -75,7 +75,7 @@ export default class Sass extends TaskExtended {
    * @type {number}
    * @readonly
    */
-  public static readonly taskOrder: number = 40;
+  public static readonly taskOrder: number = 50;
 
   /**
    * Flag to define if critical rule is active.

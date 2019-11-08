@@ -1,4 +1,4 @@
 import { sayHello } from "./greet";
 
-const name = "TypeScript000";
+const name = "TypeScript";
 console.log(sayHello(name));

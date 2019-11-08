@@ -34,7 +34,7 @@ export default class Browsersync extends TaskSimple {
    * @type {number}
    * @readonly
    */
-  public static readonly taskOrder: number = 50;
+  public static readonly taskOrder: number = 60;
 
   /**
    * Real Browsersync instance.

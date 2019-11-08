@@ -32,7 +32,7 @@ export default class Javascript extends TaskExtended {
    * @type {number}
    * @readonly
    */
-  public static readonly taskOrder: number = 40;
+  public static readonly taskOrder: number = 50;
 
   /**
    * Default settings for babel.

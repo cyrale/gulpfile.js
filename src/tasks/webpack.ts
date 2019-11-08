@@ -33,7 +33,7 @@ export default class Webpack extends Javascript {
    * @type {number}
    * @readonly
    */
-  public static readonly taskOrder: number = 30;
+  public static readonly taskOrder: number = 40;
 
   /**
    * Task constructor.
