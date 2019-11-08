@@ -10,7 +10,7 @@ import Vinyl from "vinyl";
 import vinylFile from "vinyl-file";
 
 import Config from "../libs/config";
-import TaskFactory from "../libs/task-factory";
+import { explodeTaskName } from "../libs/utils";
 
 enum Hash {
   MD5 = "md5",
@@ -69,7 +69,7 @@ export default class Revision {
    * @return {string | false}
    */
   public static getHash(taskName: string, fileName: string, hash: Hash = Hash.SHA1): string | false {
-    const { type, name } = TaskFactory.explodeTaskName(taskName);
+    const { type, name } = explodeTaskName(taskName);
 
     // If revision is deactivated, return false.
     if (!Revision.isActive()) {
@@ -320,7 +320,7 @@ export default class Revision {
    * @private
    */
   private static _pushHash(data: HashData, callback?: SimpleRevisionCallback): void {
-    const { type, name } = TaskFactory.explodeTaskName(data.taskName);
+    const { type, name } = explodeTaskName(data.taskName);
     let newData = {
       [type]: {
         [name]: {

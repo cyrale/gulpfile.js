@@ -11,7 +11,6 @@ import Undertaker from "undertaker";
 import Config from "../libs/config";
 import Revision, { SimpleRevisionCallback } from "../gulp-plugins/revision";
 import Size from "../gulp-plugins/size";
-import TaskFactory from "../libs/task-factory";
 import Browsersync from "./browsersync";
 import Task, { BuildSettings, TaskCallback, Options as TaskOptions } from "./task";
 

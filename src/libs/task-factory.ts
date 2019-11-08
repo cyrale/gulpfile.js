@@ -297,7 +297,6 @@ export default class TaskFactory {
 
     // Create super global tasks.
     Object.keys(this._superGlobalTasks).forEach((step: string): void => {
-      console.log(step);
       // Sort and order super global tasks.
       this._orderedSuperGlobalTasks[step] = this._tasksGroupAndOrder()
         .map((taskNames: string[]): (string | string[])[] => {
