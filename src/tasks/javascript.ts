@@ -4,7 +4,6 @@ import babel from "gulp-babel";
 import { sink } from "gulp-clone";
 import concat from "gulp-concat";
 import esLint from "gulp-eslint";
-import gulpIf from "gulp-if";
 import order from "gulp-order";
 import rename from "gulp-rename";
 import stripe from "gulp-strip-comments";
@@ -106,9 +105,13 @@ export default class Javascript extends TaskExtended {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cloneSink: any = sink();
 
+    stream = stream.pipe(order(this._settings.src));
+
+    if (this._settings.settings.babel !== false) {
+      stream = stream.pipe(babel(this._settings.settings.babel));
+    }
+
     return stream
-      .pipe(order(this._settings.src))
-      .pipe(gulpIf(this._settings.settings.babel !== false, babel(this._settings.settings.babel)))
       .pipe(concat(this._settings.filename))
       .pipe(cloneSink)
       .pipe(stripe())

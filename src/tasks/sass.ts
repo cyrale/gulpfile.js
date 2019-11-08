@@ -8,7 +8,6 @@ import { sink } from "gulp-clone";
 import criticalCSS from "gulp-critical-css";
 import extractMediaQueries from "gulp-extract-media-queries";
 import filter from "gulp-filter";
-import gulpIf from "gulp-if";
 import gulpPostCSS from "gulp-postcss";
 import rename from "gulp-rename";
 import sass from "gulp-sass";
@@ -235,10 +234,11 @@ export default class Sass extends TaskExtended {
     ];
 
     // Start SASS process.
-    stream = stream
-      .pipe(gulpIf(this._criticalActive, gulpPostCSS([hierarchicalCriticalCSS()], { parser: scssParser })))
-      .pipe(sass(this._settings.settings.sass || {}))
-      .pipe(gulpPostCSS(postCSSPluginsBefore));
+    if (this._criticalActive) {
+      stream = stream.pipe(gulpPostCSS([hierarchicalCriticalCSS()], { parser: scssParser }));
+    }
+
+    stream = stream.pipe(sass(this._settings.settings.sass || {})).pipe(gulpPostCSS(postCSSPluginsBefore));
 
     // Extract media queries to saves it to separated files.
     if (this._settings.settings.extractMQ) {

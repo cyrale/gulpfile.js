@@ -1,7 +1,6 @@
 import changeCase from "change-case";
 import { dest } from "gulp";
 import header from "gulp-header";
-import gulpIf from "gulp-if";
 import sort from "gulp-sort";
 import spriteSmith from "gulp.spritesmith";
 import merge from "lodash/merge";
@@ -103,15 +102,18 @@ export default class Sprites extends TaskExtended {
     }
 
     // Sort file in certain condition to make that it's the same order in normal and retina sprites.
-    const sortFiles: boolean =
+    if (
       (typeof this._settings.algorithm === "undefined" || this._settings.algorithm !== "binary-tree") &&
       typeof this._settings.algorithmOpts !== "undefined" &&
-      this._settings.algorithmOpts.sort !== false;
+      this._settings.algorithmOpts.sort !== false
+    ) {
+      stream = stream.pipe(sort());
+    }
 
     const sprite: {
       css: NodeJS.ReadableStream;
       img: NodeJS.ReadableStream;
-    } = stream.pipe(gulpIf(sortFiles, sort())).pipe(spriteSmith(spritesmithSettings));
+    } = stream.pipe(spriteSmith(spritesmithSettings));
 
     // Write SASS file
     sprite.css
