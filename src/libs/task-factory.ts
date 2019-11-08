@@ -1,8 +1,11 @@
+import chalk from "chalk";
+import CLIProgress from "cli-progress";
 import log from "fancy-log";
 import { parallel, series, task as gulpTask } from "gulp";
 import map from "lodash/map";
 import uniq from "lodash/uniq";
 import process from "process";
+import timestamp from "time-stamp";
 import Undertaker from "undertaker";
 
 import Task, { TaskCallback, Options as TaskOptions } from "../tasks/task";
@@ -10,6 +13,7 @@ import TaskExtended from "../tasks/task-extended";
 import TaskSimple from "../tasks/task-simple";
 import Config, { Options as ConfigOptions } from "./config";
 import { explodeTaskName, modules, steps } from "./utils";
+import { type } from "os";
 
 interface TaskList {
   [name: string]: string[];
@@ -511,15 +515,36 @@ export default class TaskFactory {
   }
 
   private _loadModules(settings: ConfigOptions): ModuleClasses {
+    const tasks: string[] = Object.keys(settings);
+    const progress: CLIProgress.Bar = new CLIProgress.Bar({
+      format: "{time} [{bar}] | {percentage}% | {value}/{total} | {task}",
+    });
+
     log("Loading modules...");
 
-    Object.keys(settings).forEach((task: string): void => {
-      this._loadModule(task);
+    progress.start(tasks.length, 0, {
+      task: tasks[0],
+      time: TaskFactory._logTime(),
     });
+
+    for (const [index, task] of tasks.entries()) {
+      this._loadModule(task);
+
+      progress.update(index + 1, {
+        task: index + 1 >= tasks.length ? " " : tasks[index + 1],
+        time: TaskFactory._logTime(),
+      });
+    }
+
+    progress.stop();
 
     log("Modules loaded");
 
     return this._modules;
+  }
+
+  private static _logTime(): string {
+    return "[" + chalk.gray(timestamp("HH:mm:ss")) + "]";
   }
 
   private _loadModule(taskName: string): unknown | void {
