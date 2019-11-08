@@ -57,9 +57,9 @@ export default class Pug extends TaskExtended {
     if (typeof this._settings.settings.data === "string") {
       data = yaml.safeLoad(fs.readFileSync(this._settings.settings.data, "utf8"));
     } else if (typeof this._settings.settings.data === "object") {
-      (this._settings.settings.data as string[]).forEach((filename: string): void => {
+      for (const filename of this._settings.settings.data as string[]) {
         data = merge(data, yaml.safeLoad(fs.readFileSync(filename, "utf8")));
-      });
+      }
     }
 
     return stream.pipe(gulpData(data)).pipe(pug());

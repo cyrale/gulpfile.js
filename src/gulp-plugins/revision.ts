@@ -369,12 +369,10 @@ export default class Revision {
   private static _sortObjectByKeys(object: DefaultObject): DefaultObject {
     const result: DefaultObject = {};
 
-    Object.keys(object)
-      .sort()
-      .forEach((key: string) => {
-        result[key] =
-          typeof object[key] === "object" ? Revision._sortObjectByKeys(object[key] as DefaultObject) : object[key];
-      });
+    for (const key of Object.keys(object).sort()) {
+      result[key] =
+        typeof object[key] === "object" ? Revision._sortObjectByKeys(object[key] as DefaultObject) : object[key];
+    }
 
     return result;
   }

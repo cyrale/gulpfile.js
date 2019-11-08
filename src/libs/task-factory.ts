@@ -150,10 +150,9 @@ export default class TaskFactory {
     });
 
     // Initialize all tasks.
-    allTasks.forEach((task: string): void => {
-      const confTasks: {} = conf.settings[task] as {};
-      this._createTasks(task, confTasks);
-    });
+    for (const task of allTasks) {
+      this._createTasks(task, conf.settings[task] as ConfigOptions);
+    }
 
     if (this._tasks.length > 0) {
       // Create global and super global tasks.
@@ -216,7 +215,7 @@ export default class TaskFactory {
    */
   private _createGlobalTasks(): void {
     // Group tasks by step, name and type.
-    this._tasks.forEach((task: string): void => {
+    for (const task of this._tasks) {
       const { type, name, step } = explodeTaskName(task);
 
       if (this._isTaskSimple(type)) {
@@ -233,11 +232,11 @@ export default class TaskFactory {
         // Sort tasks by type only.
         this._pushGlobalTask("byTypeOnly", type, sortedByName);
       }
-    });
+    }
 
     // Create tasks sorted by type and name.
     if (this._globalTasks.byName) {
-      Object.keys(this._globalTasks.byName).forEach((taskName: string): void => {
+      for (const taskName of Object.keys(this._globalTasks.byName)) {
         this._globalTasks.byName[taskName].sort((itemA: string, itemB: string): number => {
           const { step: stepA } = explodeTaskName(itemA);
           const { step: stepB } = explodeTaskName(itemB);
@@ -246,29 +245,29 @@ export default class TaskFactory {
         });
 
         this._defineTask(taskName, this._globalTasks.byName[taskName]);
-      });
+      }
     }
 
     // Create tasks sorted by type and step.
     if (this._globalTasks.byStep) {
-      Object.keys(this._globalTasks.byStep).forEach((taskName: string): void => {
+      for (const taskName of Object.keys(this._globalTasks.byStep)) {
         this._defineTask(
           taskName,
           this._globalTasks.byStep[taskName],
           this._runInParallel(taskName) ? "parallel" : "series"
         );
-      });
+      }
     }
 
     // Create tasks sorted by type only.
     if (this._globalTasks.byTypeOnly) {
-      Object.keys(this._globalTasks.byTypeOnly).forEach((taskName: string): void => {
+      for (const taskName of Object.keys(this._globalTasks.byTypeOnly)) {
         this._defineTask(
           taskName,
           this._globalTasks.byTypeOnly[taskName],
           this._runInParallel(taskName) ? "parallel" : "series"
         );
-      });
+      }
 
       // Sort and order global tasks.
       this._orderedGlobalTasks = this._tasksGroupAndOrder()
@@ -286,7 +285,7 @@ export default class TaskFactory {
    */
   private _createSuperGlobalTasks(): void {
     // Collect and group tasks.
-    this._tasks.forEach((task: string): void => {
+    for (const task of this._tasks) {
       const { type, step } = explodeTaskName(task);
 
       if (steps.indexOf(step) >= 0) {
@@ -296,10 +295,10 @@ export default class TaskFactory {
       } else if (step === "start") {
         TaskFactory._pushTask(this._superGlobalTasks, "watch", task);
       }
-    });
+    }
 
     // Create super global tasks.
-    Object.keys(this._superGlobalTasks).forEach((step: string): void => {
+    for (const step of Object.keys(this._superGlobalTasks)) {
       // Sort and order super global tasks.
       this._orderedSuperGlobalTasks[step] = this._tasksGroupAndOrder()
         .map((taskNames: string[]): (string | string[])[] => {
@@ -346,7 +345,7 @@ export default class TaskFactory {
           )
         );
       }
-    });
+    }
   }
 
   /**
@@ -370,7 +369,7 @@ export default class TaskFactory {
       this._pushTask(taskInstance.taskWatch());
     } else if (!isSimple) {
       // Add classic tasks.
-      Object.keys(tasks).forEach((name: string): void => {
+      for (const name of Object.keys(tasks)) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const taskInstance: any = this.createTask(task, name, tasks[name] as TaskOptions);
 
@@ -388,7 +387,7 @@ export default class TaskFactory {
         if (currentStep === "" || currentStep === "watch") {
           this._pushTask(taskInstance.taskWatch());
         }
-      });
+      }
     }
   }
 

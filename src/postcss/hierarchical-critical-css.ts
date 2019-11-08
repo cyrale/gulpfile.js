@@ -7,11 +7,13 @@ export default postcss.plugin("postcss-hierarchical-critical", (): ((css: Contai
   return (css: ContainerBase): void => {
     css.walkDecls("critical", (decl: Declaration): void => {
       if (decl.parent.nodes) {
-        decl.parent.nodes
-          .filter((node: ChildNode): boolean => node.type === "rule" || node.type === "atrule")
-          .forEach((node: ChildNode): void => {
-            (node as ContainerBase).append({ prop: "critical", value: "this" });
-          });
+        const nodes: ChildNode[] = decl.parent.nodes.filter(
+          (node: ChildNode): boolean => node.type === "rule" || node.type === "atrule"
+        );
+
+        for (const node of nodes) {
+          (node as ContainerBase).append({ prop: "critical", value: "this" });
+        }
       }
     });
   };

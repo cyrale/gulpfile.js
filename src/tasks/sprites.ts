@@ -70,13 +70,9 @@ export default class Sprites extends TaskExtended {
         spriteImg.name = `${sanitizedTaskName}-${spriteImg.name}`;
 
         if (this._settings["src-2x"]) {
-          let match = false;
-
-          this._settings["src-2x"]
+          const match: boolean = this._settings["src-2x"]
             .map((pattern: string): string => `**/${pattern}`.replace("//", "/"))
-            .forEach((pattern: string): void => {
-              match = match || minimatch(spriteImg.source_image, pattern);
-            });
+            .reduce((acc: boolean, pattern: string) => acc || minimatch(spriteImg.source_image, pattern), false);
 
           if (match) {
             spriteImg.name += "-retina";

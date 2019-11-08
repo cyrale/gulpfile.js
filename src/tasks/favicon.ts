@@ -155,7 +155,8 @@ export default class Favicon extends TaskExtended {
           if (Revision.isActive()) {
             // Get generated files and manage revision.
             const dir = decodedData.files_location.path;
-            decodedData.favicon.files_urls.forEach((iconURL: string): void => {
+
+            for (const iconURL of decodedData.favicon.files_urls) {
               const base = path.basename(iconURL);
               const url = path.join(dir, base);
 
@@ -164,7 +165,7 @@ export default class Favicon extends TaskExtended {
 
               // eslint-disable-next-line @typescript-eslint/camelcase
               decodedData.favicon.html_code = decodedData.favicon.html_code.replace(url, `${url}?rev=${rev}`);
-            });
+            }
 
             fs.writeFile(
               markupFile,
