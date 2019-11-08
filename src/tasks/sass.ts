@@ -100,10 +100,12 @@ export default class Sass extends TaskExtended {
   constructor(options: TaskOptions) {
     super(options);
 
+    // This task could build sourcemaps and sync browser with filter.
     this._gulpSourcemaps = true;
     this._browserSyncSettings = { match: "**/*.css" };
 
     this._minifySuffix = ".min";
+    this._hideGzippedSize = false;
 
     const defaultSettings: {} = {
       SVGO: {},

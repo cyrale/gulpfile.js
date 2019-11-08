@@ -54,11 +54,12 @@ export default class Javascript extends TaskExtended {
   constructor(options: TaskOptions) {
     super(options);
 
-    this._minifySuffix = ".min";
-
     // This task could build sourcemaps and sync browser with filter.
     this._gulpSourcemaps = true;
     this._browserSyncSettings = { match: "**/*.js" };
+
+    this._minifySuffix = ".min";
+    this._hideGzippedSize = false;
 
     this._settings.settings = this._settings.settings || {};
 

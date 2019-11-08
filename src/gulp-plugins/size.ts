@@ -161,7 +161,7 @@ export default class Size {
           });
 
           // Count calculated sizes.
-          const countSizes: number = filter(this._files[relFilename].sizes).filter((size: number): boolean => size >= 0)
+          const countSizes: number = filter(this._files[relFilename].sizes, (size: number): boolean => size >= 0)
             .length;
 
           // Determine if all sizes is here.
