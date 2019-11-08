@@ -1,5 +1,6 @@
 import { CLIEngine, Linter } from "eslint";
 import log from "fancy-log";
+import { src } from "gulp";
 import { sink } from "gulp-clone";
 import rename from "gulp-rename";
 import stripe from "gulp-strip-comments";
@@ -105,6 +106,15 @@ export default class Webpack extends Javascript {
         })
       )
       .pipe(cloneSink.tap());
+  }
+
+  protected _hookLintSrc(): NodeJS.ReadableStream {
+    const srcLint: string[] = [
+      ...(Array.isArray(this._settings.src) ? this._settings.src : [this._settings.src]),
+      ...(this._settings.watch || []),
+    ];
+
+    return src(srcLint, { cwd: this._settings.cwd });
   }
 
   /**

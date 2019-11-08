@@ -126,24 +126,19 @@ export default class Browserify extends Javascript {
   }
 
   protected _hookOverrideLint(done?: TaskCallback): void {
-    return async.series(
+    if (this._settings.watch) {
+      this._esLint(this._settings.watch, done);
+      return;
+    }
+
+    async.series(
       {
         "collect-files": (cb: TaskCallback): void => {
           this.bundlerOnly.on("file", this._collectFilesForLint.bind(this)).bundle(cb);
         },
       },
       (): void => {
-        src(this._bundleFiles, { allowEmpty: true, cwd: this._settings.cwd })
-          .pipe(esLint(this._settings.settings.eslint))
-          .pipe(esLint.format())
-          .pipe(
-            esLint.results((filesWithErrors: { errorCount: number }): void => {
-              this._lintError = filesWithErrors.errorCount > 0;
-            })
-          )
-          .on("finish", () => {
-            if (done) done();
-          });
+        this._esLint(this._bundleFiles, done);
       }
     );
   }
@@ -182,6 +177,20 @@ export default class Browserify extends Javascript {
         }
       );
     });
+  }
+
+  protected _esLint(files: string[], done?: TaskCallback): NodeJS.ReadableStream {
+    return src(files, { allowEmpty: true, cwd: this._settings.cwd })
+      .pipe(esLint(this._settings.settings.eslint))
+      .pipe(esLint.format())
+      .pipe(
+        esLint.results((filesWithErrors: { errorCount: number }): void => {
+          this._lintError = filesWithErrors.errorCount > 0;
+        })
+      )
+      .on("finish", () => {
+        if (done) done();
+      });
   }
 
   protected _fakeGulpTask(taskName: string, task: Undertaker.TaskFunction, done: TaskCallback): void {

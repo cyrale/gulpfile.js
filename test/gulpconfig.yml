@@ -105,6 +105,8 @@ webpack:
   tasks:
     public:
       src: "src/js/webpack/app.js"
+      watch:
+        - "src/js/webpack/**/*.js"
       dst: "dist/js"
       filename: "webpack.js"
       settings:
@@ -117,6 +119,8 @@ typescript:
   tasks:
     public:
       src: "src/typescript/main.ts"
+      watch:
+        - "src/typescript/**/*.ts"
       dst: "dist/js"
       filename: "typescript.js"
       settings:
