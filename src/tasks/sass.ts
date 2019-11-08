@@ -39,7 +39,7 @@ import hierarchicalCriticalCSS from "../postcss/hierarchical-critical-css";
 import normalizeRevision from "../postcss/normalize-revision";
 import removeCriticalProperties from "../postcss/remove-critical-properties";
 import removeCriticalRules from "../postcss/remove-critical-rules";
-import { BuildSettings, Options as TaskOptions } from "./task";
+import { Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 type PurgeCSSParam = unknown[] | boolean;
@@ -204,11 +204,10 @@ export default class Sass extends TaskExtended {
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadableStream} stream
-   * @param {BuildSettings} buildSettings
    * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     const streams: NodeJS.ReadableStream[] = [];
 
     // Collect PostCSS plugins to run on global CSS file, before media queries or critical extraction.
@@ -299,7 +298,6 @@ export default class Sass extends TaskExtended {
 
     return mergeStream(streams)
       .pipe(gulpPostCSS(postCSSPluginsIntermediate))
-      .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(cloneSink)
       .pipe(gulpPostCSS(postCSSPluginsAfter))
       .pipe(rename({ suffix: this._minifySuffix }))

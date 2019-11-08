@@ -1,9 +1,6 @@
 import { task as gulpTask, TaskFunction } from "gulp";
 
-import { RevisionOptions } from "../gulp-plugins/revision";
-import Size from "../gulp-plugins/size";
 import Config, { Options as ConfigOptions } from "../libs/config";
-import { BrowserSyncMethods } from "./browsersync";
 
 interface TaskErrorDefinition {
   taskName: string;
@@ -14,20 +11,6 @@ interface TaskErrorDefinition {
 export interface Options {
   name?: string;
   settings: ConfigOptions;
-}
-
-export interface GulpOptions {
-  cwd?: string;
-  read?: boolean;
-  sourcemaps?: true | string;
-}
-
-export interface BuildSettings {
-  browserSync: BrowserSyncMethods;
-  options: GulpOptions;
-  revision: RevisionOptions;
-  size: Size;
-  taskName: string;
 }
 
 export type TaskCallback = (error?: unknown) => void;

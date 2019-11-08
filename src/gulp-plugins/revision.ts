@@ -43,13 +43,12 @@ interface RevisionManifest {
 }
 
 interface RevisionDefaultOption {
-  manifest?: string;
+  dst: string;
 }
 
 export interface RevisionOptions extends RevisionDefaultOption {
   callback?: SimpleRevisionCallback;
   cwd: string;
-  dst: string;
   taskName: string;
 }
 
@@ -117,12 +116,11 @@ export default class Revision {
    * Collect hashes from build files.
    *
    * @param {RevisionOptions} options
-   * @param {SimpleRevisionCallback} callback
    * @return {Transform}
    */
-  public static manifest(options: RevisionOptions, callback?: SimpleRevisionCallback): Transform {
+  public static manifest(options: RevisionOptions): Transform {
     const defaultOptions: RevisionDefaultOption = {
-      manifest: "rev-manifest.json",
+      dst: "rev-manifest.json",
     };
 
     options = merge(defaultOptions, options);
@@ -136,8 +134,16 @@ export default class Revision {
       (file: File, encoding: string, cb: TransformCallback): void => {
         // Collect files and calculate hash from the stream.
 
-        // Exclude null, stream and MAP files, only Buffer works.
-        if (file.isNull() || file.isStream() || path.extname(file.path) === ".map") {
+        if (file.isNull()) {
+          return cb();
+        }
+
+        if (file.isStream()) {
+          return cb(new PluginError("revision", "Stream not supported"));
+        }
+
+        // Exclude MAP files.
+        if (path.extname(file.path) === ".map") {
           return cb();
         }
 
@@ -168,14 +174,14 @@ export default class Revision {
             revRelFile,
             taskName: options.taskName,
           },
-          callback
+          options.callback
         );
 
         cb();
       },
       function(cb: TransformCallback): void {
         // Merge and write manifest.
-        const manifestFile = options.manifest as string;
+        const manifestFile = options.dst;
 
         // Read manifest file.
         vinylFile
@@ -259,7 +265,7 @@ export default class Revision {
       });
 
       fs.writeFile(
-        path.resolve(options.cwd, options.manifest as string),
+        path.resolve(options.cwd, options.dst),
         JSON.stringify(Revision._manifest, null, "  "),
         (): void => {}
       );

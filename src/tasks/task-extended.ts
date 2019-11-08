@@ -4,15 +4,14 @@ import { dest, series, src, watch } from "gulp";
 import gulpIf from "gulp-if";
 import plumber from "gulp-plumber";
 import process from "process";
-import { Transform } from "stream";
-import through from "through2";
 import Undertaker from "undertaker";
+import { DestOptions, SrcOptions } from "vinyl-fs";
 
 import Revision, { SimpleRevisionCallback } from "../gulp-plugins/revision";
 import Size from "../gulp-plugins/size";
 import Config from "../libs/config";
 import Browsersync from "./browsersync";
-import Task, { BuildSettings, TaskCallback, Options as TaskOptions } from "./task";
+import Task, { TaskCallback, Options as TaskOptions } from "./task";
 
 export interface Options extends TaskOptions {
   browsersync?: Browsersync;
@@ -30,13 +29,6 @@ export default abstract class TaskExtended extends Task {
    * @protected
    */
   protected _defaultDest = true;
-
-  /**
-   * Flag to define if task use the default revision system.
-   * @type {boolean}
-   * @protected
-   */
-  protected _defaultRevision = true;
 
   /**
    * Callback to add data to manifest file.
@@ -67,13 +59,6 @@ export default abstract class TaskExtended extends Task {
    * @protected
    */
   protected _lintError = false;
-
-  /**
-   * Flag to avoid read of file on load of gulp task.
-   * @type {boolean}
-   * @protected
-   */
-  protected _gulpRead = true;
 
   /**
    * Flag to define if task could build sourcemaps.
@@ -206,7 +191,7 @@ export default abstract class TaskExtended extends Task {
     return !!this._hookLint;
   }
 
-  protected _hookBuildSrc?(attributes: BuildSettings): NodeJS.ReadableStream;
+  protected _hookBuildSrc?(): NodeJS.ReadableStream;
 
   protected _hookLintSrc?(): NodeJS.ReadableStream;
 
@@ -214,11 +199,10 @@ export default abstract class TaskExtended extends Task {
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadableStream} stream
-   * @param {BuildSettings} buildSettings
    * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _hookBuildBefore?(stream: NodeJS.ReadableStream, buildSettings?: BuildSettings): NodeJS.ReadableStream;
+  protected _hookBuildBefore?(stream: NodeJS.ReadableStream): NodeJS.ReadableStream;
 
   /**
    * Method to add specific steps for the lint.
@@ -229,7 +213,7 @@ export default abstract class TaskExtended extends Task {
    */
   protected _hookLint?(stream: NodeJS.ReadableStream): NodeJS.ReadableStream;
 
-  protected _hookOverrideBuild?(buildSettings: BuildSettings, done?: TaskCallback): NodeJS.ReadableStream | void;
+  protected _hookOverrideBuild?(done?: TaskCallback): NodeJS.ReadableStream | void;
 
   protected _hookOverrideLint?(done?: TaskCallback): NodeJS.ReadableStream | void;
 
@@ -263,40 +247,23 @@ export default abstract class TaskExtended extends Task {
     const taskName: string = this._taskName("build");
     const config = Config.getInstance();
 
-    // All the build settings in a unique object.
-    const buildSettings: BuildSettings = {
-      browserSync: {
-        memorize: this._browserSync ? this._browserSync.memorize : (): Transform => through.obj(),
-        remember: this._browserSync ? this._browserSync.remember : (): Transform => through.obj(),
-        sync: this._browserSync ? this._browserSync.sync : (): Transform => through.obj(),
-      },
-      options: {
-        cwd: this._settings.cwd,
-        read: this._gulpRead,
-        sourcemaps: this._gulpSourcemaps && this._settings.settings.sourcemaps,
-      },
-      revision: {
-        cwd: config.options.cwd,
-        dst: this._settings.dst,
-        manifest: typeof config.options.revision === "string" ? config.options.revision : "rev-manifest.json",
-        taskName,
-      },
-      size: new Size({
-        gzip: !this._hideGzippedSize && this._settings.sizes.gzipped,
-        minifySuffix: this._minifySuffix,
-        taskName,
-      }),
-      taskName,
+    const options: SrcOptions = {
+      cwd: this._settings.cwd,
+      sourcemaps: this._gulpSourcemaps && this._settings.settings.sourcemaps,
     };
 
+    const size: Size = new Size({
+      gzip: !this._hideGzippedSize && this._settings.sizes.gzipped,
+      minifySuffix: this._minifySuffix,
+      taskName,
+    });
+
     if (this._hookOverrideBuild) {
-      return this._hookOverrideBuild(buildSettings, done);
+      return this._hookOverrideBuild(done);
     }
 
     // Start new stream with the files of the task.
-    let stream: NodeJS.ReadableStream = this._hookBuildSrc
-      ? this._hookBuildSrc(buildSettings)
-      : src(this._settings.src, buildSettings.options as {});
+    let stream: NodeJS.ReadableStream = this._hookBuildSrc ? this._hookBuildSrc() : src(this._settings.src, options);
 
     // Add plumber to avoid exit on error.
     stream = stream.pipe(plumber((error: unknown): void => this._displayOrExitOnError(taskName, error, done)));
@@ -304,33 +271,37 @@ export default abstract class TaskExtended extends Task {
     // Init collection of file sizes.
     const activeSizes: boolean = (this._activeSizes || this._activeInitSizesAnyway) && this._settings.sizes.normal;
     if (activeSizes) {
-      stream = stream.pipe(buildSettings.size.init());
+      stream = stream.pipe(size.init());
     }
 
     // If there is no linter or no error, start specific logic of each task.
     if (!this._haveLinter || !this._lintError) {
       if (this._hookBuildBefore) {
-        stream = this._hookBuildBefore(stream, buildSettings);
+        stream = this._hookBuildBefore(stream);
       }
 
       // Collect file sizes and display them.
       if (activeSizes) {
-        stream = stream.pipe(buildSettings.size.collect());
+        stream = stream.pipe(size.collect());
       }
 
-      stream = stream
-        .pipe(plumber.stop())
-        .pipe(gulpIf(this._defaultDest, dest(this._settings.dst, buildSettings.options)));
-      // .pipe(buildSettings.browserSync.remember(taskName))
+      stream = stream.pipe(plumber.stop()).pipe(dest(this._settings.dst, options as DestOptions));
 
       if (this._browserSync) {
         stream = stream.pipe(this._browserSync.sync(taskName, this._browserSyncSettings));
       }
 
-      if (this._defaultRevision && Revision.isActive()) {
+      if (Revision.isActive()) {
         stream = stream
-          .pipe(Revision.manifest(buildSettings.revision, this._manifestCallback))
-          .pipe(dest(".", buildSettings.options));
+          .pipe(
+            Revision.manifest({
+              cwd: this._settings.cwd,
+              dst: this._settings.revision,
+              taskName,
+              callback: this._manifestCallback,
+            })
+          )
+          .pipe(dest(".", options as DestOptions));
       }
 
       if (this._bindEventsToBuilder) {

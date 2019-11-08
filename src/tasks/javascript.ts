@@ -13,7 +13,7 @@ import merge from "lodash/merge";
 import omit from "lodash/omit";
 import path from "path";
 
-import { BuildSettings, Options as TaskOptions } from "./task";
+import { Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -99,11 +99,10 @@ export default class Javascript extends TaskExtended {
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadableStream} stream
-   * @param {BuildSettings} buildSettings
    * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cloneSink: any = sink();
 
@@ -111,7 +110,6 @@ export default class Javascript extends TaskExtended {
       .pipe(order(this._settings.src))
       .pipe(gulpIf(this._settings.settings.babel !== false, babel(this._settings.settings.babel)))
       .pipe(concat(this._settings.filename))
-      .pipe(gulpIf(this._settings.sizes.normal, buildSettings.size.collect()))
       .pipe(cloneSink)
       .pipe(stripe())
       .pipe(terser())

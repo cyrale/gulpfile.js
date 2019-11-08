@@ -4,7 +4,7 @@ import merge from "lodash/merge";
 import path from "path";
 
 import Revision from "../gulp-plugins/revision";
-import { BuildSettings, Options as TaskOptions, TaskCallback } from "./task";
+import { Options as TaskOptions, TaskCallback } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -134,12 +134,13 @@ export default class Favicon extends TaskExtended {
   /**
    * Method to add specific steps for the build.
    *
-   * @param {BuildSettings} buildSettings
    * @param {TaskCallback} done
    * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _hookOverrideBuild(buildSettings: BuildSettings, done: TaskCallback): void {
+  protected _hookOverrideBuild(done: TaskCallback): void {
+    const taskName: string = this._taskName("build");
+
     favicon.generateFavicon(this._settings.settings, () => {
       const markupFile = path.resolve(this._settings.cwd, this._settings.settings.markupFile);
 
@@ -159,7 +160,7 @@ export default class Favicon extends TaskExtended {
               const url = path.join(dir, base);
 
               const fileName = path.resolve(this._settings.dst, base);
-              const rev = Revision.getHashRevision(buildSettings.taskName, fileName);
+              const rev = Revision.getHashRevision(taskName, fileName);
 
               // eslint-disable-next-line @typescript-eslint/camelcase
               decodedData.favicon.html_code = decodedData.favicon.html_code.replace(url, `${url}?rev=${rev}`);
@@ -174,7 +175,11 @@ export default class Favicon extends TaskExtended {
                 }
 
                 // Update Revision file.
-                Revision.pushAndWrite(markupFile, buildSettings.revision);
+                Revision.pushAndWrite(markupFile, {
+                  cwd: this._settings.cwd,
+                  dst: this._settings.revision,
+                  taskName,
+                });
               }
             );
           }

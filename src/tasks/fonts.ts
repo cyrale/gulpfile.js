@@ -9,7 +9,7 @@ import path from "path";
 import buffer from "vinyl-buffer";
 
 import Revision from "../gulp-plugins/revision";
-import { BuildSettings, GulpOptions, Options as TaskOptions } from "./task";
+import { Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -34,8 +34,6 @@ export default class Fonts extends TaskExtended {
 
   private _glyphs: object[] = [];
 
-  private _savedBuildOptions: BuildSettings | undefined;
-
   /**
    * Task constructor.
    *
@@ -59,13 +57,10 @@ export default class Fonts extends TaskExtended {
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadableStream} stream
-   * @param {BuildSettings} buildSettings
    * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
-    this._savedBuildOptions = buildSettings;
-
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     // Build font based on SVG files.
     return stream
       .pipe(
@@ -84,10 +79,6 @@ export default class Fonts extends TaskExtended {
 
   protected _bindEventsToBuilder(builder: NodeJS.ReadableStream): void {
     builder.on("finish", () => {
-      if (this._savedBuildOptions) {
-        return;
-      }
-
       const file: string = path.resolve(__dirname, `../../src/templates/${this._settings.settings.template}.lodash`);
 
       // Load template file to build SASS file.
@@ -96,8 +87,7 @@ export default class Fonts extends TaskExtended {
           throw err;
         }
 
-        const taskName: string = this._savedBuildOptions ? this._savedBuildOptions.taskName : "";
-        const options: GulpOptions = this._savedBuildOptions ? this._savedBuildOptions.options : {};
+        const taskName: string = this._taskName("build");
 
         // Get all variables used in template.
         const templateVars: {} = {
@@ -123,7 +113,7 @@ export default class Fonts extends TaskExtended {
           stylesheet = `// sass-lint:disable-all\n\n${stylesheet}`;
 
           gulpFile(`_${this._sanitizedTaskName}.scss`, stylesheet, { src: true }).pipe(
-            dest(this._settings.settings.sass.dst, options)
+            dest(this._settings.settings.sass.dst, { cwd: this._settings.cwd })
           );
         });
       });

@@ -10,7 +10,7 @@ import minimatch from "minimatch";
 import path from "path";
 import buffer from "vinyl-buffer";
 
-import { BuildSettings, Options as TaskOptions } from "./task";
+import { Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -52,11 +52,10 @@ export default class Sprites extends TaskExtended {
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadableStream} stream
-   * @param {BuildSettings} buildSettings
    * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
     const sanitizedTaskName: string = changeCase.paramCase(this._taskName().replace("sprites:", prefix));
 
@@ -117,7 +116,7 @@ export default class Sprites extends TaskExtended {
     // Write SASS file
     sprite.css
       .pipe(header("// sass-lint:disable-all\n\n"))
-      .pipe(dest(this._settings.settings.sass.dst, buildSettings.options));
+      .pipe(dest(this._settings.settings.sass.dst, { cwd: this._settings.cwd }));
 
     return sprite.img.pipe(buffer());
   }

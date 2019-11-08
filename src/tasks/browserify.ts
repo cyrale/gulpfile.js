@@ -17,7 +17,7 @@ import source from "vinyl-source-stream";
 import watchify from "watchify";
 
 import Javascript from "./javascript";
-import { BuildSettings, TaskCallback, Options as TaskOptions } from "./task";
+import { TaskCallback, Options as TaskOptions } from "./task";
 
 /**
  * Package Javascript using Browserify.
@@ -107,11 +107,10 @@ export default class Browserify extends Javascript {
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadableStream} stream
-   * @param {BuildSettings} buildSettings
    * @return {NodeJS.ReadableStream}
    * @private
    */
-  protected _hookBuildBefore(stream: NodeJS.ReadableStream, buildSettings: BuildSettings): NodeJS.ReadableStream {
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cloneSink: any = sink();
 

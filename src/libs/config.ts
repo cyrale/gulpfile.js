@@ -7,6 +7,7 @@ import path from "path";
 import process from "process";
 
 import { explodeTaskName, filterObject, modules } from "./utils";
+import set = Reflect.set;
 
 export interface Options {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +20,12 @@ interface SizesOptions {
 }
 
 interface TaskOptions {
+  src: string[];
+  dst: string;
+  watch?: string[];
+  filename?: string;
   cwd?: string;
+  revision?: string;
   settings?: Options;
   sizes?: boolean | Options | SizesOptions;
 }
@@ -202,44 +208,53 @@ export default class Config {
     }
 
     // Get sizes settings.
-    const defaultSizes: SizesOptions = { gzipped: true, normal: true };
-    let sizes: SizesOptions = defaultSizes;
+    if (!this._options.sizes) {
+      const defaultSizes: SizesOptions = {
+        normal: true,
+        gzipped: true,
+      };
 
-    if (typeof this._settings.sizes === "boolean") {
-      sizes = { gzipped: this._settings.sizes, normal: this._settings.sizes };
-    } else if (typeof this._settings.sizes === "object") {
-      sizes = merge(defaultSizes, this._settings.sizes);
+      if (typeof this._settings.sizes === "boolean") {
+        this._settings.sizes = {
+          normal: this._settings.sizes,
+          gzipped: this._settings.sizes,
+        };
+      } else if (typeof this._settings.sizes === "object") {
+        this._settings.sizes = merge(defaultSizes, this._settings.sizes);
+      } else {
+        this._settings.sizes = defaultSizes;
+      }
+
+      this._options.sizes = this._settings.sizes;
+      delete this._settings.sizes;
     }
 
-    delete this._settings.sizes;
-
     // Merge global and local settings in each tasks.
-    modules.forEach((name: string): void => {
+    for (const name of modules) {
       const settings: Options = this._settings[name] as Options;
 
       if (settings && !settings.tasks) {
         settings.cwd = this._options.cwd;
-      } else if (this._settings[name] && settings.tasks) {
-        const globalSettings: {} = settings.settings || {};
-
-        Object.keys(settings.tasks).forEach((taskName: string): void => {
+      } else if (settings && settings.tasks) {
+        for (const taskName of Object.keys(settings.tasks)) {
           const task: TaskOptions = (settings.tasks as Options)[taskName] as TaskOptions;
 
-          task.settings = merge(globalSettings, task.settings || {});
-          if (!task.cwd) {
-            task.cwd = this._options.cwd;
-          }
+          task.settings = merge(settings.settings || {}, task.settings || {});
 
-          if (!task.sizes) {
-            task.sizes = sizes;
+          for (const option of ["cwd", "revision", "sizes"]) {
+            /* eslint-disable @typescript-eslint/no-explicit-any */
+            if (!(task as any)[option]) {
+              (task as any)[option] = this._options[option];
+            }
+            /* eslint-enable @typescript-eslint/no-explicit-any */
           }
 
           settings[taskName] = task;
-        });
+        }
 
         delete settings.tasks;
         delete settings.settings;
       }
-    });
+    }
   }
 }
