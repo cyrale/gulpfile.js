@@ -1,6 +1,6 @@
 {
   "exclude": [
-    "test"
+    "examples"
   ],
   "compilerOptions": {
     /* Basic Options */
