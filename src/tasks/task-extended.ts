@@ -23,13 +23,6 @@ export default abstract class TaskExtended extends Task {
   public static readonly runInParallel: boolean = true;
 
   /**
-   * Flag to define if task use the default dest to save files.
-   * @type {boolean}
-   * @protected
-   */
-  protected _defaultDest = true;
-
-  /**
    * Callback to add data to manifest file.
    * @type {SimpleRevisionCallback|undefined}
    * @protected
