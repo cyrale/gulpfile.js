@@ -89,7 +89,8 @@ export default class Browserify extends Javascript {
     return this._bundlerOnly;
   }
 
-  protected _collectFilesForLint(absolute: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected _collectFilesForLint(absolute: string, relative: string): void {
     if (this._bundleFiles.indexOf(absolute) < 0) this._bundleFiles.push(absolute);
   }
 
