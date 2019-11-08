@@ -1,7 +1,6 @@
 import log from "fancy-log";
 import fs from "fs";
 import { dest, series, src, watch } from "gulp";
-import gulpIf from "gulp-if";
 import plumber from "gulp-plumber";
 import process from "process";
 import Undertaker from "undertaker";
@@ -245,18 +244,11 @@ export default abstract class TaskExtended extends Task {
     Config.chdir(this._settings.cwd);
 
     const taskName: string = this._taskName("build");
-    const config = Config.getInstance();
 
     const options: SrcOptions = {
       cwd: this._settings.cwd,
       sourcemaps: this._gulpSourcemaps && this._settings.settings.sourcemaps,
     };
-
-    const size: Size = new Size({
-      gzip: !this._hideGzippedSize && this._settings.sizes.gzipped,
-      minifySuffix: this._minifySuffix,
-      taskName,
-    });
 
     if (this._hookOverrideBuild) {
       return this._hookOverrideBuild(done);
@@ -268,21 +260,21 @@ export default abstract class TaskExtended extends Task {
     // Add plumber to avoid exit on error.
     stream = stream.pipe(plumber((error: unknown): void => this._displayOrExitOnError(taskName, error, done)));
 
-    // Init collection of file sizes.
-    const activeSizes: boolean = (this._activeSizes || this._activeInitSizesAnyway) && this._settings.sizes.normal;
-    if (activeSizes) {
-      stream = stream.pipe(size.init());
-    }
-
     // If there is no linter or no error, start specific logic of each task.
     if (!this._haveLinter || !this._lintError) {
       if (this._hookBuildBefore) {
         stream = this._hookBuildBefore(stream);
       }
 
-      // Collect file sizes and display them.
-      if (activeSizes) {
-        stream = stream.pipe(size.collect());
+      // Display file sizes.
+      if ((this._activeSizes || this._activeInitSizesAnyway) && this._settings.sizes.normal) {
+        const size: Size = new Size({
+          gzip: !this._hideGzippedSize && this._settings.sizes.gzipped,
+          minifySuffix: this._minifySuffix,
+          taskName,
+        });
+
+        stream = stream.pipe(size.log());
       }
 
       stream = stream.pipe(plumber.stop()).pipe(dest(this._settings.dst, options as DestOptions));

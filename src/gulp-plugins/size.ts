@@ -112,11 +112,15 @@ export default class Size {
   }
 
   /**
-   * Collect sizes of files in a stream.
+   * Log sizes of files in a stream.
    *
    * @return {Transform}
    */
-  public collect(): Transform {
+  public log(): Transform {
+    this._files = {};
+    this._end = false;
+    this._displayed = false;
+
     return through.obj(
       (file: File, encoding: string, cb: TransformCallback): void => {
         if (file.isNull()) {
@@ -223,19 +227,6 @@ export default class Size {
         cb();
       }
     );
-  }
-
-  /**
-   * Reset files.
-   *
-   * @return {Transform}
-   */
-  public init(): Transform {
-    this._files = {};
-    this._end = false;
-    this._displayed = false;
-
-    return through.obj();
   }
 
   /**
