@@ -1,20 +1,11 @@
 import BrowserSync, { BrowserSyncInstance, StreamOptions } from "browser-sync";
 import { watch } from "gulp";
 import merge from "lodash/merge";
-import { Transform } from "stream";
 import through from "through2";
 
 import Config from "../libs/config";
 import { Options as TaskOptions, TaskCallback } from "./task";
 import TaskSimple from "./task-simple";
-
-type BrowserSyncTransform = ((taskName: string) => Transform) | (() => Transform);
-
-export interface BrowserSyncMethods {
-  memorize: BrowserSyncTransform;
-  remember: BrowserSyncTransform;
-  sync: ((taskName: string, settings?: StreamOptions) => NodeJS.ReadWriteStream) | (() => Transform);
-}
 
 /**
  * Use Browsersync to reload browser on file modification.

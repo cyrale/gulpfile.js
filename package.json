@@ -17,8 +17,8 @@
   },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "tsc --build ./tsconfig.json",
-    "watch": "tsc --watch ./tsconfig.json",
+    "build": "tsc --build",
+    "watch": "tsc --watch",
     "lint": "eslint \"src/**/*.ts?(x)\"",
     "pretty": "prettier --write \"src/**/*.ts?(x)\"",
     "examples": "npx gulp --gulpfile dist/app.js --configfile examples/gulpconfig.yml"
