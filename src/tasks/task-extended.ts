@@ -202,10 +202,11 @@ export default abstract class TaskExtended extends Task {
    * Method to add specific steps for the lint.
    *
    * @param {NodeJS.ReadableStream} stream
+   * @param {TaskCallback} done
    * @return {NodeJS.ReadableStream}
    * @protected
    */
-  protected _hookLint?(stream: NodeJS.ReadableStream): NodeJS.ReadableStream;
+  protected _hookLint?(stream: NodeJS.ReadableStream, done?: TaskCallback): NodeJS.ReadableStream;
 
   protected _hookOverrideBuild?(done?: TaskCallback): NodeJS.ReadableStream | void;
 
@@ -225,7 +226,7 @@ export default abstract class TaskExtended extends Task {
       : src(this._settings.src, { cwd: this._settings.cwd });
 
     if (this._hookLint) {
-      stream = this._hookLint(stream);
+      stream = this._hookLint(stream, done);
     }
 
     if (this._bindEventsToLinter) {

@@ -17,7 +17,7 @@ import source from "vinyl-source-stream";
 import watchify from "watchify";
 
 import Config from "../libs/config";
-import Javascript from "./javascript";
+import Javascript, { ESLintErrors } from "./javascript";
 import { TaskCallback, Options as TaskOptions } from "./task";
 
 /**
@@ -187,8 +187,8 @@ export default class Browserify extends Javascript {
       .pipe(esLint(this._settings.settings.eslint))
       .pipe(esLint.format())
       .pipe(
-        esLint.results((filesWithErrors: { errorCount: number }): void => {
-          this._lintError = filesWithErrors.errorCount > 0;
+        esLint.results((filesWithErrors: ESLintErrors): void => {
+          this._esLintResults(filesWithErrors, done);
         })
       )
       .on("finish", () => {

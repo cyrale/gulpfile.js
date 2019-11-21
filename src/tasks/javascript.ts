@@ -13,8 +13,15 @@ import omit from "lodash/omit";
 import path from "path";
 
 import Config from "../libs/config";
-import { Options as TaskOptions } from "./task";
+import { Options as TaskOptions, TaskCallback } from "./task";
 import TaskExtended from "./task-extended";
+
+type ESLintFile = unknown[];
+
+export interface ESLintErrors extends ESLintFile {
+  errorCount: number;
+  warningCount: number;
+}
 
 /**
  * Concatenate Javascript files into one file. This file could be babelified.
@@ -126,18 +133,35 @@ export default class Javascript extends TaskExtended {
    * Method to add specific steps for the lint.
    *
    * @param {NodeJS.ReadWriteStream} stream
+   * @param {TaskCallback} done
    * @return {NodeJS.ReadWriteStream}
    * @protected
    */
-  protected _hookLint(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _hookLint(stream: NodeJS.ReadWriteStream, done?: TaskCallback): NodeJS.ReadWriteStream {
     return stream
       .pipe(esLint(this._settings.settings.eslint))
       .pipe(esLint.format())
       .pipe(
-        esLint.results((filesWithErrors: { errorCount: number }): void => {
-          this._lintError = filesWithErrors.errorCount > 0;
+        esLint.results((filesWithErrors: ESLintErrors): void => {
+          this._esLintResults(filesWithErrors, done);
         })
       );
+  }
+
+  protected _esLintResults(filesWithErrors: ESLintErrors, done?: TaskCallback): void {
+    const config: Config = Config.getInstance();
+
+    this._lintError = filesWithErrors.errorCount > 0;
+
+    if (this._lintError && config.isLintRun()) {
+      for (const error of filesWithErrors) {
+        TaskExtended.taskErrors.push({
+          taskName: this._taskName("lint"),
+          error,
+          done,
+        });
+      }
+    }
   }
 
   /**
