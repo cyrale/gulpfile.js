@@ -180,7 +180,8 @@ export default abstract class TaskExtended extends Task {
   }
 
   protected get _haveLinter(): boolean {
-    return !!this._hookLint;
+    const config: Config = Config.getInstance();
+    return !!this._hookLint && config.options.lint;
   }
 
   protected _hookBuildSrc?(): NodeJS.ReadableStream;

@@ -181,15 +181,16 @@ export default class Config {
   private _loadOptions(): void {
     // Merge default options with command line arguments
     this._options = minimist(process.argv.slice(2), {
-      boolean: ["sourcemaps"],
+      boolean: ["lint", "sourcemaps"],
+      string: ["configfile", "cwd", "env", "revision"],
       default: {
         configfile: process.env.CONFIG_FILE || "gulpconfig.yml",
         cwd: "",
         env: process.env.NODE_ENV || "production",
+        lint: true,
         revision: false,
         sourcemaps: process.env.SOURCEMAPS || false,
       },
-      string: ["configfile", "cwd", "env", "revision"],
     });
 
     if (!path.isAbsolute(this._options.configfile)) {
