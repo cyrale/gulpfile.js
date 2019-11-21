@@ -60,10 +60,13 @@ export default class Config {
    * Get settings.
    */
   get settings(): Options {
+    let settings: Options = this._settings;
+
+    // Keep only desired tasks.
     if (this.currentRun !== "default") {
       const { type, name } = explodeTaskName(this.currentRun);
 
-      return filterObject(this._settings, (obj: unknown, key: string): boolean => {
+      settings = filterObject(settings, (obj: unknown, key: string): boolean => {
         const valid: boolean = type === "" || key === type;
 
         if (valid && name !== "") {
@@ -74,7 +77,12 @@ export default class Config {
       });
     }
 
-    return this._settings;
+    // Check "--no-{task}" arguments exists.
+    settings = filterObject(settings, (obj: unknown, key: string): boolean => {
+      return typeof this._options[key] === "undefined" || this._options[key];
+    });
+
+    return settings;
   }
 
   /**
@@ -181,12 +189,13 @@ export default class Config {
   private _loadOptions(): void {
     // Merge default options with command line arguments
     this._options = minimist(process.argv.slice(2), {
-      boolean: ["lint", "sourcemaps"],
+      boolean: ["favicon", "lint", "sourcemaps"],
       string: ["configfile", "cwd", "env", "revision"],
       default: {
         configfile: process.env.CONFIG_FILE || "gulpconfig.yml",
         cwd: "",
         env: process.env.NODE_ENV || "production",
+        favicon: true,
         lint: true,
         revision: false,
         sourcemaps: process.env.SOURCEMAPS || false,
@@ -238,8 +247,6 @@ export default class Config {
       this._options.sizes = this._settings.sizes;
       delete this._settings.sizes;
     }
-
-    console.log(this._options);
   }
 
   /**
