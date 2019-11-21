@@ -400,10 +400,12 @@ export default class TaskFactory {
    * @private
    */
   private _defineTask(taskName: string, tasks: Undertaker.Task[], type = "series"): void {
+    const config: Config = Config.getInstance();
     const errorHandler = `${taskName}:error`;
+    const addErrorHandler: boolean = (config.isLintRun() || config.isBuildRun()) && config.isCurrentRun(taskName);
 
     // Define gulp task to catch error in build run to exit with error code.
-    if (Config.getInstance().isBuildRun() && Config.getInstance().isCurrentRun(taskName)) {
+    if (addErrorHandler) {
       gulpTask(errorHandler, (done: TaskCallback): void => {
         done();
 
@@ -415,7 +417,7 @@ export default class TaskFactory {
 
     let task: Undertaker.TaskFunction = (done: TaskCallback) => done();
 
-    if (Config.getInstance().isBuildRun() && Config.getInstance().isCurrentRun(taskName)) {
+    if (addErrorHandler) {
       // Add error handler to the tasks.
       let tasksWithHandler: Undertaker.Task[] = [];
 

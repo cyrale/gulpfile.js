@@ -34,6 +34,7 @@ import File from "vinyl";
 
 import MediaQueries from "../gulp-plugins/media-queries";
 import Revision, { DefaultObject } from "../gulp-plugins/revision";
+import Config from "../libs/config";
 import hierarchicalCriticalCSS from "../postcss/hierarchical-critical-css";
 import normalizeRevision from "../postcss/normalize-revision";
 import removeCriticalProperties from "../postcss/remove-critical-properties";
@@ -328,6 +329,8 @@ export default class Sass extends TaskExtended {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected _displayError(error: any): void {
+    const config: Config = Config.getInstance();
+
     log.error(
       sassLint.format([
         {
@@ -347,7 +350,7 @@ export default class Sass extends TaskExtended {
     );
 
     // Particular exit due to the comportment of Sass.
-    if (TaskExtended._isBuildRun() && error.code !== "ENOENT") {
+    if ((config.isLintRun() || config.isBuildRun()) && error.code !== "ENOENT") {
       process.exit(1);
     }
   }

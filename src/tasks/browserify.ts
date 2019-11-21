@@ -16,6 +16,7 @@ import buffer from "vinyl-buffer";
 import source from "vinyl-source-stream";
 import watchify from "watchify";
 
+import Config from "../libs/config";
 import Javascript from "./javascript";
 import { TaskCallback, Options as TaskOptions } from "./task";
 
@@ -62,6 +63,8 @@ export default class Browserify extends Javascript {
   }
 
   protected get bundler(): BrowserifyObject {
+    const config: Config = Config.getInstance();
+
     // Initialize Browserify bundler.
     if (!this._bundler) {
       this._bundler = this.bundlerOnly;
@@ -70,7 +73,7 @@ export default class Browserify extends Javascript {
         this._bundler.transform("babelify", this._settings.settings.babel);
       }
 
-      if (!Browserify._isBuildRun()) {
+      if (!config.isBuildRun()) {
         this._bundler.plugin("watchify");
       }
     }

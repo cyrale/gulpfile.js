@@ -12,6 +12,7 @@ import merge from "lodash/merge";
 import omit from "lodash/omit";
 import path from "path";
 
+import Config from "../libs/config";
 import { Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
@@ -147,6 +148,7 @@ export default class Javascript extends TaskExtended {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected _displayError(error: any): void {
+    const config: Config = Config.getInstance();
     const cliEngine: CLIEngine = new CLIEngine({});
     const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");
     const relativeFile: string = path.relative(this._settings.cwd, error.fileName || "");
@@ -177,7 +179,7 @@ export default class Javascript extends TaskExtended {
       ];
 
       // Particular exit due to the comportment of gulp-babel.
-      if (TaskExtended._isBuildRun()) {
+      if (config.isLintRun() || config.isBuildRun()) {
         log.error(formatter(formattedMessage));
         process.exit(1);
       }

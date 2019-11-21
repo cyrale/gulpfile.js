@@ -162,6 +162,8 @@ export default abstract class TaskExtended extends Task {
    * @protected
    */
   protected _displayOrExitOnError(taskName: string, error: unknown, done?: TaskCallback): void {
+    const config: Config = Config.getInstance();
+
     this._displayError(error);
 
     TaskExtended.taskErrors.push({
@@ -170,7 +172,7 @@ export default abstract class TaskExtended extends Task {
       taskName,
     });
 
-    if (TaskExtended._isBuildRun() && TaskExtended._isCurrentRun(taskName)) {
+    if ((config.isLintRun() || config.isBuildRun()) && config.isCurrentRun(taskName)) {
       if (!!done) {
         done();
       }

@@ -1,6 +1,6 @@
 import { task as gulpTask, TaskFunction } from "gulp";
 
-import Config, { Options as ConfigOptions } from "../libs/config";
+import { Options as ConfigOptions } from "../libs/config";
 
 interface TaskErrorDefinition {
   taskName: string;
@@ -38,27 +38,6 @@ export default abstract class Task {
    * @type {TaskErrorDefinition[]}
    */
   public static taskErrors: TaskErrorDefinition[] = [];
-
-  /**
-   * Check if current run is a build run.
-   *
-   * @return {boolean}
-   * @protected
-   */
-  protected static _isBuildRun(): boolean {
-    return Config.getInstance().isBuildRun();
-  }
-
-  /**
-   * Check if a task is the current run.
-   *
-   * @param {string} taskName
-   * @return {boolean}
-   * @protected
-   */
-  protected static _isCurrentRun(taskName: string): boolean {
-    return Config.getInstance().isCurrentRun(taskName);
-  }
 
   /**
    * Name of the current task.

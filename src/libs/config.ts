@@ -99,8 +99,8 @@ export default class Config {
       log("Loading configuration file...");
 
       Config._instance = new Config();
-      Config._instance.refreshOptions();
-      Config._instance.refreshSettings();
+      Config._instance._refreshOptions();
+      Config._instance._refreshSettings();
 
       log("Configuration file loaded");
     }
@@ -137,13 +137,16 @@ export default class Config {
    * @return {boolean}
    */
   public isBuildRun(): boolean {
-    const search = "build";
+    return this._isIndentifiedRun("build");
+  }
 
-    return (
-      this.currentRun !== "default" &&
-      this.currentRun.lastIndexOf(search) >= 0 &&
-      this.currentRun.lastIndexOf(search) === this.currentRun.length - search.length
-    );
+  /**
+   * Check if current run is a lint run.
+   *
+   * @return {boolean}
+   */
+  public isLintRun(): boolean {
+    return this._isIndentifiedRun("lint");
   }
 
   /**
@@ -157,9 +160,24 @@ export default class Config {
   }
 
   /**
+   * Identify a run.
+   *
+   * @param {string} run
+   * @returns {boolean}
+   * @private
+   */
+  private _isIndentifiedRun(run: string): boolean {
+    return (
+      this.currentRun !== "default" &&
+      this.currentRun.lastIndexOf(run) >= 0 &&
+      this.currentRun.lastIndexOf(run) === this.currentRun.length - run.length
+    );
+  }
+
+  /**
    * Read options for application from command line.
    */
-  private refreshOptions(): void {
+  private _refreshOptions(): void {
     // Merge default options with command line arguments
     this._options = minimist(process.argv.slice(2), {
       boolean: ["sourcemaps"],
@@ -181,7 +199,7 @@ export default class Config {
   /**
    * Read settings from configuration file.
    */
-  private refreshSettings(): void {
+  private _refreshSettings(): void {
     // Read configuration file.
     try {
       this._settings = yaml.safeLoad(fs.readFileSync(this._options.configfile, "utf8"));
