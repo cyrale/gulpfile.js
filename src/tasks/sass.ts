@@ -39,7 +39,7 @@ import hierarchicalCriticalCSS from "../postcss/hierarchical-critical-css";
 import normalizeRevision from "../postcss/normalize-revision";
 import removeCriticalProperties from "../postcss/remove-critical-properties";
 import removeCriticalRules from "../postcss/remove-critical-rules";
-import { Options as TaskOptions } from "./task";
+import { Options as TaskOptions, TaskCallback } from "./task";
 import TaskExtended from "./task-extended";
 
 type PurgeCSSParam = unknown[] | boolean;
@@ -311,14 +311,15 @@ export default class Sass extends TaskExtended {
    * Method to add specific steps for the lint.
    *
    * @param {NodeJS.ReadWriteStream} stream
+   * @param {TaskCallback} done
    * @return {NodeJS.ReadWriteStream}
    * @protected
    */
-  protected _hookLint(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _hookLint(stream: NodeJS.ReadWriteStream, done?: TaskCallback): NodeJS.ReadWriteStream {
     return stream
       .pipe(gulpSassLint({ configFile: path.join(this._settings.cwd, ".sass-lint.yml") }))
       .pipe(gulpSassLint.format())
-      .pipe(this._lintNotifier());
+      .pipe(this._lintNotifier(done));
   }
 
   /**
@@ -358,14 +359,33 @@ export default class Sass extends TaskExtended {
   /**
    * Collect error from lint.
    *
+   * @param {TaskCallback} done
    * @return {Transform}
    * @private
    */
-  private _lintNotifier(): Transform {
+  private _lintNotifier(done?: TaskCallback): Transform {
+    const config: Config = Config.getInstance();
+
     return through.obj(
       (file: File, encoding: string, cb: TransformCallback): void => {
-        if (!file.isNull() && !file.isStream() && file.sassLint[0].errorCount > 0) {
+        if (
+          !file.isNull() &&
+          !file.isStream() &&
+          file.sassLint.filter((error: { errorCount: number }) => error.errorCount > 0).length > 0
+        ) {
           this._lintError = true;
+
+          if (config.isLintRun()) {
+            for (const error of file.sassLint) {
+              if (error.errorCount > 0) {
+                TaskExtended.taskErrors.push({
+                  taskName: this._taskName("lint"),
+                  error,
+                  done,
+                });
+              }
+            }
+          }
         }
 
         cb();
