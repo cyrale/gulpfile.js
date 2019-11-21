@@ -99,8 +99,8 @@ export default class Config {
       log("Loading configuration file...");
 
       Config._instance = new Config();
-      Config._instance._refreshOptions();
-      Config._instance._refreshSettings();
+      Config._instance._loadOptions();
+      Config._instance._loadSettings();
 
       log("Configuration file loaded");
     }
@@ -177,7 +177,7 @@ export default class Config {
   /**
    * Read options for application from command line.
    */
-  private _refreshOptions(): void {
+  private _loadOptions(): void {
     // Merge default options with command line arguments
     this._options = minimist(process.argv.slice(2), {
       boolean: ["sourcemaps"],
@@ -199,7 +199,7 @@ export default class Config {
   /**
    * Read settings from configuration file.
    */
-  private _refreshSettings(): void {
+  private _loadSettings(): void {
     // Read configuration file.
     try {
       this._settings = yaml.safeLoad(fs.readFileSync(this._options.configfile, "utf8"));
