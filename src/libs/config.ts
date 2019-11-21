@@ -63,7 +63,7 @@ export default class Config {
       const { type, name } = explodeTaskName(this.currentRun);
 
       return filterObject(this._settings, (obj: unknown, key: string): boolean => {
-        const valid: boolean = key === type;
+        const valid: boolean = type === "" || key === type;
 
         if (valid && name !== "") {
           this._settings[key] = filterObject(this._settings[key], (o: unknown, k: string) => k === name);
