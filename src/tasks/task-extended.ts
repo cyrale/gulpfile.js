@@ -173,9 +173,7 @@ export default abstract class TaskExtended extends Task {
     });
 
     if ((config.isLintRun() || config.isBuildRun()) && config.isCurrentRun(taskName)) {
-      if (!!done) {
-        done();
-      }
+      if (!!done) done();
 
       process.exit(1);
     }
