@@ -6,7 +6,8 @@ import * as yaml from "js-yaml";
 import merge from "lodash/merge";
 import pugLintStylish from "puglint-stylish";
 
-import { Options as TaskOptions } from "./task";
+import Config from "../libs/config";
+import { Options as TaskOptions, TaskCallback } from "./task";
 import TaskExtended from "./task-extended";
 
 /**
@@ -69,16 +70,29 @@ export default class Pug extends TaskExtended {
    * Method to add specific steps for the lint.
    *
    * @param {NodeJS.ReadWriteStream} stream
+   * @param {TaskCallback} done
    * @return {NodeJS.ReadWriteStream}
    * @protected
    */
-  protected _hookLint(stream: NodeJS.ReadWriteStream): NodeJS.ReadWriteStream {
+  protected _hookLint(stream: NodeJS.ReadWriteStream, done?: TaskCallback): NodeJS.ReadWriteStream {
+    const config: Config = Config.getInstance();
+
     return stream.pipe(
       pugLinter({
         reporter: (errors: unknown[]): void => {
           if (errors.length > 0) {
             this._lintError = true;
             pugLintStylish(errors);
+
+            if (config.isLintRun()) {
+              for (const error of errors) {
+                TaskExtended.taskErrors.push({
+                  taskName: this._taskName("lint"),
+                  error,
+                  done,
+                });
+              }
+            }
           }
         },
       })
