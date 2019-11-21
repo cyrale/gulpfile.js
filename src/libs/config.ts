@@ -1,6 +1,7 @@
 import log from "fancy-log";
 import fs from "fs";
 import * as yaml from "js-yaml";
+import isEmpty from "lodash/isEmpty";
 import merge from "lodash/merge";
 import minimist, { ParsedArgs } from "minimist";
 import path from "path";
@@ -194,18 +195,9 @@ export default class Config {
     if (!path.isAbsolute(this._options.configfile)) {
       this._options.configfile = path.resolve(process.env.PWD || "", this._options.configfile);
     }
-  }
 
-  /**
-   * Read settings from configuration file.
-   */
-  private _loadSettings(): void {
     // Read configuration file.
-    try {
-      this._settings = yaml.safeLoad(fs.readFileSync(this._options.configfile, "utf8"));
-    } catch (e) {
-      log.error(e.stack || String(e));
-    }
+    this._readConfigFile();
 
     // Normalize current working directory.
     if (!this._options.cwd) {
@@ -246,6 +238,16 @@ export default class Config {
       delete this._settings.sizes;
     }
 
+    console.log(this._options);
+  }
+
+  /**
+   * Read settings from configuration file.
+   */
+  private _loadSettings(): void {
+    // Read configuration file.
+    this._readConfigFile();
+
     // Merge global and local settings in each tasks.
     for (const name of modules) {
       const settings: Options = this._settings[name] as Options;
@@ -273,5 +275,24 @@ export default class Config {
         delete settings.settings;
       }
     }
+  }
+
+  /**
+   * Read configuration file.
+   *
+   * @returns {Options}
+   * @private
+   */
+  private _readConfigFile(): Options {
+    if (isEmpty(this._settings)) {
+      // Read configuration file.
+      try {
+        this._settings = yaml.safeLoad(fs.readFileSync(this._options.configfile, "utf8"));
+      } catch (e) {
+        log.error(e.stack || String(e));
+      }
+    }
+
+    return this._settings;
   }
 }
