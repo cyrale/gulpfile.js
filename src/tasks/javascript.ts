@@ -1,15 +1,16 @@
 import { CLIEngine, Linter } from "eslint";
 import log from "fancy-log";
 import babel from "gulp-babel";
-import { sink } from "gulp-clone";
+import clone, { sink } from "gulp-clone";
 import concat from "gulp-concat";
 import esLint from "gulp-eslint";
 import order from "gulp-order";
 import rename from "gulp-rename";
-import stripe from "gulp-strip-comments";
+import sourcemaps from "gulp-sourcemaps";
 import terser from "gulp-terser";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
+import mergeStream from "merge-stream";
 import path from "path";
 
 import Config from "../libs/config";
@@ -62,8 +63,7 @@ export default class Javascript extends TaskExtended {
   constructor(options: TaskOptions) {
     super(options);
 
-    // This task could build sourcemaps and sync browser with filter.
-    this._gulpSourcemaps = true;
+    // This task sync browser with filter.
     this._browserSyncSettings = { match: "**/*.js" };
 
     this._minifySuffix = ".min";
@@ -111,22 +111,30 @@ export default class Javascript extends TaskExtended {
    * @protected
    */
   protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloneSink: any = sink();
-
     stream = stream.pipe(order(this._settings.src));
+
+    if (this._settings.sourcemaps) {
+      stream = stream.pipe(sourcemaps.init());
+    }
 
     if (this._settings.settings.babel !== false) {
       stream = stream.pipe(babel(this._settings.settings.babel));
     }
 
-    return stream
-      .pipe(concat(this._settings.filename))
-      .pipe(cloneSink)
-      .pipe(stripe())
-      .pipe(terser())
-      .pipe(rename({ suffix: this._minifySuffix }))
-      .pipe(cloneSink.tap());
+    stream = stream.pipe(concat(this._settings.filename));
+
+    const streamMin: NodeJS.ReadableStream = stream
+      .pipe(clone())
+      .pipe(terser({ output: { comments: false } }))
+      .pipe(rename({ suffix: this._minifySuffix }));
+
+    let mergedStream: NodeJS.ReadableStream = mergeStream(stream, streamMin);
+
+    if (this._settings.sourcemaps) {
+      mergedStream = mergedStream.pipe(sourcemaps.write());
+    }
+
+    return mergedStream;
   }
 
   /**

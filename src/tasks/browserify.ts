@@ -6,7 +6,7 @@ import { src } from "gulp";
 import { sink } from "gulp-clone";
 import esLint from "gulp-eslint";
 import rename from "gulp-rename";
-import stripe from "gulp-strip-comments";
+import sourcemaps from "gulp-sourcemaps";
 import terser from "gulp-terser";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
@@ -55,7 +55,7 @@ export default class Browserify extends Javascript {
     // Merge settings with default.
     const defaultSettings: {} = {
       basedir: this._settings.cwd,
-      debug: !!this._settings.settings.sourcemaps,
+      debug: this._settings.sourcemaps,
       entries: this._settings.src,
     };
 
@@ -118,14 +118,22 @@ export default class Browserify extends Javascript {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cloneSink: any = sink();
 
-    return stream
+    stream = stream
       .pipe(source(this._settings.filename))
       .pipe(buffer())
-      .pipe(cloneSink)
-      .pipe(stripe())
-      .pipe(terser())
-      .pipe(rename({ suffix: this._minifySuffix }))
-      .pipe(cloneSink.tap());
+      .pipe(cloneSink);
+
+    if (this._settings.sourcemaps) {
+      stream = stream.pipe(sourcemaps.init({ loadMaps: true }));
+    }
+
+    stream = stream.pipe(terser({ output: { comments: false } })).pipe(rename({ suffix: this._minifySuffix }));
+
+    if (this._settings.sourcemaps) {
+      stream = stream.pipe(sourcemaps.write());
+    }
+
+    return stream.pipe(cloneSink.tap());
   }
 
   protected _hookOverrideLint(done?: TaskCallback): void {

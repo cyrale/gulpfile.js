@@ -3,7 +3,7 @@ import log from "fancy-log";
 import { src } from "gulp";
 import { sink } from "gulp-clone";
 import rename from "gulp-rename";
-import stripe from "gulp-strip-comments";
+import sourcemaps from "gulp-sourcemaps";
 import terser from "gulp-terser";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
@@ -73,6 +73,10 @@ export default class Webpack extends Javascript {
       },
       watch: false,
     });
+
+    if (this._settings.sourcemaps) {
+      this._settings.settings.devtool = "inline-source-map";
+    }
   }
 
   /**
@@ -86,7 +90,7 @@ export default class Webpack extends Javascript {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cloneSink: any = sink();
 
-    return stream
+    stream = stream
       .pipe(named())
       .pipe(
         webpackStream(omit(this._settings.settings, ["babel", "eslint"])),
@@ -97,15 +101,23 @@ export default class Webpack extends Javascript {
           basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),
         })
       )
-      .pipe(cloneSink)
-      .pipe(stripe())
-      .pipe(terser())
-      .pipe(
-        rename({
-          suffix: this._minifySuffix,
-        })
-      )
-      .pipe(cloneSink.tap());
+      .pipe(cloneSink);
+
+    if (this._settings.sourcemaps) {
+      stream = stream.pipe(sourcemaps.init({ loadMaps: true }));
+    }
+
+    stream = stream.pipe(terser({ output: { comments: false } })).pipe(
+      rename({
+        suffix: this._minifySuffix,
+      })
+    );
+
+    if (this._settings.sourcemaps) {
+      stream = stream.pipe(sourcemaps.write());
+    }
+
+    return stream.pipe(cloneSink.tap());
   }
 
   protected _hookLintSrc(): NodeJS.ReadableStream {
