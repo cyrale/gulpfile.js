@@ -268,9 +268,9 @@ export default class Config {
 
           task.settings = merge(settings.settings || {}, task.settings || {});
 
-          for (const option of ["cwd", "revision", "sizes"]) {
+          for (const option of ["cwd", "revision", "sizes", "sourcemaps"]) {
             /* eslint-disable @typescript-eslint/no-explicit-any */
-            if (!(task as any)[option]) {
+            if (typeof (task as any)[option] === "undefined") {
               (task as any)[option] = this._options[option];
             }
             /* eslint-enable @typescript-eslint/no-explicit-any */
