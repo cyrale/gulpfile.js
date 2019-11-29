@@ -6,7 +6,7 @@ import process from "process";
 import Undertaker from "undertaker";
 import { DestOptions, SrcOptions } from "vinyl-fs";
 
-import Revision from "../gulp-plugins/revision";
+import revision, { isActive } from "../gulp-plugins/revision";
 import Size from "../gulp-plugins/size";
 import Config from "../libs/config";
 import Browsersync from "./browsersync";
@@ -274,10 +274,10 @@ export default abstract class TaskExtended extends Task {
         stream = stream.pipe(this._browserSync.sync(taskName, this._browserSyncSettings));
       }
 
-      if (Revision.isActive()) {
+      if (isActive()) {
         stream = stream
           .pipe(
-            Revision.manifest({
+            revision({
               taskName,
               cwd: this._settings.cwd,
               dst: this._settings.revision,

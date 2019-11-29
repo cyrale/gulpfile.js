@@ -30,7 +30,7 @@ import through, { TransformCallback } from "through2";
 import File from "vinyl";
 
 import extractMediaQueries from "../gulp-plugins/media-queries-extractor";
-import Revision, { DefaultObject } from "../gulp-plugins/revision";
+import { isActive } from "../gulp-plugins/revision";
 import Config from "../libs/config";
 import criticalClean from "../postcss/critical-clean";
 import criticalExtract from "../postcss/critical-extract";
@@ -108,7 +108,7 @@ export default class Sass extends TaskExtended {
     const defaultSettings: {} = {
       SVGO: {},
       assets: {
-        cachebuster: Revision.isActive(),
+        cachebuster: isActive(),
         relative: true,
       },
       autoprefixer: {

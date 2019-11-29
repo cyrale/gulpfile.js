@@ -8,7 +8,7 @@ import merge from "lodash/merge";
 import path from "path";
 import buffer from "vinyl-buffer";
 
-import Revision from "../gulp-plugins/revision";
+import { getHashRevision } from "../gulp-plugins/revision";
 import { Options as TaskOptions } from "./task";
 import TaskExtended from "./task-extended";
 
@@ -100,11 +100,11 @@ export default class Fonts extends TaskExtended {
             name: glyph.name,
           })),
           hash: {
-            eot: Revision.getHashRevision(taskName, `${this._sanitizedTaskName}.eot`),
-            svg: Revision.getHashRevision(taskName, `${this._sanitizedTaskName}.svg`),
-            ttf: Revision.getHashRevision(taskName, `${this._sanitizedTaskName}.ttf`),
-            woff: Revision.getHashRevision(taskName, `${this._sanitizedTaskName}.woff`),
-            woff2: Revision.getHashRevision(taskName, `${this._sanitizedTaskName}.woff2`),
+            eot: getHashRevision(taskName, `${this._sanitizedTaskName}.eot`),
+            svg: getHashRevision(taskName, `${this._sanitizedTaskName}.svg`),
+            ttf: getHashRevision(taskName, `${this._sanitizedTaskName}.ttf`),
+            woff: getHashRevision(taskName, `${this._sanitizedTaskName}.woff`),
+            woff2: getHashRevision(taskName, `${this._sanitizedTaskName}.woff2`),
           },
         };
 

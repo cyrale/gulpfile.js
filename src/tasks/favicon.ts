@@ -3,7 +3,7 @@ import favicon from "gulp-real-favicon";
 import merge from "lodash/merge";
 import path from "path";
 
-import Revision from "../gulp-plugins/revision";
+import { getHashRevision, isActive, pushAndWrite } from "../gulp-plugins/revision";
 import { Options as TaskOptions, TaskCallback } from "./task";
 import TaskExtended from "./task-extended";
 
@@ -152,7 +152,7 @@ export default class Favicon extends TaskExtended {
         try {
           const decodedData = JSON.parse(data.toString());
 
-          if (Revision.isActive()) {
+          if (isActive()) {
             // Get generated files and manage revision.
             const dir = decodedData.files_location.path;
 
@@ -161,7 +161,7 @@ export default class Favicon extends TaskExtended {
               const url = path.join(dir, base);
 
               const fileName = path.resolve(this._settings.dst, base);
-              const rev = Revision.getHashRevision(taskName, fileName);
+              const rev = getHashRevision(taskName, fileName);
 
               // eslint-disable-next-line @typescript-eslint/camelcase
               decodedData.favicon.html_code = decodedData.favicon.html_code.replace(url, `${url}?rev=${rev}`);
@@ -175,8 +175,8 @@ export default class Favicon extends TaskExtended {
                   throw errorWrite;
                 }
 
-                // Update Revision file.
-                Revision.pushAndWrite(markupFile, {
+                // Update revision file.
+                pushAndWrite(markupFile, {
                   taskName,
                   cwd: this._settings.cwd,
                   dst: this._settings.revision,
