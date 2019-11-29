@@ -4,24 +4,21 @@ import CSSMQPacker from "css-mqpacker";
 import CSSNano from "cssnano";
 import log from "fancy-log";
 import Fiber from "fibers";
-import { sink } from "gulp-clone";
-import criticalCSS from "gulp-critical-css";
-import extractMediaQueries from "gulp-extract-media-queries";
-import filter from "gulp-filter";
+import clone, { sink } from "gulp-clone";
 import gulpPostCSS from "gulp-postcss";
 import rename from "gulp-rename";
 import sass from "gulp-sass";
 import gulpSassLint from "gulp-sass-lint";
+import sourcemaps from "gulp-sourcemaps";
 import merge from "lodash/merge";
-import uniq from "lodash/uniq";
 import mergeStream from "merge-stream";
 import path from "path";
-import postcss from "postcss";
+import perfectionist from "perfectionist";
+import { AcceptedPlugin } from "postcss";
 import assets from "postcss-assets";
 import discardComments from "postcss-discard-comments";
 import discardEmpty from "postcss-discard-empty";
 import inlineSVG from "postcss-inline-svg";
-import scssParser from "postcss-scss";
 import svgo from "postcss-svgo";
 import purgeCSSWithWordPress from "purgecss-with-wordpress";
 import rucksackCSS from "rucksack-css";
@@ -32,13 +29,13 @@ import { Transform } from "stream";
 import through, { TransformCallback } from "through2";
 import File from "vinyl";
 
-import MediaQueries from "../gulp-plugins/media-queries";
+import extractMediaQueries from "../gulp-plugins/media-queries-extractor";
 import Revision, { DefaultObject } from "../gulp-plugins/revision";
 import Config from "../libs/config";
-import hierarchicalCriticalCSS from "../postcss/hierarchical-critical-css";
+import criticalClean from "../postcss/critical-clean";
+import criticalExtract from "../postcss/critical-extract";
+import mediaQueriesClean from "../postcss/media-queries-clean";
 import normalizeRevision from "../postcss/normalize-revision";
-import removeCriticalProperties from "../postcss/remove-critical-properties";
-import removeCriticalRules from "../postcss/remove-critical-rules";
 import { Options as TaskOptions, TaskCallback } from "./task";
 import TaskExtended from "./task-extended";
 
@@ -190,16 +187,16 @@ export default class Sass extends TaskExtended {
       this._settings.settings.purgeCSS = purgeCSSDefaultSettings;
     }
 
-    this._manifestCallback = (data, additionalInformation): {} => {
-      const media: string = MediaQueries.mediaQuery(
-        data.origRelFile.replace(this._minifySuffix, ""),
-        (additionalInformation.media as string[]) || []
-      );
-
-      return {
-        media: media === "" ? "all" : media,
-      };
-    };
+    // this._manifestCallback = (data, additionalInformation): {} => {
+    //   const media: string = MediaQueries.mediaQuery(
+    //     data.origRelFile.replace(this._minifySuffix, ""),
+    //     (additionalInformation.media as string[]) || []
+    //   );
+    //
+    //   return {
+    //     media: media === "" ? "all" : media,
+    //   };
+    // };
   }
 
   /**
@@ -212,9 +209,9 @@ export default class Sass extends TaskExtended {
   protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     const streams: NodeJS.ReadableStream[] = [];
 
-    // Collect PostCSS plugins to run on global CSS file, before media queries or critical extraction.
-    const postCSSPluginsBefore: postcss.AcceptedPlugin[] = [
+    const postCSSGlobal: AcceptedPlugin[] = [
       discardComments(),
+      discardEmpty(),
       assets(this._settings.settings.assets),
       normalizeRevision(),
       rucksackCSS(this._settings.settings.rucksack),
@@ -224,87 +221,65 @@ export default class Sass extends TaskExtended {
     ];
 
     if (this._purgeCSSActive) {
-      postCSSPluginsBefore.push(purgeCSS(this._settings.settings.purgeCSS));
+      postCSSGlobal.push(purgeCSS(this._settings.settings.purgeCSS));
     }
 
-    // Collect PostCSS plugins to run before first save.
-    const postCSSPluginsIntermediate: postcss.AcceptedPlugin[] = [removeCriticalProperties(), discardEmpty()];
+    if (this._settings.sourcemaps) {
+      stream = stream.pipe(sourcemaps.init());
+    }
 
-    // Collect PostCSS pluging to run after first save, for minification process.
-    const postCSSPluginsAfter: postcss.AcceptedPlugin[][] = [
-      CSSNano(this._settings.settings.cssnano),
-      CSSMQPacker(this._settings.settings.mqpacker),
-    ];
+    // Propagate critical rules to children properties.
+    let mainStream: NodeJS.ReadableStream = stream
+      .pipe(sass(this._settings.settings.sass || {}).on("error", sass.logError))
+      .pipe(gulpPostCSS(postCSSGlobal));
 
-    // Start SASS process.
+    // Extract critical rules.
     if (this._criticalActive) {
-      stream = stream.pipe(gulpPostCSS([hierarchicalCriticalCSS()], { parser: scssParser }));
-    }
-
-    stream = stream.pipe(sass(this._settings.settings.sass || {})).pipe(gulpPostCSS(postCSSPluginsBefore));
-
-    // Extract media queries to saves it to separated files.
-    if (this._settings.settings.extractMQ) {
-      let mainFilename = "";
-
-      let streamExtractMQ: NodeJS.ReadWriteStream = stream
+      const criticalStream: NodeJS.ReadableStream = mainStream
+        .pipe(clone())
+        .pipe(gulpPostCSS([criticalExtract(), discardEmpty()]))
         .pipe(
-          rename((pPath: rename.ParsedPath): void => {
-            mainFilename = pPath.basename as string;
-          })
-        )
-        .pipe(
-          Revision.additionalData((file: unknown, additionalData: DefaultObject): void => {
-            additionalData.media = uniq([
-              ...((additionalData.media as string[]) || []),
-              ...MediaQueries.extractMediaQueries(file as File),
-            ]);
-          })
-        )
-        .pipe(extractMediaQueries())
-        .pipe(
-          rename((pPath: rename.ParsedPath): void => {
-            if (pPath.basename !== mainFilename) {
-              pPath.basename = `${mainFilename}.${pPath.basename}`;
-            }
+          rename({
+            suffix: ".critical",
           })
         );
 
-      // Remove critical rules from original file.
-      if (this._criticalActive) {
-        streamExtractMQ = streamExtractMQ.pipe(gulpPostCSS([removeCriticalRules()]));
-      }
-
-      streams.push(streamExtractMQ);
+      // Add critical stream to stack.
+      streams.push(criticalStream);
     }
 
-    // Extract critical rules to saves it to separated files.
-    if (this._criticalActive) {
-      let streamCriticalCSS: NodeJS.ReadableStream = stream
-        .pipe(criticalCSS(this._settings.settings.critical))
-        .pipe(filter(["**/*.critical.css"]));
+    // Remove critical rules.
+    mainStream = mainStream.pipe(gulpPostCSS([criticalClean({ keepRules: !this._criticalActive })]));
 
-      // Remove critical rules from original file.
-      if (!this._settings.settings.extractMQ) {
-        streamCriticalCSS = mergeStream(streamCriticalCSS, stream.pipe(gulpPostCSS([removeCriticalRules()])));
-      }
+    // Extract media queries.
+    if (this._settings.settings.extractMQ) {
+      const mediaQueriesStream: NodeJS.ReadableStream = mainStream.pipe(clone()).pipe(extractMediaQueries());
 
-      streams.push(streamCriticalCSS);
+      // Add media queries stream to stack.
+      streams.push(mediaQueriesStream);
+
+      // Remove media queries.
+      mainStream = mainStream.pipe(gulpPostCSS([mediaQueriesClean()]));
     }
 
-    if (streams.length === 0) {
-      streams.push(stream);
+    streams.unshift(mainStream);
+
+    // Merge all streams and clean them.
+    stream = mergeStream(streams).pipe(gulpPostCSS([discardEmpty(), perfectionist({ indentSize: 2 })]));
+
+    // Generate minified file.
+    const streamMin: NodeJS.ReadableStream = stream
+      .pipe(clone())
+      .pipe(gulpPostCSS([CSSNano(this._settings.settings.cssnano), CSSMQPacker(this._settings.settings.mqpacker)]))
+      .pipe(rename({ suffix: this._minifySuffix }));
+
+    let mergedStream: NodeJS.ReadableStream = mergeStream(stream, streamMin);
+
+    if (this._settings.sourcemaps) {
+      mergedStream = mergedStream.pipe(sourcemaps.write());
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloneSink: any = sink();
-
-    return mergeStream(streams)
-      .pipe(gulpPostCSS(postCSSPluginsIntermediate))
-      .pipe(cloneSink)
-      .pipe(gulpPostCSS(postCSSPluginsAfter))
-      .pipe(rename({ suffix: this._minifySuffix }))
-      .pipe(cloneSink.tap());
+    return mergedStream;
   }
 
   /**
