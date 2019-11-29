@@ -186,17 +186,6 @@ export default class Sass extends TaskExtended {
     } else {
       this._settings.settings.purgeCSS = purgeCSSDefaultSettings;
     }
-
-    // this._manifestCallback = (data, additionalInformation): {} => {
-    //   const media: string = MediaQueries.mediaQuery(
-    //     data.origRelFile.replace(this._minifySuffix, ""),
-    //     (additionalInformation.media as string[]) || []
-    //   );
-    //
-    //   return {
-    //     media: media === "" ? "all" : media,
-    //   };
-    // };
   }
 
   /**

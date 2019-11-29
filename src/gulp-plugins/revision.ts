@@ -23,10 +23,11 @@ export interface DefaultObject {
 }
 
 interface HashData {
-  contents: string | Buffer;
+  taskName: string;
   origRelFile: string;
   revRelFile: string;
-  taskName: string;
+  contents: string | Buffer;
+  data?: DefaultObject;
 }
 
 interface RevisionManifest {
@@ -47,13 +48,9 @@ interface DefaultOption {
 }
 
 interface Options extends DefaultOption {
-  callback?: SimpleRevisionCallback;
   cwd: string;
   taskName: string;
 }
-
-export type SimpleRevisionCallback = (data: HashData, additionalInformation: DefaultObject) => DefaultObject;
-export type RevisionCallback = (file: unknown, additionalData: DefaultObject) => void;
 
 /**
  * Collect hashes from build files.
@@ -160,15 +157,13 @@ export default class Revision {
           .replace(/\\/g, "/");
 
         // Insert file and calculated hashes into the manifest.
-        Revision._pushHash(
-          {
-            contents: file.contents ? file.contents.toString() : "",
-            origRelFile,
-            revRelFile,
-            taskName: options.taskName,
-          },
-          options.callback
-        );
+        Revision._pushHash({
+          taskName: options.taskName,
+          origRelFile,
+          revRelFile,
+          contents: file.contents ? file.contents.toString() : "",
+          data: file.revisionData || {},
+        });
 
         cb();
       },
@@ -219,19 +214,6 @@ export default class Revision {
   }
 
   /**
-   * Collect data relative to files in stream.
-   * @param {RevisionCallback} callback
-   * @return {Transform}
-   */
-  public static additionalData(callback: RevisionCallback): Transform {
-    return through.obj((file: unknown, encoding: string, cb: TransformCallback): void => {
-      callback(file, Revision._additionalData);
-
-      cb(null, file);
-    });
-  }
-
-  /**
    * Push arbitrary file in manifest.
    *
    * @param {string} fileName
@@ -251,10 +233,10 @@ export default class Revision {
       }
 
       Revision._pushHash({
-        contents: data,
+        taskName: options.taskName,
         origRelFile,
         revRelFile,
-        taskName: options.taskName,
+        contents: data,
       });
 
       fs.writeFile(
@@ -264,13 +246,6 @@ export default class Revision {
       );
     });
   }
-
-  /**
-   * Collect data to add to manifest.
-   * @type {DefaultObject}
-   * @private
-   */
-  private static _additionalData: DefaultObject = {};
 
   /**
    * Collection of hashes.
@@ -312,13 +287,11 @@ export default class Revision {
 
   /**
    * Push a new file in manifest and calculate the hash of this file.
-   * Optionally, add data relative to this file via callback.
    *
    * @param {HashData} data
-   * @param {SimpleRevisionCallback} callback
    * @private
    */
-  private static _pushHash(data: HashData, callback?: SimpleRevisionCallback): void {
+  private static _pushHash(data: HashData): void {
     const { type, name } = explodeTaskName(data.taskName);
     let newData = {
       [type]: {
@@ -333,20 +306,16 @@ export default class Revision {
       },
     };
 
-    if (callback) {
-      const additionalData = callback(data, this._additionalData);
-
-      if (!isEmpty(additionalData)) {
-        newData = merge(newData, {
-          [type]: {
-            [name]: {
-              [data.origRelFile]: {
-                data: additionalData,
-              },
+    if (!isEmpty(data.data)) {
+      newData = merge(newData, {
+        [type]: {
+          [name]: {
+            [data.origRelFile]: {
+              data: data.data,
             },
           },
-        });
-      }
+        },
+      });
     }
 
     Revision._manifest = Revision._sortObjectByKeys(merge(Revision._manifest, newData)) as RevisionManifest;

@@ -6,7 +6,7 @@ import process from "process";
 import Undertaker from "undertaker";
 import { DestOptions, SrcOptions } from "vinyl-fs";
 
-import Revision, { SimpleRevisionCallback } from "../gulp-plugins/revision";
+import Revision from "../gulp-plugins/revision";
 import Size from "../gulp-plugins/size";
 import Config from "../libs/config";
 import Browsersync from "./browsersync";
@@ -21,13 +21,6 @@ export interface Options extends TaskOptions {
  */
 export default abstract class TaskExtended extends Task {
   public static readonly runInParallel: boolean = true;
-
-  /**
-   * Callback to add data to manifest file.
-   * @type {SimpleRevisionCallback|undefined}
-   * @protected
-   */
-  protected _manifestCallback: SimpleRevisionCallback | undefined;
 
   /**
    * List of files to watch in addition to the working files.
@@ -285,10 +278,9 @@ export default abstract class TaskExtended extends Task {
         stream = stream
           .pipe(
             Revision.manifest({
+              taskName,
               cwd: this._settings.cwd,
               dst: this._settings.revision,
-              taskName,
-              callback: this._manifestCallback,
             })
           )
           .pipe(dest(".", { cwd: dstOptions.cwd }));

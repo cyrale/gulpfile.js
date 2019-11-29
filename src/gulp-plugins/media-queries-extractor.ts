@@ -1,5 +1,6 @@
 import cleanUpString from "clean-up-string";
 import CSSMQPacker from "css-mqpacker";
+import merge from "lodash/merge";
 import path from "path";
 import perfectionist from "perfectionist";
 import PluginError from "plugin-error";
@@ -72,6 +73,9 @@ const splitMediaQueries = (file: BufferFile, stream: Transform): void => {
         if (mediaFile.sourceMap) {
           mediaFile.sourceMap.file = mediaFile.relative;
         }
+
+        // Save query in file for revision.
+        mediaFile.revisionData = merge(mediaFile.revisionData || {}, { media: query });
 
         stream.push(mediaFile);
       });
