@@ -233,20 +233,16 @@ export default abstract class TaskExtended extends Task {
 
     const taskName: string = this._taskName("build");
 
-    const srcOptions: SrcOptions = {
-      cwd: this._settings.cwd,
-      sourcemaps: false, //this._gulpSourcemaps && this._settings.sourcemaps,
-    };
-
-    const dstOptions: DestOptions = srcOptions as DestOptions;
-    // TODO: check external sourcemaps
-
     if (this._hookOverrideBuild) {
       return this._hookOverrideBuild(done);
     }
 
     // Start new stream with the files of the task.
-    let stream: NodeJS.ReadableStream = this._hookBuildSrc ? this._hookBuildSrc() : src(this._settings.src, srcOptions);
+    let stream: NodeJS.ReadableStream = this._hookBuildSrc
+      ? this._hookBuildSrc()
+      : src(this._settings.src, {
+          cwd: this._settings.cwd,
+        });
 
     // Add plumber to avoid exit on error.
     stream = stream.pipe(plumber((error: unknown): void => this._displayOrExitOnError(taskName, error, done)));
@@ -268,7 +264,7 @@ export default abstract class TaskExtended extends Task {
         stream = stream.pipe(size.log());
       }
 
-      stream = stream.pipe(plumber.stop()).pipe(dest(this._settings.dst, dstOptions));
+      stream = stream.pipe(plumber.stop()).pipe(dest(this._settings.dst, { cwd: this._settings.cwd }));
 
       if (this._browserSync) {
         stream = stream.pipe(this._browserSync.sync(taskName, this._browserSyncSettings));
@@ -283,7 +279,7 @@ export default abstract class TaskExtended extends Task {
               dst: this._settings.revision,
             })
           )
-          .pipe(dest(".", { cwd: dstOptions.cwd }));
+          .pipe(dest(".", { cwd: this._settings.cwd }));
       }
 
       if (this._bindEventsToBuilder) {
