@@ -1,0 +1,23 @@
+@import 'colors';
+
+a {
+  critical: this;
+  color: $black;
+  font-size: 2rem;
+
+  strong {
+    color: $green;
+  }
+
+  &:hover {
+    color: $white;
+  }
+
+  @media screen and (max-width: 640px) {
+    font-size: 3rem;
+  }
+
+  @media screen and (max-width: 768px) {
+    font-size: 2rem;
+  }
+}

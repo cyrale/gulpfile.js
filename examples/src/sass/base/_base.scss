@@ -1,0 +1,41 @@
+@import 'colors';
+
+@critical {
+  html {
+    font-size: 62.5%;
+    font-weight: normal;
+
+    i {
+      font-family: sans-serif;
+    }
+  }
+
+  body {
+    background: $white;
+    margin: 0;
+    padding: 0;
+
+    @media screen and (min-width: 768px) {
+      background: $green;
+    }
+  }
+}
+
+p {
+  font-size: 1.6rem;
+}
+
+.wrapper {
+  margin-left: 2rem;
+  margin-right: 2rem;
+
+  @media screen and (min-width: 768px) {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 768px;
+  }
+}
+
+.center {
+  text-align: center;
+}

@@ -1,6 +1,6 @@
 /* global jQuery */
 
-(function($) {
+($ => {
   "use strict";
   /**
    * All of the code for your admin-facing JavaScript source
@@ -30,13 +30,11 @@
    * practising this, we should strive to set a better example in our own work.
    */
 
-  $(function() {
-    let test = 0;
+  const sayHello = name => {
+    return `Hello from ${name}`;
+  };
 
-    test = test + 10000;
-
-    window.console.log(test);
+  $(() => {
+    window.console.log(sayHello("Javascript"));
   });
 })(jQuery);
-
-// alert("test");

@@ -1,81 +1,30 @@
-// Base
-//@import "helpers/wordpress";
-//@import "helpers/breakpoint";
-
 // Fonts
 //@import 'fonts/icon-custom';
-
-// Colors
-@import "base/colors";
 
 // Sprites
 //@import 'helpers/icon-icon';
 //@include retina-sprites($icon-icon-retina);
 
+// Colors
+@import 'base/colors';
+
+// Box sizing reset
 html {
-  critical: this;
-  font-size: 62.5%;
+  box-sizing: border-box;
+}
 
-  a {
-    color: $black;
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
 
-    strong {
-      color: $white;
-    }
+@media print {
+  html {
+    background-color: $white;
   }
 }
 
-html {
-  font-weight: normal;
-}
+@import 'base/base';
+@import 'base/link';
 
-body {
-  critical: this;
-  background: $white;
-
-  @media screen and (min-width: 768px) {
-    background: $white;
-  }
-
-  @for $i from 1 through 4 {
-    .test-#{$i} {
-      width: 60px + $i
-    }
-  }
-}
-
-a {
-  color: $black;
-  font-size: 2rem;
-  transform: rotate(46deg);
-  background: resolve("../images/image01.jpg");
-  background-size: size("../images/image01.jpg");
-
-  &:hover {
-    color: $white;
-  }
-
-  @media screen and (max-width: 640px) {
-    font-size: 3rem;
-  }
-
-  @media screen and (max-width: 768px) {
-    font-size: 2rem;
-  }
-}
-
-// sass-lint:disable force-element-nesting
-:fullscreen a {
-  display: flex;
-  width: width("../images/image01.jpg");
-}
-
-html {
-  font-size: 16px;
-  font-style: italic;
-}
-
-.grid {
-  display: grid;
-  user-select: none;
-}

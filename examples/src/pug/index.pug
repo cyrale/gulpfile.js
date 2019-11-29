@@ -1,10 +1,20 @@
 doctype html
 html
   head
-    title gulpfile.js test
+    title gulpfile.js
+    //link(rel="stylesheet" href='/css/app.critical.css')
     link(rel="stylesheet" href='/css/app.css')
-    script(src='/js/all.js')
+    //link(rel="stylesheet" href='/css/app.media.css')
+    link(rel="stylesheet" href='/css/app.screen-and-min-width-768px.css' media='screen and (min-width: 768px)')
+    link(rel="stylesheet" href='/css/app.screen-and-max-width-640px.css' media='screen and (max-width: 640px)')
+    link(rel="stylesheet" href='/css/app.screen-and-max-width-768px.css' media='screen and (max-width: 768px)')
+    script(src='https://code.jquery.com/jquery-3.4.1.min.js')
+    script(src='/js/all.min.js')
   body
-    p #{name}'s Pug source code!
-    div(data-test='test' class='test-class') public
-    div.grid yolo
+    div.wrapper
+      p #{lorem1}
+      p #{lorem2}
+      p #{lorem3}
+      p #{lorem1}
+      p.center
+        a(href="https://github.com") GitHub
