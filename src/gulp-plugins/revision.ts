@@ -224,8 +224,17 @@ export default class Revision {
       return;
     }
 
-    const origRelFile = path.basename(fileName);
-    const revRelFile = path.join(options.dst, origRelFile);
+    // Get relative path and name of the file.
+    const revPath: string = fileName.replace(/\\/g, "/");
+    const revBase: string = path.dirname(fileName).replace(/\\/g, "/");
+
+    // Get relative path between file and revision file.
+    const origRelFile: string = path
+      .join(path.relative(options.cwd, revBase), path.basename(revPath))
+      .replace(/\\/g, "/");
+    const revRelFile: string = path
+      .relative(path.dirname(path.join(options.cwd, options.dst)), revPath)
+      .replace(/\\/g, "/");
 
     fs.readFile(fileName, (error: NodeJS.ErrnoException | null, data: Buffer): void => {
       if (error) {

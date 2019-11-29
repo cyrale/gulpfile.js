@@ -177,9 +177,9 @@ export default class Favicon extends TaskExtended {
 
                 // Update Revision file.
                 Revision.pushAndWrite(markupFile, {
+                  taskName,
                   cwd: this._settings.cwd,
                   dst: this._settings.revision,
-                  taskName,
                 });
               }
             );
