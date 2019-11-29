@@ -15,20 +15,20 @@ browsersync:
       baseDir: "dist/"
   watch:
     - "src/**/*.html"
-# ------------------------------------------
-# Favicon (https://realfavicongenerator.net/)
-# ------------------------------------------
-favicon:
-  tasks:
-    main:
-      src: "src/favicon/git.png"
-      dst: "dist/favicon"
-      settings:
-        name: "Test"
-        backgroundColor: "#ffffff"
-        themeColor: "#ffffff"
-        margin: "20%"
-        iconsPath: "/path/to/icon"
+## ------------------------------------------
+## Favicon (https://realfavicongenerator.net/)
+## ------------------------------------------
+#favicon:
+#  tasks:
+#    main:
+#      src: "src/favicon/git.png"
+#      dst: "dist/favicon"
+#      settings:
+#        name: "Test"
+#        backgroundColor: "#ffffff"
+#        themeColor: "#ffffff"
+#        margin: "20%"
+#        iconsPath: "/path/to/icon"
 # ------------------------------------------
 # Pug (https://pugjs.org)
 # ------------------------------------------
@@ -38,17 +38,6 @@ pug:
       src:
         - "src/pug/*.pug"
       dst: "dist"
-    test1:
-      src:
-        - "src/pug/test1/**/*.pug"
-      dst: "dist/pug/test1"
-    test2:
-      src:
-        - "src/pug/test2/**/*.pug"
-      dst: "dist/pug/test2"
-      settings:
-        data:
-          - "src/pug/test2/pugdata-task.yml"
   settings:
     data: "src/pug/pugdata.yml"
 # ------------------------------------------
@@ -68,7 +57,7 @@ sass:
       sort: "mobile"
     inlineSVG:
       path: "assets/"
-    critical: true
+    critical: false
     extractMQ: true
     purgeCSS: false
 # ------------------------------------------
@@ -82,106 +71,106 @@ javascript:
         - "src/js/concat/*.js"
       dst: "dist/js"
       filename: "all.js"
-# ------------------------------------------
-# Browserify
-# ------------------------------------------
-browserify:
-  tasks:
-    public:
-      src: "src/js/browserify/app.js"
-      dst: "dist/js"
-      filename: "browserify.js"
-      settings:
-        eslint: ".eslintrc"
-# ------------------------------------------
-# Webpack
-# ------------------------------------------
-webpack:
-  tasks:
-    public:
-      src: "src/js/webpack/app.js"
-      watch:
-        - "src/js/webpack/**/*.js"
-      dst: "dist/js"
-      filename: "webpack.js"
-      settings:
-        babel:
-          sourceType: "module"
-# ------------------------------------------
-# TypeScript
-# ------------------------------------------
-typescript:
-  tasks:
-    public:
-      src: "src/typescript/main.ts"
-      watch:
-        - "src/typescript/**/*.ts"
-      dst: "dist/js"
-      filename: "typescript.js"
-      settings:
-        eslint:
-          configFile: ".eslintrc-ts"
-          useEslintrc: false
-          ignorePath: ".eslintignore-ts"
-# ------------------------------------------
-# Images
-# ------------------------------------------
-images:
-  tasks:
-    public:
-      src:
-        - "src/images/**/*.png"
-        - "src/images/**/*.jpg"
-        - "src/images/**/*.jpeg"
-        - "src/images/**/*.gif"
-        - "src/images/**/*.svg"
-      dst: "dist/images"
-  settings:
-    webp: true
-# ------------------------------------------
-# Sprites (https://github.com/Ensighten/spritesmith)
-# ------------------------------------------
-sprites:
-  tasks:
-    icon:
-      src-1x:
-        - "src/sprites/*.png"
-        - "src/sprites/*.jpg"
-      src-2x:
-        - "src/sprites/*@2x.png"
-        - "src/sprites/*@2x.jpg"
-      dst: "dist/images"
-      settings:
-        sass:
-          dst: "src/sass/helpers"
-          rel: "../images"
-        prefix: "icon"
-# ------------------------------------------
-# Fonts (https://www.npmjs.com/package/gulp-iconfont)
-# ------------------------------------------
-fonts:
-  tasks:
-    custom:
-      src:
-        - "src/svg/*.svg"
-      dst: "dist/fonts"
-      settings:
-        sass:
-          dst: "src/sass/helpers"
-          rel: "../fonts"
-        template: "fontawesome"
-        prefix: "font"
-  settings:
-    template: "foundation"
-# ------------------------------------------
-# SVG Store
-# ------------------------------------------
-svgstore:
-  tasks:
-    icons:
-      src:
-        - "src/svg/*.svg"
-      dst: "dist/images"
-      filename: "icons.svg"
-      settings:
-        prefix: "icon"
+## ------------------------------------------
+## Browserify
+## ------------------------------------------
+#browserify:
+#  tasks:
+#    public:
+#      src: "src/js/browserify/app.js"
+#      dst: "dist/js"
+#      filename: "browserify.js"
+#      settings:
+#        eslint: ".eslintrc"
+## ------------------------------------------
+## Webpack
+## ------------------------------------------
+#webpack:
+#  tasks:
+#    public:
+#      src: "src/js/webpack/app.js"
+#      watch:
+#        - "src/js/webpack/**/*.js"
+#      dst: "dist/js"
+#      filename: "webpack.js"
+#      settings:
+#        babel:
+#          sourceType: "module"
+## ------------------------------------------
+## TypeScript
+## ------------------------------------------
+#typescript:
+#  tasks:
+#    public:
+#      src: "src/typescript/main.ts"
+#      watch:
+#        - "src/typescript/**/*.ts"
+#      dst: "dist/js"
+#      filename: "typescript.js"
+#      settings:
+#        eslint:
+#          configFile: ".eslintrc-ts"
+#          useEslintrc: false
+#          ignorePath: ".eslintignore-ts"
+## ------------------------------------------
+## Images
+## ------------------------------------------
+#images:
+#  tasks:
+#    public:
+#      src:
+#        - "src/images/**/*.png"
+#        - "src/images/**/*.jpg"
+#        - "src/images/**/*.jpeg"
+#        - "src/images/**/*.gif"
+#        - "src/images/**/*.svg"
+#      dst: "dist/images"
+#  settings:
+#    webp: true
+## ------------------------------------------
+## Sprites (https://github.com/Ensighten/spritesmith)
+## ------------------------------------------
+#sprites:
+#  tasks:
+#    icon:
+#      src-1x:
+#        - "src/sprites/*.png"
+#        - "src/sprites/*.jpg"
+#      src-2x:
+#        - "src/sprites/*@2x.png"
+#        - "src/sprites/*@2x.jpg"
+#      dst: "dist/images"
+#      settings:
+#        sass:
+#          dst: "src/sass/helpers"
+#          rel: "../images"
+#        prefix: "icon"
+## ------------------------------------------
+## Fonts (https://www.npmjs.com/package/gulp-iconfont)
+## ------------------------------------------
+#fonts:
+#  tasks:
+#    custom:
+#      src:
+#        - "src/svg/*.svg"
+#      dst: "dist/fonts"
+#      settings:
+#        sass:
+#          dst: "src/sass/helpers"
+#          rel: "../fonts"
+#        template: "fontawesome"
+#        prefix: "font"
+#  settings:
+#    template: "foundation"
+## ------------------------------------------
+## SVG Store
+## ------------------------------------------
+#svgstore:
+#  tasks:
+#    icons:
+#      src:
+#        - "src/svg/*.svg"
+#      dst: "dist/images"
+#      filename: "icons.svg"
+#      settings:
+#        prefix: "icon"

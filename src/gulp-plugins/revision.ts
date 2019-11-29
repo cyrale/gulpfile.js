@@ -42,11 +42,11 @@ interface RevisionManifest {
   };
 }
 
-interface RevisionDefaultOption {
+interface DefaultOption {
   dst: string;
 }
 
-export interface RevisionOptions extends RevisionDefaultOption {
+interface Options extends DefaultOption {
   callback?: SimpleRevisionCallback;
   cwd: string;
   taskName: string;
@@ -115,11 +115,11 @@ export default class Revision {
   /**
    * Collect hashes from build files.
    *
-   * @param {RevisionOptions} options
+   * @param {Options} options
    * @return {Transform}
    */
-  public static manifest(options: RevisionOptions): Transform {
-    const defaultOptions: RevisionDefaultOption = {
+  public static manifest(options: Options): Transform {
+    const defaultOptions: DefaultOption = {
       dst: "rev-manifest.json",
     };
 
@@ -151,20 +151,13 @@ export default class Revision {
         const revBase: string = path.resolve(file.cwd, file.base).replace(/\\/g, "/");
         const revPath: string = path.resolve(file.cwd, file.path).replace(/\\/g, "/");
 
-        let revRelFile = "";
-
-        if (!revPath.startsWith(revBase)) {
-          revRelFile = revPath;
-        } else {
-          revRelFile = revPath.slice(revBase.length);
-
-          if (revRelFile[0] === "/") {
-            revRelFile = revRelFile.slice(1);
-          }
-        }
-
-        const origRelFile = path.join(path.dirname(revRelFile), path.basename(file.path)).replace(/\\/g, "/");
-        revRelFile = path.join(options.dst, revRelFile);
+        // Get relative path between file and revision file.
+        const origRelFile: string = path
+          .join(path.relative(file.cwd, revBase), path.basename(revPath))
+          .replace(/\\/g, "/");
+        const revRelFile: string = path
+          .relative(path.dirname(path.join(options.cwd, options.dst)), revPath)
+          .replace(/\\/g, "/");
 
         // Insert file and calculated hashes into the manifest.
         Revision._pushHash(
@@ -242,9 +235,9 @@ export default class Revision {
    * Push arbitrary file in manifest.
    *
    * @param {string} fileName
-   * @param {RevisionOptions} options
+   * @param {Options} options
    */
-  public static pushAndWrite(fileName: string, options: RevisionOptions): void {
+  public static pushAndWrite(fileName: string, options: Options): void {
     if (!Revision.isActive() || !path.isAbsolute(fileName)) {
       return;
     }
