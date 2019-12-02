@@ -12,7 +12,7 @@ The project is inspired by [**Blendid** _(formerly known as Gulp Starter)_](http
 
 ## Changes
 
-See changes in [CHANGELOG](../blob/master/CHANGELOG.md)
+See changes in [CHANGELOG](./CHANGELOG.md)
 
 ## Execution graph
 
