@@ -16,6 +16,7 @@ import path from "path";
 import Config from "../libs/config";
 import { Options as TaskOptions, TaskCallback } from "./task";
 import TaskExtended from "./task-extended";
+import sourcemapExtractor from "../gulp-plugins/sourcemap-extractor";
 
 type ESLintFile = unknown[];
 
@@ -122,7 +123,7 @@ export default class Javascript extends TaskExtended {
     }
 
     stream = stream.pipe(concat(this._settings.filename));
-    stream = Javascript._minifyFiles(stream);
+    stream = this._minifyFiles(stream);
 
     if (this._settings.sourcemaps) {
       stream = stream.pipe(sourcemaps.write(this._settings.sourcemapFiles));
@@ -236,7 +237,21 @@ export default class Javascript extends TaskExtended {
     }
   }
 
-  protected static _minifyFiles(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
+  protected _sourceMapsAndMinification(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
+    if (this._settings.sourcemaps) {
+      stream = stream.pipe(sourcemapExtractor()).pipe(sourcemaps.init());
+    }
+
+    stream = this._minifyFiles(stream);
+
+    if (this._settings.sourcemaps) {
+      stream = stream.pipe(sourcemaps.write(this._settings.sourcemapFiles));
+    }
+
+    return stream;
+  }
+
+  protected _minifyFiles(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     const streamMin: NodeJS.ReadableStream = stream
       .pipe(clone())
       .pipe(terser({ output: { comments: false } }))

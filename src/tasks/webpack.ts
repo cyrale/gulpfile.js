@@ -98,15 +98,7 @@ export default class Webpack extends Javascript {
         })
       );
 
-    if (this._settings.sourcemaps) {
-      stream = stream.pipe(sourcemapExtractor()).pipe(sourcemaps.init());
-    }
-
-    stream = Webpack._minifyFiles(stream);
-
-    if (this._settings.sourcemaps) {
-      stream = stream.pipe(sourcemaps.write(this._settings.sourcemapFiles));
-    }
+    stream = this._sourceMapsAndMinification(stream);
 
     return stream;
   }

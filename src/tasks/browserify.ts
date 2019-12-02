@@ -114,16 +114,7 @@ export default class Browserify extends Javascript {
    */
   protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     stream = stream.pipe(source(this._settings.filename)).pipe(buffer());
-
-    if (this._settings.sourcemaps) {
-      stream = stream.pipe(sourcemapExtractor()).pipe(sourcemaps.init());
-    }
-
-    stream = Browserify._minifyFiles(stream);
-
-    if (this._settings.sourcemaps) {
-      stream = stream.pipe(sourcemaps.write(this._settings.sourcemapFiles));
-    }
+    stream = this._sourceMapsAndMinification(stream);
 
     return stream;
   }
