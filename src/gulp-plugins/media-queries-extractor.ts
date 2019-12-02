@@ -1,4 +1,4 @@
-import cleanUpString from "clean-up-string";
+import { paramCase } from "change-case";
 import CSSMQPacker from "css-mqpacker";
 import merge from "lodash/merge";
 import path from "path";
@@ -48,7 +48,7 @@ const splitMediaQueries = (file: BufferFile, stream: Transform): void => {
       })
       .then((result: Result): void => {
         const mediaFile: BufferFile = file.clone();
-        const mediaBasename: string = basename + "." + cleanUpString(query) + extname;
+        const mediaBasename: string = basename + "." + paramCase(query) + extname;
         const mediaPath: string = path.join(path.dirname(mediaFile.path), mediaBasename);
 
         mediaFile.contents = Buffer.from(result.css);
