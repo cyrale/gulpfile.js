@@ -57,7 +57,7 @@ sass:
       sort: "mobile"
     inlineSVG:
       path: "assets/"
-    critical: false
+    critical: true
     extractMQ: true
     purgeCSS: false
 # ------------------------------------------

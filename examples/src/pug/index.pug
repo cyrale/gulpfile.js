@@ -2,14 +2,16 @@ doctype html
 html
   head
     title gulpfile.js
-    //link(rel="stylesheet" href='/css/app.critical.css')
-    link(rel="stylesheet" href='/css/app.css')
-    //link(rel="stylesheet" href='/css/app.media.css')
-    link(rel="stylesheet" href='/css/app.screen-and-min-width-768px.css' media='screen and (min-width: 768px)')
-    link(rel="stylesheet" href='/css/app.screen-and-max-width-640px.css' media='screen and (max-width: 640px)')
-    link(rel="stylesheet" href='/css/app.screen-and-max-width-768px.css' media='screen and (max-width: 768px)')
-    script(src='https://code.jquery.com/jquery-3.4.1.min.js')
+    link(rel="stylesheet" href='/css/app.critical.min.css')
+    link(rel="stylesheet" href='/css/app.min.css')
+    link(rel="stylesheet" href='/css/app.screen-and-min-width-768px.min.css' media='screen and (min-width: 768px)')
+    link(rel="stylesheet" href='/css/app.screen-and-max-width-640px.min.css' media='screen and (max-width: 640px)')
+    link(rel="stylesheet" href='/css/app.screen-and-max-width-768px.min.css' media='screen and (max-width: 768px)')
+    //script(src='https://code.jquery.com/jquery-3.4.1.min.js')
     script(src='/js/all.min.js')
+    script(src='/js/browserify.min.js')
+    script(src='/js/typescript.min.js')
+    script(src='/js/webpack.min.js')
   body
     div.wrapper
       p #{lorem1}

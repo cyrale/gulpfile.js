@@ -3,11 +3,8 @@ import browserify, { BrowserifyObject, Options } from "browserify";
 import chalk from "chalk";
 import log from "fancy-log";
 import { src } from "gulp";
-import { sink } from "gulp-clone";
 import esLint from "gulp-eslint";
-import rename from "gulp-rename";
 import sourcemaps from "gulp-sourcemaps";
-import terser from "gulp-terser";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
 import prettyHrTime from "pretty-hrtime";
@@ -16,6 +13,7 @@ import buffer from "vinyl-buffer";
 import source from "vinyl-source-stream";
 import watchify from "watchify";
 
+import sourcemapExtractor from "../gulp-plugins/sourcemap-extractor";
 import Config from "../libs/config";
 import Javascript, { ESLintErrors } from "./javascript";
 import { TaskCallback, Options as TaskOptions } from "./task";
@@ -115,25 +113,19 @@ export default class Browserify extends Javascript {
    * @private
    */
   protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloneSink: any = sink();
-
-    stream = stream
-      .pipe(source(this._settings.filename))
-      .pipe(buffer())
-      .pipe(cloneSink);
+    stream = stream.pipe(source(this._settings.filename)).pipe(buffer());
 
     if (this._settings.sourcemaps) {
-      stream = stream.pipe(sourcemaps.init({ loadMaps: true }));
+      stream = stream.pipe(sourcemapExtractor()).pipe(sourcemaps.init());
     }
 
-    stream = stream.pipe(terser({ output: { comments: false } })).pipe(rename({ suffix: this._minifySuffix }));
+    stream = Browserify._minifyFiles(stream);
 
     if (this._settings.sourcemaps) {
-      stream = stream.pipe(sourcemaps.write());
+      stream = stream.pipe(sourcemaps.write(this._settings.sourcemapFiles));
     }
 
-    return stream.pipe(cloneSink.tap());
+    return stream;
   }
 
   protected _hookOverrideLint(done?: TaskCallback): void {

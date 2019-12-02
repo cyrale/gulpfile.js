@@ -1,7 +1,7 @@
 import { CLIEngine, Linter } from "eslint";
 import log from "fancy-log";
 import babel from "gulp-babel";
-import clone, { sink } from "gulp-clone";
+import clone from "gulp-clone";
 import concat from "gulp-concat";
 import esLint from "gulp-eslint";
 import order from "gulp-order";
@@ -122,19 +122,13 @@ export default class Javascript extends TaskExtended {
     }
 
     stream = stream.pipe(concat(this._settings.filename));
-
-    const streamMin: NodeJS.ReadableStream = stream
-      .pipe(clone())
-      .pipe(terser({ output: { comments: false } }))
-      .pipe(rename({ suffix: this._minifySuffix }));
-
-    let mergedStream: NodeJS.ReadableStream = mergeStream(stream, streamMin);
+    stream = Javascript._minifyFiles(stream);
 
     if (this._settings.sourcemaps) {
-      mergedStream = mergedStream.pipe(sourcemaps.write());
+      stream = stream.pipe(sourcemaps.write(this._settings.sourcemapFiles));
     }
 
-    return mergedStream;
+    return stream;
   }
 
   /**
@@ -239,8 +233,15 @@ export default class Javascript extends TaskExtended {
       ];
 
       log.error(formatter(formattedMessage));
-    } else {
-      log.error(formattedMessage);
     }
+  }
+
+  protected static _minifyFiles(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
+    const streamMin: NodeJS.ReadableStream = stream
+      .pipe(clone())
+      .pipe(terser({ output: { comments: false } }))
+      .pipe(rename({ suffix: this._minifySuffix }));
+
+    return mergeStream(stream, streamMin);
   }
 }

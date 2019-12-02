@@ -189,21 +189,26 @@ export default class Config {
   private _loadOptions(): void {
     // Merge default options with command line arguments
     this._options = minimist(process.argv.slice(2), {
-      boolean: ["favicon", "lint", "sourcemaps"],
+      boolean: ["favicon", "lint", "sourcemaps", "sourcemapFiles"],
       string: ["configfile", "cwd", "env", "revision"],
       default: {
-        configfile: process.env.CONFIG_FILE || "gulpconfig.yml",
+        configFile: process.env.CONFIG_FILE || "gulpconfig.yml",
         cwd: "",
         env: process.env.NODE_ENV || "production",
         favicon: true,
         lint: true,
         revision: false,
         sourcemaps: process.env.SOURCEMAPS || false,
+        sourcemapFiles: process.env.SOURCEMAPS || false,
+      },
+      alias: {
+        configFile: ["configfile", "config-file"],
+        sourcemapFiles: ["sourcemap-files"],
       },
     });
 
-    if (!path.isAbsolute(this._options.configfile)) {
-      this._options.configfile = path.resolve(process.env.PWD || "", this._options.configfile);
+    if (!path.isAbsolute(this._options.configFile)) {
+      this._options.configFile = path.resolve(process.env.PWD || "", this._options.configFile);
     }
 
     // Read configuration file.
@@ -212,13 +217,17 @@ export default class Config {
     // Normalize current working directory.
     if (!this._options.cwd) {
       if (!this._settings.cwd) {
-        this._options.cwd = path.dirname(this._options.configfile);
+        this._options.cwd = path.dirname(this._options.configFile);
       } else if (!path.isAbsolute(this._settings.cwd as string)) {
-        this._options.cwd = path.resolve(path.dirname(this._options.configfile), this._settings.cwd as string);
+        this._options.cwd = path.resolve(path.dirname(this._options.configFile), this._settings.cwd as string);
       }
 
       delete this._settings.cwd;
     }
+
+    // Normalize sourcemaps settings.
+    this._options.sourcemaps = this._options.sourcemaps || this._options.sourcemapFiles;
+    this._options.sourcemapFiles = this._options.sourcemapFiles ? "." : undefined;
 
     // Get revision settings.
     if (!this._options.revision && this._settings.revision) {
@@ -268,7 +277,7 @@ export default class Config {
 
           task.settings = merge(settings.settings || {}, task.settings || {});
 
-          for (const option of ["cwd", "revision", "sizes", "sourcemaps"]) {
+          for (const option of ["cwd", "revision", "sizes", "sourcemaps", "sourcemapFiles"]) {
             /* eslint-disable @typescript-eslint/no-explicit-any */
             if (typeof (task as any)[option] === "undefined") {
               (task as any)[option] = this._options[option];
@@ -295,7 +304,7 @@ export default class Config {
     if (isEmpty(this._settings)) {
       // Read configuration file.
       try {
-        this._settings = yaml.safeLoad(fs.readFileSync(this._options.configfile, "utf8"));
+        this._settings = yaml.safeLoad(fs.readFileSync(this._options.configFile, "utf8"));
       } catch (e) {
         log.error(e.stack || String(e));
       }

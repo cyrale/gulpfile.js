@@ -4,8 +4,8 @@ import CSSMQPacker from "css-mqpacker";
 import CSSNano from "cssnano";
 import log from "fancy-log";
 import Fiber from "fibers";
-import clone, { sink } from "gulp-clone";
-import gulpPostCSS from "gulp-postcss";
+import clone from "gulp-clone";
+import postCSS from "gulp-postcss";
 import rename from "gulp-rename";
 import sass from "gulp-sass";
 import gulpSassLint from "gulp-sass-lint";
@@ -220,13 +220,13 @@ export default class Sass extends TaskExtended {
     // Propagate critical rules to children properties.
     let mainStream: NodeJS.ReadableStream = stream
       .pipe(sass(this._settings.settings.sass || {}).on("error", sass.logError))
-      .pipe(gulpPostCSS(postCSSGlobal));
+      .pipe(postCSS(postCSSGlobal));
 
     // Extract critical rules.
     if (this._criticalActive) {
       const criticalStream: NodeJS.ReadableStream = mainStream
         .pipe(clone())
-        .pipe(gulpPostCSS([criticalExtract(), discardEmpty()]))
+        .pipe(postCSS([criticalExtract(), discardEmpty()]))
         .pipe(
           rename({
             suffix: ".critical",
@@ -238,7 +238,7 @@ export default class Sass extends TaskExtended {
     }
 
     // Remove critical rules.
-    mainStream = mainStream.pipe(gulpPostCSS([criticalClean({ keepRules: !this._criticalActive })]));
+    mainStream = mainStream.pipe(postCSS([criticalClean({ keepRules: !this._criticalActive })]));
 
     // Extract media queries.
     if (this._settings.settings.extractMQ) {
@@ -248,24 +248,24 @@ export default class Sass extends TaskExtended {
       streams.push(mediaQueriesStream);
 
       // Remove media queries.
-      mainStream = mainStream.pipe(gulpPostCSS([mediaQueriesClean()]));
+      mainStream = mainStream.pipe(postCSS([mediaQueriesClean()]));
     }
 
     streams.unshift(mainStream);
 
     // Merge all streams and clean them.
-    stream = mergeStream(streams).pipe(gulpPostCSS([discardEmpty(), perfectionist({ indentSize: 2 })]));
+    stream = mergeStream(streams).pipe(postCSS([discardEmpty(), perfectionist({ indentSize: 2 })]));
 
     // Generate minified file.
     const streamMin: NodeJS.ReadableStream = stream
       .pipe(clone())
-      .pipe(gulpPostCSS([CSSNano(this._settings.settings.cssnano), CSSMQPacker(this._settings.settings.mqpacker)]))
+      .pipe(postCSS([CSSNano(this._settings.settings.cssnano), CSSMQPacker(this._settings.settings.mqpacker)]))
       .pipe(rename({ suffix: this._minifySuffix }));
 
     let mergedStream: NodeJS.ReadableStream = mergeStream(stream, streamMin);
 
     if (this._settings.sourcemaps) {
-      mergedStream = mergedStream.pipe(sourcemaps.write());
+      mergedStream = mergedStream.pipe(sourcemaps.write(this._settings.sourcemapFiles));
     }
 
     return mergedStream;
