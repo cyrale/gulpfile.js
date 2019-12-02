@@ -77,6 +77,42 @@ export default class Images extends TaskExtended {
   }
 
   /**
+   * Bind events to file watcher.
+   *
+   * @param {fs.FSWatcher} watcher
+   * @protected
+   */
+  protected _bindEventsToWatcher(watcher: fs.FSWatcher): void {
+    // Watch if files were deleted to delete in destination directory.
+    watcher.on("unlink", (filename: string): void => {
+      const srcFilename: string = path.resolve(this._settings.cwd, filename);
+      const srcParts: string[] = srcFilename.split("/");
+
+      const dstFilename: string = path.resolve(this._settings.cwd, this._settings.dst);
+      const dstParts: string[] = dstFilename.split("/");
+
+      let newFilename = "/";
+      let index = 0;
+
+      while (srcParts[index] === dstParts[index] && (index < srcParts.length || index < dstParts.length)) {
+        newFilename = path.join(newFilename, srcParts[index]);
+        index++;
+      }
+
+      for (let i: number = index; i < dstParts.length; i++) {
+        newFilename = path.join(newFilename, dstParts[i]);
+      }
+
+      newFilename = path.join(newFilename, path.basename(filename));
+      this._deleteFile(newFilename);
+
+      if (this._settings.settings.webp && this._webPSupportedFile(newFilename)) {
+        this._deleteFile(newFilename + ".webp");
+      }
+    });
+  }
+
+  /**
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadableStream} stream
@@ -116,42 +152,6 @@ export default class Images extends TaskExtended {
     }
 
     return mergeStream(streams);
-  }
-
-  /**
-   * Bind events to file watcher.
-   *
-   * @param {fs.FSWatcher} watcher
-   * @protected
-   */
-  protected _bindEventsToWatcher(watcher: fs.FSWatcher): void {
-    // Watch if files were deleted to delete in destination directory.
-    watcher.on("unlink", (filename: string): void => {
-      const srcFilename: string = path.resolve(this._settings.cwd, filename);
-      const srcParts: string[] = srcFilename.split("/");
-
-      const dstFilename: string = path.resolve(this._settings.cwd, this._settings.dst);
-      const dstParts: string[] = dstFilename.split("/");
-
-      let newFilename = "/";
-      let index = 0;
-
-      while (srcParts[index] === dstParts[index] && (index < srcParts.length || index < dstParts.length)) {
-        newFilename = path.join(newFilename, srcParts[index]);
-        index++;
-      }
-
-      for (let i: number = index; i < dstParts.length; i++) {
-        newFilename = path.join(newFilename, dstParts[i]);
-      }
-
-      newFilename = path.join(newFilename, path.basename(filename));
-      this._deleteFile(newFilename);
-
-      if (this._settings.settings.webp && this._webPSupportedFile(newFilename)) {
-        this._deleteFile(newFilename + ".webp");
-      }
-    });
   }
 
   /**

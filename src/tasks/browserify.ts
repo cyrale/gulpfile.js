@@ -4,7 +4,6 @@ import chalk from "chalk";
 import log from "fancy-log";
 import { src } from "gulp";
 import esLint from "gulp-eslint";
-import sourcemaps from "gulp-sourcemaps";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
 import prettyHrTime from "pretty-hrtime";
@@ -13,7 +12,6 @@ import buffer from "vinyl-buffer";
 import source from "vinyl-source-stream";
 import watchify from "watchify";
 
-import sourcemapExtractor from "../gulp-plugins/sourcemap-extractor";
 import Config from "../libs/config";
 import Javascript, { ESLintErrors } from "./javascript";
 import { TaskCallback, Options as TaskOptions } from "./task";
@@ -36,11 +34,11 @@ export default class Browserify extends Javascript {
    */
   public static readonly taskOrder: number = 40;
 
-  protected _bundlerOnly: BrowserifyObject | undefined;
+  protected _bundleFiles: string[] = [];
 
   protected _bundler: BrowserifyObject | undefined;
 
-  protected _bundleFiles: string[] = [];
+  protected _bundlerOnly: BrowserifyObject | undefined;
 
   /**
    * Browserify constructor.
@@ -95,14 +93,36 @@ export default class Browserify extends Javascript {
     if (this._bundleFiles.indexOf(absolute) < 0) this._bundleFiles.push(absolute);
   }
 
-  protected _hookBuildSrc(): NodeJS.ReadableStream {
-    const self = this;
+  protected _esLint(files: string[], done?: TaskCallback): NodeJS.ReadableStream {
+    return src(files, { allowEmpty: true, cwd: this._settings.cwd })
+      .pipe(esLint(this._settings.settings.eslint))
+      .pipe(esLint.format())
+      .pipe(
+        esLint.results((filesWithErrors: ESLintErrors): void => {
+          this._esLintResults(filesWithErrors, done);
+        })
+      )
+      .on("finish", () => {
+        if (done) done();
+      });
+  }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.bundler.bundle().on("error", function(this: any, err: unknown): void {
-      self._displayError(err);
-      this.emit("end");
-    });
+  protected _fakeGulpTask(taskName: string, task: Undertaker.TaskFunction, done: TaskCallback): void {
+    const coloredTaskName: string = chalk.cyan(taskName);
+    const start = process.hrtime();
+
+    log(`Starting '${coloredTaskName}'...`);
+
+    const callback = (done: TaskCallback) => {
+      return (): void => {
+        const duration = process.hrtime(start);
+
+        log(`Finished '${coloredTaskName}' after ` + chalk.magenta(prettyHrTime(duration)));
+        done();
+      };
+    };
+
+    task(callback(done));
   }
 
   /**
@@ -117,6 +137,16 @@ export default class Browserify extends Javascript {
     stream = this._sourceMapsAndMinification(stream);
 
     return stream;
+  }
+
+  protected _hookBuildSrc(): NodeJS.ReadableStream {
+    const self = this;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return this.bundler.bundle().on("error", function(this: any, err: unknown): void {
+      self._displayError(err);
+      this.emit("end");
+    });
   }
 
   protected _hookOverrideLint(done?: TaskCallback): void {
@@ -171,37 +201,5 @@ export default class Browserify extends Javascript {
         }
       );
     });
-  }
-
-  protected _esLint(files: string[], done?: TaskCallback): NodeJS.ReadableStream {
-    return src(files, { allowEmpty: true, cwd: this._settings.cwd })
-      .pipe(esLint(this._settings.settings.eslint))
-      .pipe(esLint.format())
-      .pipe(
-        esLint.results((filesWithErrors: ESLintErrors): void => {
-          this._esLintResults(filesWithErrors, done);
-        })
-      )
-      .on("finish", () => {
-        if (done) done();
-      });
-  }
-
-  protected _fakeGulpTask(taskName: string, task: Undertaker.TaskFunction, done: TaskCallback): void {
-    const coloredTaskName: string = chalk.cyan(taskName);
-    const start = process.hrtime();
-
-    log(`Starting '${coloredTaskName}'...`);
-
-    const callback = (done: TaskCallback) => {
-      return (): void => {
-        const duration = process.hrtime(start);
-
-        log(`Finished '${coloredTaskName}' after ` + chalk.magenta(prettyHrTime(duration)));
-        done();
-      };
-    };
-
-    task(callback(done));
   }
 }

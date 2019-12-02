@@ -105,69 +105,6 @@ export default class Javascript extends TaskExtended {
   }
 
   /**
-   * Method to add specific steps for the build.
-   *
-   * @param {NodeJS.ReadableStream} stream
-   * @return {NodeJS.ReadableStream}
-   * @protected
-   */
-  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
-    stream = stream.pipe(order(this._settings.src));
-
-    if (this._settings.sourcemaps) {
-      stream = stream.pipe(sourcemaps.init());
-    }
-
-    if (this._settings.settings.babel !== false) {
-      stream = stream.pipe(babel(this._settings.settings.babel));
-    }
-
-    stream = stream.pipe(concat(this._settings.filename));
-    stream = this._minifyFiles(stream);
-
-    if (this._settings.sourcemaps) {
-      stream = stream.pipe(sourcemaps.write(this._settings.sourcemapFiles));
-    }
-
-    return stream;
-  }
-
-  /**
-   * Method to add specific steps for the lint.
-   *
-   * @param {NodeJS.ReadWriteStream} stream
-   * @param {TaskCallback} done
-   * @return {NodeJS.ReadWriteStream}
-   * @protected
-   */
-  protected _hookLint(stream: NodeJS.ReadWriteStream, done?: TaskCallback): NodeJS.ReadWriteStream {
-    return stream
-      .pipe(esLint(this._settings.settings.eslint))
-      .pipe(esLint.format())
-      .pipe(
-        esLint.results((filesWithErrors: ESLintErrors): void => {
-          this._esLintResults(filesWithErrors, done);
-        })
-      );
-  }
-
-  protected _esLintResults(filesWithErrors: ESLintErrors, done?: TaskCallback): void {
-    const config: Config = Config.getInstance();
-
-    this._lintError = filesWithErrors.errorCount > 0;
-
-    if (this._lintError && config.isLintRun()) {
-      for (const error of filesWithErrors) {
-        TaskExtended.taskErrors.push({
-          taskName: this._taskName("lint"),
-          error,
-          done,
-        });
-      }
-    }
-  }
-
-  /**
    * Display error from Babel, Uglify or other modules used by this task.
    *
    * @param error
@@ -237,6 +174,78 @@ export default class Javascript extends TaskExtended {
     }
   }
 
+  protected _esLintResults(filesWithErrors: ESLintErrors, done?: TaskCallback): void {
+    const config: Config = Config.getInstance();
+
+    this._lintError = filesWithErrors.errorCount > 0;
+
+    if (this._lintError && config.isLintRun()) {
+      for (const error of filesWithErrors) {
+        TaskExtended.taskErrors.push({
+          taskName: this._taskName("lint"),
+          error,
+          done,
+        });
+      }
+    }
+  }
+
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadableStream} stream
+   * @return {NodeJS.ReadableStream}
+   * @protected
+   */
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
+    stream = stream.pipe(order(this._settings.src));
+
+    if (this._settings.sourcemaps) {
+      stream = stream.pipe(sourcemaps.init());
+    }
+
+    if (this._settings.settings.babel !== false) {
+      stream = stream.pipe(babel(this._settings.settings.babel));
+    }
+
+    stream = stream.pipe(concat(this._settings.filename));
+    stream = this._minifyFiles(stream);
+
+    if (this._settings.sourcemaps) {
+      stream = stream.pipe(sourcemaps.write(this._settings.sourcemapFiles));
+    }
+
+    return stream;
+  }
+
+  /**
+   * Method to add specific steps for the lint.
+   *
+   * @param {NodeJS.ReadWriteStream} stream
+   * @param {TaskCallback} done
+   * @return {NodeJS.ReadWriteStream}
+   * @protected
+   */
+  protected _hookLint(stream: NodeJS.ReadWriteStream, done?: TaskCallback): NodeJS.ReadWriteStream {
+    return stream
+      .pipe(esLint(this._settings.settings.eslint))
+      .pipe(esLint.format())
+      .pipe(
+        esLint.results((filesWithErrors: ESLintErrors): void => {
+          this._esLintResults(filesWithErrors, done);
+        })
+      );
+  }
+
+  protected _minifyFiles(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
+    const streamMin: NodeJS.ReadableStream = stream
+      .pipe(clone())
+      .pipe(terser({ output: { comments: false } }))
+      .pipe(rename({ suffix: this._minifySuffix }));
+
+    return mergeStream(stream, streamMin);
+  }
+
   protected _sourceMapsAndMinification(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     if (this._settings.sourcemaps) {
       stream = stream.pipe(sourcemapExtractor()).pipe(sourcemaps.init());
@@ -249,14 +258,5 @@ export default class Javascript extends TaskExtended {
     }
 
     return stream;
-  }
-
-  protected _minifyFiles(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
-    const streamMin: NodeJS.ReadableStream = stream
-      .pipe(clone())
-      .pipe(terser({ output: { comments: false } }))
-      .pipe(rename({ suffix: this._minifySuffix }));
-
-    return mergeStream(stream, streamMin);
   }
 }

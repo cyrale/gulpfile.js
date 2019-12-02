@@ -35,6 +35,29 @@ interface TaskOptions {
  */
 export default class Config {
   /**
+   * Config instance.
+   * @type {Config}
+   * @private
+   */
+  private static _instance: Config;
+
+  /**
+   * Global options passed in command line.
+   * @type {ParsedArgs}
+   * @private
+   */
+  private _options: ParsedArgs = {
+    _: [],
+  };
+
+  /**
+   * All settings in YAML file that define tasks.
+   * @type {Options}
+   * @private
+   */
+  private _settings: Options = {};
+
+  /**
    * Get name of the current run.
    *
    * @return {string}
@@ -86,76 +109,12 @@ export default class Config {
   }
 
   /**
-   * Change the current working directory.
-   *
-   * @param directory
-   */
-  public static chdir(directory: string): void {
-    try {
-      process.chdir(directory);
-    } catch (err) {
-      log.error(`chdir: ${err}`);
-    }
-  }
-
-  /**
-   * Get Config instance.
-   *
-   * @return Unique instance of Config.
-   */
-  public static getInstance(): Config {
-    if (!Config._instance) {
-      log("Loading configuration file...");
-
-      Config._instance = new Config();
-      Config._instance._loadOptions();
-      Config._instance._loadSettings();
-
-      log("Configuration file loaded");
-    }
-
-    return Config._instance;
-  }
-
-  /**
-   * Config instance.
-   * @type {Config}
-   * @private
-   */
-  private static _instance: Config;
-
-  /**
-   * Global options passed in command line.
-   * @type {ParsedArgs}
-   * @private
-   */
-  private _options: ParsedArgs = {
-    _: [],
-  };
-
-  /**
-   * All settings in YAML file that define tasks.
-   * @type {Options}
-   * @private
-   */
-  private _settings: Options = {};
-
-  /**
    * Check if current run is a build run.
    *
    * @return {boolean}
    */
   public isBuildRun(): boolean {
     return this._isIndentifiedRun("build");
-  }
-
-  /**
-   * Check if current run is a lint run.
-   *
-   * @return {boolean}
-   */
-  public isLintRun(): boolean {
-    return this._isIndentifiedRun("lint");
   }
 
   /**
@@ -166,6 +125,15 @@ export default class Config {
    */
   public isCurrentRun(taskName: string): boolean {
     return this.currentRun === taskName;
+  }
+
+  /**
+   * Check if current run is a lint run.
+   *
+   * @return {boolean}
+   */
+  public isLintRun(): boolean {
+    return this._isIndentifiedRun("lint");
   }
 
   /**
@@ -311,5 +279,37 @@ export default class Config {
     }
 
     return this._settings;
+  }
+
+  /**
+   * Change the current working directory.
+   *
+   * @param directory
+   */
+  public static chdir(directory: string): void {
+    try {
+      process.chdir(directory);
+    } catch (err) {
+      log.error(`chdir: ${err}`);
+    }
+  }
+
+  /**
+   * Get Config instance.
+   *
+   * @return Unique instance of Config.
+   */
+  public static getInstance(): Config {
+    if (!Config._instance) {
+      log("Loading configuration file...");
+
+      Config._instance = new Config();
+      Config._instance._loadOptions();
+      Config._instance._loadSettings();
+
+      log("Configuration file loaded");
+    }
+
+    return Config._instance;
   }
 }

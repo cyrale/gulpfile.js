@@ -45,6 +45,16 @@ export default class Pug extends TaskExtended {
   }
 
   /**
+   * Display error from Pug.
+   *
+   * @param error
+   * @protected
+   */
+  protected _displayError(error: unknown): void {
+    pugLintStylish([error]);
+  }
+
+  /**
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadableStream} stream
@@ -97,15 +107,5 @@ export default class Pug extends TaskExtended {
         },
       })
     );
-  }
-
-  /**
-   * Display error from Pug.
-   *
-   * @param error
-   * @protected
-   */
-  protected _displayError(error: unknown): void {
-    pugLintStylish([error]);
   }
 }

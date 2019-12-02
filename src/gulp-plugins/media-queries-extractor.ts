@@ -12,6 +12,13 @@ import applySourceMap from "vinyl-sourcemaps-apply";
 
 import mediaQueriesExtract from "../postcss/media-queries-extract";
 
+/**
+ * List media queries in CSS file.
+ *
+ * @param {File.BufferFile} file
+ * @returns {postcss.LazyResult}
+ * @private
+ */
 function _listMediaQueries(file: BufferFile): LazyResult {
   file.mediaQueriesList = [];
 
@@ -34,6 +41,13 @@ function _listMediaQueries(file: BufferFile): LazyResult {
   });
 }
 
+/**
+ * Put media queries in different files.
+ *
+ * @param {File.BufferFile} file
+ * @param {Transform} stream
+ * @private
+ */
 function _splitMediaQueries(file: BufferFile, stream: Transform): void {
   const extname: string = path.extname(file.basename);
   const basename: string = path.basename(file.basename, extname);
@@ -84,6 +98,11 @@ function _splitMediaQueries(file: BufferFile, stream: Transform): void {
   delete file.mediaQueriesList;
 }
 
+/**
+ * Extract media queries in different files.
+ *
+ * @returns {Transform}
+ */
 export default (): Transform => {
   return through.obj(function(file: File, encoding: string, cb: TransformCallback): void {
     if (file.isNull()) {

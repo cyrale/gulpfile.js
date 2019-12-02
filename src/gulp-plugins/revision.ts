@@ -22,12 +22,21 @@ export interface DefaultObject {
   [name: string]: unknown;
 }
 
+interface DefaultOption {
+  dst: string;
+}
+
 interface HashData {
   taskName: string;
   origRelFile: string;
   revRelFile: string;
   contents: string | Buffer;
   data?: DefaultObject;
+}
+
+interface Options extends DefaultOption {
+  cwd: string;
+  taskName: string;
 }
 
 interface RevisionManifest {
@@ -41,15 +50,6 @@ interface RevisionManifest {
       };
     };
   };
-}
-
-interface DefaultOption {
-  dst: string;
-}
-
-interface Options extends DefaultOption {
-  cwd: string;
-  taskName: string;
 }
 
 /**

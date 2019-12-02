@@ -189,6 +189,40 @@ export default class Sass extends TaskExtended {
   }
 
   /**
+   * Display error from SASS.
+   *
+   * @param {any} error
+   * @protected
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected _displayError(error: any): void {
+    const config: Config = Config.getInstance();
+
+    log.error(
+      sassLint.format([
+        {
+          errorCount: 1,
+          filePath: error.relativePath || path.relative(this._settings.cwd, error.file || error.path),
+          messages: [
+            {
+              column: error.column,
+              line: error.line,
+              message: error.messageOriginal || error.message,
+              severity: 2,
+            },
+          ],
+          warningCount: 0,
+        },
+      ])
+    );
+
+    // Particular exit due to the comportment of Sass.
+    if ((config.isLintRun() || config.isBuildRun()) && error.code !== "ENOENT") {
+      process.exit(1);
+    }
+  }
+
+  /**
    * Method to add specific steps for the build.
    *
    * @param {NodeJS.ReadableStream} stream
@@ -284,40 +318,6 @@ export default class Sass extends TaskExtended {
       .pipe(gulpSassLint({ configFile: path.join(this._settings.cwd, ".sass-lint.yml") }))
       .pipe(gulpSassLint.format())
       .pipe(this._lintNotifier(done));
-  }
-
-  /**
-   * Display error from SASS.
-   *
-   * @param {any} error
-   * @protected
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected _displayError(error: any): void {
-    const config: Config = Config.getInstance();
-
-    log.error(
-      sassLint.format([
-        {
-          errorCount: 1,
-          filePath: error.relativePath || path.relative(this._settings.cwd, error.file || error.path),
-          messages: [
-            {
-              column: error.column,
-              line: error.line,
-              message: error.messageOriginal || error.message,
-              severity: 2,
-            },
-          ],
-          warningCount: 0,
-        },
-      ])
-    );
-
-    // Particular exit due to the comportment of Sass.
-    if ((config.isLintRun() || config.isBuildRun()) && error.code !== "ENOENT") {
-      process.exit(1);
-    }
   }
 
   /**

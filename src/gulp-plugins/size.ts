@@ -15,12 +15,6 @@ import StreamCounter from "stream-counter";
 import through, { TransformCallback } from "through2";
 import File from "vinyl";
 
-export interface Options {
-  gzip: boolean;
-  minifySuffix: string;
-  taskName: string;
-}
-
 interface FileSize {
   calculated: boolean;
   sizes: Sizes;
@@ -28,6 +22,12 @@ interface FileSize {
 
 interface FileSizes {
   [filename: string]: FileSize;
+}
+
+export interface Options {
+  gzip: boolean;
+  minifySuffix: string;
+  taskName: string;
 }
 
 interface PrettySizes {

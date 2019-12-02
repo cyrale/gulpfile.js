@@ -1,5 +1,5 @@
-import postcss, { ChildNode, ContainerBase } from "postcss";
 import merge from "lodash/merge";
+import postcss, { ChildNode, ContainerBase } from "postcss";
 
 interface Options {
   keepRules: boolean;

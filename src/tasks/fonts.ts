@@ -1,4 +1,4 @@
-import changeCase from "change-case";
+import { paramCase } from "change-case";
 import consolidate from "consolidate";
 import fs from "fs";
 import { dest } from "gulp";
@@ -50,31 +50,7 @@ export default class Fonts extends TaskExtended {
     this._settings.settings = merge(defaultSettings, this._settings.settings || {});
 
     const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
-    this._sanitizedTaskName = changeCase.paramCase(this._taskName().replace("fonts:", prefix));
-  }
-
-  /**
-   * Method to add specific steps for the build.
-   *
-   * @param {NodeJS.ReadableStream} stream
-   * @return {NodeJS.ReadableStream}
-   * @protected
-   */
-  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
-    // Build font based on SVG files.
-    return stream
-      .pipe(
-        iconfont({
-          centerHorizontally: true,
-          fontName: this._sanitizedTaskName,
-          formats: ["ttf", "eot", "woff", "woff2", "svg"],
-          normalize: true,
-        })
-      )
-      .pipe(buffer())
-      .on("glyphs", (glyphs: object[]): void => {
-        this._glyphs = glyphs;
-      });
+    this._sanitizedTaskName = paramCase(this._taskName().replace("fonts:", prefix));
   }
 
   protected _bindEventsToBuilder(builder: NodeJS.ReadableStream): void {
@@ -118,5 +94,29 @@ export default class Fonts extends TaskExtended {
         });
       });
     });
+  }
+
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadableStream} stream
+   * @return {NodeJS.ReadableStream}
+   * @protected
+   */
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
+    // Build font based on SVG files.
+    return stream
+      .pipe(
+        iconfont({
+          centerHorizontally: true,
+          fontName: this._sanitizedTaskName,
+          formats: ["ttf", "eot", "woff", "woff2", "svg"],
+          normalize: true,
+        })
+      )
+      .pipe(buffer())
+      .on("glyphs", (glyphs: object[]): void => {
+        this._glyphs = glyphs;
+      });
   }
 }

@@ -4,7 +4,6 @@ import { dest, series, src, watch } from "gulp";
 import plumber from "gulp-plumber";
 import process from "process";
 import Undertaker from "undertaker";
-import { DestOptions, SrcOptions } from "vinyl-fs";
 
 import revision, { isActive } from "../gulp-plugins/revision";
 import Size from "../gulp-plugins/size";
@@ -23,11 +22,18 @@ export default abstract class TaskExtended extends Task {
   public static readonly runInParallel: boolean = true;
 
   /**
-   * List of files to watch in addition to the working files.
-   * @type {string[]}
+   * Flag to init sizes anyway.
+   * @type {boolean}
    * @protected
    */
-  protected _watchingFiles: string[] = [];
+  protected _activeInitSizesAnyway = true;
+
+  /**
+   * Flag to display sizes or not.
+   * @type {boolean}
+   * @protected
+   */
+  protected _activeSizes = true;
 
   protected _browserSync: Browsersync | undefined;
 
@@ -39,32 +45,11 @@ export default abstract class TaskExtended extends Task {
   protected _browserSyncSettings: {} = {};
 
   /**
-   * Flag to define if there is a lint error or not to block build.
-   * @type {boolean}
-   * @protected
-   */
-  protected _lintError = false;
-
-  /**
    * Flag to define if task could build sourcemaps.
    * @type {boolean}
    * @protected
    */
   protected _gulpSourcemaps = false;
-
-  /**
-   * Flag to display sizes or not.
-   * @type {boolean}
-   * @protected
-   */
-  protected _activeSizes = true;
-
-  /**
-   * Flag to init sizes anyway.
-   * @type {boolean}
-   * @protected
-   */
-  protected _activeInitSizesAnyway = true;
 
   /**
    * Force to hide gzipped size.
@@ -74,11 +59,25 @@ export default abstract class TaskExtended extends Task {
   protected _hideGzippedSize = true;
 
   /**
+   * Flag to define if there is a lint error or not to block build.
+   * @type {boolean}
+   * @protected
+   */
+  protected _lintError = false;
+
+  /**
    * Suffix of the minified file.
    * @type {string}
    * @protected
    */
   protected _minifySuffix = "";
+
+  /**
+   * List of files to watch in addition to the working files.
+   * @type {string[]}
+   * @protected
+   */
+  protected _watchingFiles: string[] = [];
 
   /**
    * Task constructor.
@@ -89,6 +88,11 @@ export default abstract class TaskExtended extends Task {
     super(options);
 
     this._browserSync = options.browsersync;
+  }
+
+  protected get _haveLinter(): boolean {
+    const config: Config = Config.getInstance();
+    return !!this._hookLint && config.options.lint;
   }
 
   /**
@@ -172,62 +176,6 @@ export default abstract class TaskExtended extends Task {
     }
   }
 
-  protected get _haveLinter(): boolean {
-    const config: Config = Config.getInstance();
-    return !!this._hookLint && config.options.lint;
-  }
-
-  protected _hookBuildSrc?(): NodeJS.ReadableStream;
-
-  protected _hookLintSrc?(): NodeJS.ReadableStream;
-
-  /**
-   * Method to add specific steps for the build.
-   *
-   * @param {NodeJS.ReadableStream} stream
-   * @return {NodeJS.ReadableStream}
-   * @protected
-   */
-  protected _hookBuildBefore?(stream: NodeJS.ReadableStream): NodeJS.ReadableStream;
-
-  /**
-   * Method to add specific steps for the lint.
-   *
-   * @param {NodeJS.ReadableStream} stream
-   * @param {TaskCallback} done
-   * @return {NodeJS.ReadableStream}
-   * @protected
-   */
-  protected _hookLint?(stream: NodeJS.ReadableStream, done?: TaskCallback): NodeJS.ReadableStream;
-
-  protected _hookOverrideBuild?(done?: TaskCallback): NodeJS.ReadableStream | void;
-
-  protected _hookOverrideLint?(done?: TaskCallback): NodeJS.ReadableStream | void;
-
-  protected _hookOverrideWatch?(done?: TaskCallback): NodeJS.ReadableStream | void;
-
-  protected _lint(done?: TaskCallback): NodeJS.ReadableStream | void {
-    Config.chdir(this._settings.cwd);
-
-    if (this._hookOverrideLint) {
-      return this._hookOverrideLint(done);
-    }
-
-    let stream: NodeJS.ReadableStream = this._hookLintSrc
-      ? this._hookLintSrc()
-      : src(this._settings.src, { cwd: this._settings.cwd });
-
-    if (this._hookLint) {
-      stream = this._hookLint(stream, done);
-    }
-
-    if (this._bindEventsToLinter) {
-      this._bindEventsToLinter(stream);
-    }
-
-    return stream;
-  }
-
   protected _build(done?: TaskCallback): NodeJS.ReadableStream | void {
     Config.chdir(this._settings.cwd);
 
@@ -289,6 +237,57 @@ export default abstract class TaskExtended extends Task {
 
     return stream;
   }
+
+  protected _lint(done?: TaskCallback): NodeJS.ReadableStream | void {
+    Config.chdir(this._settings.cwd);
+
+    if (this._hookOverrideLint) {
+      return this._hookOverrideLint(done);
+    }
+
+    let stream: NodeJS.ReadableStream = this._hookLintSrc
+      ? this._hookLintSrc()
+      : src(this._settings.src, { cwd: this._settings.cwd });
+
+    if (this._hookLint) {
+      stream = this._hookLint(stream, done);
+    }
+
+    if (this._bindEventsToLinter) {
+      this._bindEventsToLinter(stream);
+    }
+
+    return stream;
+  }
+
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadableStream} stream
+   * @return {NodeJS.ReadableStream}
+   * @protected
+   */
+  protected _hookBuildBefore?(stream: NodeJS.ReadableStream): NodeJS.ReadableStream;
+
+  protected _hookBuildSrc?(): NodeJS.ReadableStream;
+
+  /**
+   * Method to add specific steps for the lint.
+   *
+   * @param {NodeJS.ReadableStream} stream
+   * @param {TaskCallback} done
+   * @return {NodeJS.ReadableStream}
+   * @protected
+   */
+  protected _hookLint?(stream: NodeJS.ReadableStream, done?: TaskCallback): NodeJS.ReadableStream;
+
+  protected _hookLintSrc?(): NodeJS.ReadableStream;
+
+  protected _hookOverrideBuild?(done?: TaskCallback): NodeJS.ReadableStream | void;
+
+  protected _hookOverrideLint?(done?: TaskCallback): NodeJS.ReadableStream | void;
+
+  protected _hookOverrideWatch?(done?: TaskCallback): NodeJS.ReadableStream | void;
 
   protected _watch(done?: TaskCallback): void {
     const tasks: Undertaker.Task[] = [];

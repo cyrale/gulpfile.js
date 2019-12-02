@@ -14,10 +14,6 @@ import TaskSimple from "../tasks/task-simple";
 import Config, { Options as ConfigOptions } from "./config";
 import { explodeTaskName, modules, steps } from "./utils";
 
-interface TaskList {
-  [name: string]: string[];
-}
-
 interface GlobalTaskList {
   [name: string]: TaskList;
 }
@@ -26,19 +22,20 @@ interface ModuleClasses {
   [name: string]: unknown;
 }
 
+interface TaskList {
+  [name: string]: string[];
+}
+
 /**
  * Factory that create all tasks.
  */
 export default class TaskFactory {
   /**
-   * Get unique instance of simple module.
-   *
-   * @param {string} name
-   * @return {unknown | undefined}
+   * Global tasks grouped by step, name and type.
+   * @type {GlobalTaskList}
+   * @private
    */
-  private _getUniqueInstanceOf(name: string): unknown | undefined {
-    return this._uniqueInstances[name];
-  }
+  private _globalTasks: GlobalTaskList = {};
 
   /**
    * List of used modules.
@@ -48,62 +45,11 @@ export default class TaskFactory {
   private _modules: ModuleClasses = {};
 
   /**
-   * List of unique instance for simple modules.
-   * @type {{}}
+   * Existing tasks grouped by steps of execution.
+   * @type {string[][]}
    * @private
    */
-  private _uniqueInstances: ModuleClasses = {};
-
-  /**
-   * Add a task in a list.
-   *
-   * @param {TaskList} list
-   * @param {string} key
-   * @param {string} task
-   * @return {TaskList}
-   * @private
-   */
-  private static _pushTask(list: TaskList, key: string, task: string): TaskList {
-    list[key] = list[key] || [];
-    if (list[key].indexOf(task) < 0) {
-      list[key].push(task);
-    }
-
-    return list;
-  }
-
-  /**
-   * Check if an array is empty. Used in filters.
-   *
-   * @param {unknown[]} tasks
-   * @return {boolean}
-   * @private
-   */
-  private static _removeEmptyArrays(tasks: unknown[]): boolean {
-    if (!Array.isArray(tasks)) {
-      return true;
-    }
-
-    tasks = tasks.map((task: unknown): unknown =>
-      Array.isArray(task) ? task.filter(TaskFactory._removeEmptyArrays) : task
-    );
-
-    return tasks.length > 0;
-  }
-
-  /**
-   * List of final tasks.
-   * @type {string[]}
-   * @private
-   */
-  private _tasks: string[] = [];
-
-  /**
-   * List of super global tasks (lint, build, watch).
-   * @type {TaskList}
-   * @private
-   */
-  private _superGlobalTasks: TaskList = {};
+  private _orderedGlobalTasks: string[][] = [];
 
   /**
    * Ordered super global tasks group by step (lint, build, watch).
@@ -115,18 +61,25 @@ export default class TaskFactory {
   } = {};
 
   /**
-   * Global tasks grouped by step, name and type.
-   * @type {GlobalTaskList}
+   * List of super global tasks (lint, build, watch).
+   * @type {TaskList}
    * @private
    */
-  private _globalTasks: GlobalTaskList = {};
+  private _superGlobalTasks: TaskList = {};
 
   /**
-   * Existing tasks grouped by steps of execution.
-   * @type {string[][]}
+   * List of final tasks.
+   * @type {string[]}
    * @private
    */
-  private _orderedGlobalTasks: string[][] = [];
+  private _tasks: string[] = [];
+
+  /**
+   * List of unique instance for simple modules.
+   * @type {{}}
+   * @private
+   */
+  private _uniqueInstances: ModuleClasses = {};
 
   /**
    * Create all tasks.
@@ -443,52 +396,13 @@ export default class TaskFactory {
   }
 
   /**
-   * Add task to list of global tasks.
-   *
-   * @param {string} sort
-   * @param {string} key
-   * @param {string} task
-   * @return {GlobalTaskList}
-   * @private
-   */
-  private _pushGlobalTask(sort: string, key: string, task: string): GlobalTaskList {
-    this._globalTasks[sort] = this._globalTasks[sort] || {};
-    TaskFactory._pushTask(this._globalTasks[sort], key, task);
-
-    return this._globalTasks;
-  }
-
-  /**
-   * Add task to the list.
+   * Get unique instance of simple module.
    *
    * @param {string} name
-   * @return {string[]}
-   * @private
+   * @return {unknown | undefined}
    */
-  private _pushTask(name: string): string[] {
-    if (name !== "") {
-      this._tasks.push(name);
-    }
-
-    return this._tasks;
-  }
-
-  /**
-   * Tasks grouped by steps of execution.
-   *
-   * @return {string[][]}
-   * @private
-   */
-  private _tasksGroupAndOrder(): string[][] {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orders: number[] = map(this._modules, (module: any): number => module.taskOrder);
-
-    return uniq(orders.sort()).map((order: number): string[] =>
-      Object.keys(this._modules).filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (task: string): boolean => (this._modules[task] as any).taskOrder === order
-      )
-    );
+  private _getUniqueInstanceOf(name: string): unknown | undefined {
+    return this._uniqueInstances[name];
   }
 
   /**
@@ -496,6 +410,7 @@ export default class TaskFactory {
    *
    * @param {string} taskName
    * @return {boolean}
+   * @private
    */
   private _isTaskSimple(taskName: string): boolean {
     const module: unknown = this._loadModule(taskName);
@@ -504,14 +419,18 @@ export default class TaskFactory {
     return (module as any).prototype instanceof TaskSimple;
   }
 
-  /**
-   * Check if a task is valid (exists in supported tasks).
-   *
-   * @param {string} taskName
-   * @return {boolean}
-   */
-  private static _isValidTask(taskName: string): boolean {
-    return modules.indexOf(taskName) >= 0;
+  private _loadModule(taskName: string): unknown | void {
+    if (!this._modules[taskName]) {
+      const module: unknown = TaskFactory._requireModule(taskName);
+
+      if (!module) {
+        return;
+      }
+
+      this._modules[taskName] = module;
+    }
+
+    return this._modules[taskName];
   }
 
   private _loadModules(settings: ConfigOptions): ModuleClasses {
@@ -543,22 +462,113 @@ export default class TaskFactory {
     return this._modules;
   }
 
+  /**
+   * Add task to list of global tasks.
+   *
+   * @param {string} sort
+   * @param {string} key
+   * @param {string} task
+   * @return {GlobalTaskList}
+   * @private
+   */
+  private _pushGlobalTask(sort: string, key: string, task: string): GlobalTaskList {
+    this._globalTasks[sort] = this._globalTasks[sort] || {};
+    TaskFactory._pushTask(this._globalTasks[sort], key, task);
+
+    return this._globalTasks;
+  }
+
+  /**
+   * Add task to the list.
+   *
+   * @param {string} name
+   * @return {string[]}
+   * @private
+   */
+  private _pushTask(name: string): string[] {
+    if (name !== "") {
+      this._tasks.push(name);
+    }
+
+    return this._tasks;
+  }
+
+  private _runInParallel(taskName: string): boolean {
+    const { type } = explodeTaskName(taskName);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const module: any = this._loadModule(type);
+
+    return module.runInParallel;
+  }
+
+  /**
+   * Tasks grouped by steps of execution.
+   *
+   * @return {string[][]}
+   * @private
+   */
+  private _tasksGroupAndOrder(): string[][] {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orders: number[] = map(this._modules, (module: any): number => module.taskOrder);
+
+    return uniq(orders.sort()).map((order: number): string[] =>
+      Object.keys(this._modules).filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (task: string): boolean => (this._modules[task] as any).taskOrder === order
+      )
+    );
+  }
+
+  /**
+   * Check if a task is valid (exists in supported tasks).
+   *
+   * @param {string} taskName
+   * @return {boolean}
+   * @private
+   */
+  private static _isValidTask(taskName: string): boolean {
+    return modules.indexOf(taskName) >= 0;
+  }
+
   private static _logTime(): string {
     return "[" + chalk.gray(timestamp("HH:mm:ss")) + "]";
   }
 
-  private _loadModule(taskName: string): unknown | void {
-    if (!this._modules[taskName]) {
-      const module: unknown = TaskFactory._requireModule(taskName);
-
-      if (!module) {
-        return;
-      }
-
-      this._modules[taskName] = module;
+  /**
+   * Add a task in a list.
+   *
+   * @param {TaskList} list
+   * @param {string} key
+   * @param {string} task
+   * @return {TaskList}
+   * @private
+   */
+  private static _pushTask(list: TaskList, key: string, task: string): TaskList {
+    list[key] = list[key] || [];
+    if (list[key].indexOf(task) < 0) {
+      list[key].push(task);
     }
 
-    return this._modules[taskName];
+    return list;
+  }
+
+  /**
+   * Check if an array is empty. Used in filters.
+   *
+   * @param {unknown[]} tasks
+   * @return {boolean}
+   * @private
+   */
+  private static _removeEmptyArrays(tasks: unknown[]): boolean {
+    if (!Array.isArray(tasks)) {
+      return true;
+    }
+
+    tasks = tasks.map((task: unknown): unknown =>
+      Array.isArray(task) ? task.filter(TaskFactory._removeEmptyArrays) : task
+    );
+
+    return tasks.length > 0;
   }
 
   private static _requireModule(taskName: string): unknown | void {
@@ -570,13 +580,5 @@ export default class TaskFactory {
     const { default: module } = require(`../tasks/${taskName}`);
 
     return module;
-  }
-
-  private _runInParallel(taskName: string): boolean {
-    const { type } = explodeTaskName(taskName);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const module: any = this._loadModule(type);
-
-    return module.runInParallel;
   }
 }

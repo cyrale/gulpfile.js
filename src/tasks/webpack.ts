@@ -2,7 +2,6 @@ import { CLIEngine, Linter } from "eslint";
 import log from "fancy-log";
 import { src } from "gulp";
 import rename from "gulp-rename";
-import sourcemaps from "gulp-sourcemaps";
 import merge from "lodash/merge";
 import omit from "lodash/omit";
 import path from "path";
@@ -10,7 +9,6 @@ import named from "vinyl-named";
 import webpack from "webpack";
 import webpackStream from "webpack-stream";
 
-import sourcemapExtractor from "../gulp-plugins/sourcemap-extractor";
 import Javascript from "./javascript";
 import { Options as TaskOptions } from "./task";
 
@@ -79,40 +77,6 @@ export default class Webpack extends Javascript {
   }
 
   /**
-   * Method to add specific steps for the build.
-   *
-   * @param {NodeJS.ReadableStream} stream
-   * @return {NodeJS.ReadableStream}
-   * @protected
-   */
-  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
-    stream = stream
-      .pipe(named())
-      .pipe(
-        webpackStream(omit(this._settings.settings, ["babel", "eslint"])),
-        webpack as any // eslint-disable-line @typescript-eslint/no-explicit-any
-      )
-      .pipe(
-        rename({
-          basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),
-        })
-      );
-
-    stream = this._sourceMapsAndMinification(stream);
-
-    return stream;
-  }
-
-  protected _hookLintSrc(): NodeJS.ReadableStream {
-    const srcLint: string[] = [
-      ...(Array.isArray(this._settings.src) ? this._settings.src : [this._settings.src]),
-      ...(this._settings.watch || []),
-    ];
-
-    return src(srcLint, { cwd: this._settings.cwd });
-  }
-
-  /**
    * Display errors from Webpack.
    *
    * @param {any} error
@@ -150,5 +114,39 @@ export default class Webpack extends Javascript {
     } else {
       super._displayError(error);
     }
+  }
+
+  /**
+   * Method to add specific steps for the build.
+   *
+   * @param {NodeJS.ReadableStream} stream
+   * @return {NodeJS.ReadableStream}
+   * @protected
+   */
+  protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
+    stream = stream
+      .pipe(named())
+      .pipe(
+        webpackStream(omit(this._settings.settings, ["babel", "eslint"])),
+        webpack as any // eslint-disable-line @typescript-eslint/no-explicit-any
+      )
+      .pipe(
+        rename({
+          basename: path.basename(this._settings.filename, path.extname(this._settings.filename)),
+        })
+      );
+
+    stream = this._sourceMapsAndMinification(stream);
+
+    return stream;
+  }
+
+  protected _hookLintSrc(): NodeJS.ReadableStream {
+    const srcLint: string[] = [
+      ...(Array.isArray(this._settings.src) ? this._settings.src : [this._settings.src]),
+      ...(this._settings.watch || []),
+    ];
+
+    return src(srcLint, { cwd: this._settings.cwd });
   }
 }

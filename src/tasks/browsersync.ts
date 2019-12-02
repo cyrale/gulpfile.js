@@ -27,7 +27,7 @@ export default class Browsersync extends TaskSimple {
 
   /**
    * Real Browsersync instance.
-   * @type {browserSync.BrowserSyncInstance}
+   * @type {BrowserSyncInstance}
    * @private
    */
   private _browserSync: BrowserSyncInstance = BrowserSync.create();
@@ -59,7 +59,7 @@ export default class Browsersync extends TaskSimple {
    * Trigger sync.
    *
    * @param {string} taskName
-   * @param {browserSync.StreamOptions} settings
+   * @param {StreamOptions} settings
    * @return {NodeJS.ReadWriteStream}
    */
   public sync(taskName: string, settings?: StreamOptions): NodeJS.ReadWriteStream {
