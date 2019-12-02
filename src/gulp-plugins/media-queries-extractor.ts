@@ -12,7 +12,7 @@ import applySourceMap from "vinyl-sourcemaps-apply";
 
 import mediaQueriesExtract from "../postcss/media-queries-extract";
 
-const listMediaQueries = (file: BufferFile): LazyResult => {
+function _listMediaQueries(file: BufferFile): LazyResult {
   file.mediaQueriesList = [];
 
   // Extract all media queries.
@@ -32,9 +32,9 @@ const listMediaQueries = (file: BufferFile): LazyResult => {
     // Generate a separate source map for gulp-sourcemaps
     map: file.sourceMap ? { annotation: false } : false,
   });
-};
+}
 
-const splitMediaQueries = (file: BufferFile, stream: Transform): void => {
+function _splitMediaQueries(file: BufferFile, stream: Transform): void {
   const extname: string = path.extname(file.basename);
   const basename: string = path.basename(file.basename, extname);
 
@@ -82,7 +82,7 @@ const splitMediaQueries = (file: BufferFile, stream: Transform): void => {
   }
 
   delete file.mediaQueriesList;
-};
+}
 
 export default (): Transform => {
   return through.obj(function(file: File, encoding: string, cb: TransformCallback): void {
@@ -98,8 +98,8 @@ export default (): Transform => {
       return cb(null, file);
     }
 
-    listMediaQueries(file as BufferFile).then(() => {
-      splitMediaQueries(file as BufferFile, this);
+    _listMediaQueries(file as BufferFile).then(() => {
+      _splitMediaQueries(file as BufferFile, this);
       cb();
     });
   });
