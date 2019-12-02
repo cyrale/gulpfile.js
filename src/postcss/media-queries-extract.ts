@@ -19,10 +19,12 @@ export default postcss.plugin("media-queries-extract", (opts?: Options): ((css: 
     const nodes: Array<ChildNode | ContainerBase> = [];
 
     css.walkAtRules("media", (node: AtRule): void => {
+      // Filter nodes by query.
       if (options.query !== node.params) {
         return;
       }
 
+      // Save children nodes.
       node.each((child: ChildNode) => {
         nodes.push(child.clone());
       });

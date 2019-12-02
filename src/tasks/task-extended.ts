@@ -16,7 +16,7 @@ export interface Options extends TaskOptions {
 }
 
 /**
- * Task class to define gulp tasks.
+ * Task class to define complex Gulp tasks with lint, build and watch sub-tasks.
  */
 export default abstract class TaskExtended extends Task {
   public static readonly runInParallel: boolean = true;
@@ -35,6 +35,11 @@ export default abstract class TaskExtended extends Task {
    */
   protected _activeSizes = true;
 
+  /**
+   * Browsersync instance.
+   * @type {Browsersync | undefined}
+   * @protected
+   */
   protected _browserSync: Browsersync | undefined;
 
   /**
@@ -90,13 +95,19 @@ export default abstract class TaskExtended extends Task {
     this._browserSync = options.browsersync;
   }
 
+  /**
+   * Check if current task have linter.
+   *
+   * @returns {boolean}
+   * @protected
+   */
   protected get _haveLinter(): boolean {
     const config: Config = Config.getInstance();
     return !!this._hookLint && config.options.lint;
   }
 
   /**
-   * Basic task that run all tasks.
+   * Register build task in Gulp.
    *
    * @return {string}
    */
@@ -105,7 +116,7 @@ export default abstract class TaskExtended extends Task {
   }
 
   /**
-   * Lint task run after build to check files validity.
+   * Register lint task that run before build to check files validity.
    *
    * @return {string}
    */
@@ -120,7 +131,7 @@ export default abstract class TaskExtended extends Task {
   }
 
   /**
-   * Run lint and build on each change of watching files.
+   * Register watch task that watch change on files and run lint and build tasks.
    *
    * @return {string}
    */
@@ -128,8 +139,20 @@ export default abstract class TaskExtended extends Task {
     return this._defineTask("watch", this._watch.bind(this));
   }
 
+  /**
+   * Bind events to build tasks.
+   *
+   * @param {NodeJS.ReadableStream} builder
+   * @protected
+   */
   protected _bindEventsToBuilder?(builder: NodeJS.ReadableStream): void;
 
+  /**
+   * Bind events to lint tasks.
+   *
+   * @param {NodeJS.ReadableStream} linter
+   * @protected
+   */
   protected _bindEventsToLinter?(linter: NodeJS.ReadableStream): void;
 
   /**
@@ -176,6 +199,13 @@ export default abstract class TaskExtended extends Task {
     }
   }
 
+  /**
+   * Build task.
+   *
+   * @param {TaskCallback} done
+   * @returns {NodeJS.ReadableStream | void}
+   * @protected
+   */
   protected _build(done?: TaskCallback): NodeJS.ReadableStream | void {
     Config.chdir(this._settings.cwd);
 
@@ -238,6 +268,13 @@ export default abstract class TaskExtended extends Task {
     return stream;
   }
 
+  /**
+   * Lint task.
+   *
+   * @param {TaskCallback} done
+   * @returns {NodeJS.ReadableStream | void}
+   * @protected
+   */
   protected _lint(done?: TaskCallback): NodeJS.ReadableStream | void {
     Config.chdir(this._settings.cwd);
 
@@ -269,6 +306,12 @@ export default abstract class TaskExtended extends Task {
    */
   protected _hookBuildBefore?(stream: NodeJS.ReadableStream): NodeJS.ReadableStream;
 
+  /**
+   * Method to change default source for build task.
+   *
+   * @returns {NodeJS.ReadableStream}
+   * @protected
+   */
   protected _hookBuildSrc?(): NodeJS.ReadableStream;
 
   /**
@@ -281,14 +324,47 @@ export default abstract class TaskExtended extends Task {
    */
   protected _hookLint?(stream: NodeJS.ReadableStream, done?: TaskCallback): NodeJS.ReadableStream;
 
+  /**
+   * Method to change default source for lint task.
+   *
+   * @returns {NodeJS.ReadableStream}
+   * @protected
+   */
   protected _hookLintSrc?(): NodeJS.ReadableStream;
 
+  /**
+   * Method to override build task.
+   *
+   * @param {TaskCallback} done
+   * @returns {NodeJS.ReadableStream | void}
+   * @protected
+   */
   protected _hookOverrideBuild?(done?: TaskCallback): NodeJS.ReadableStream | void;
 
+  /**
+   * Method to override lint task.
+   *
+   * @param {TaskCallback} done
+   * @returns {NodeJS.ReadableStream | void}
+   * @protected
+   */
   protected _hookOverrideLint?(done?: TaskCallback): NodeJS.ReadableStream | void;
 
+  /**
+   * Method to override watch task.
+   *
+   * @param {TaskCallback} done
+   * @returns {NodeJS.ReadableStream | void}
+   * @protected
+   */
   protected _hookOverrideWatch?(done?: TaskCallback): NodeJS.ReadableStream | void;
 
+  /**
+   * Watch task.
+   *
+   * @param {TaskCallback} done
+   * @protected
+   */
   protected _watch(done?: TaskCallback): void {
     const tasks: Undertaker.Task[] = [];
 

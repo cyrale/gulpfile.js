@@ -30,8 +30,18 @@ export default class Fonts extends TaskExtended {
    */
   public static readonly taskOrder: number = 20;
 
+  /**
+   * Sanitize name of the task to use it in font name.
+   * @type {string}
+   * @private
+   */
   private readonly _sanitizedTaskName: string = "";
 
+  /**
+   * List of glyphs in current font.
+   * @type {any[]}
+   * @private
+   */
   private _glyphs: object[] = [];
 
   /**
@@ -53,6 +63,13 @@ export default class Fonts extends TaskExtended {
     this._sanitizedTaskName = paramCase(this._taskName().replace("fonts:", prefix));
   }
 
+  /**
+   * Bind events to build tasks.
+   * Generate and save a SASS files with all stuff to use this font and its glyphs.
+   *
+   * @param {NodeJS.ReadableStream} builder
+   * @protected
+   */
   protected _bindEventsToBuilder(builder: NodeJS.ReadableStream): void {
     builder.on("finish", () => {
       const file: string = path.resolve(__dirname, `../../src/templates/${this._settings.settings.template}.lodash`);

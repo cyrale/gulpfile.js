@@ -78,6 +78,7 @@ export default class Images extends TaskExtended {
 
   /**
    * Bind events to file watcher.
+   * Delete destination file when a file was deleted in source.
    *
    * @param {fs.FSWatcher} watcher
    * @protected

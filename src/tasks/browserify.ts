@@ -34,10 +34,25 @@ export default class Browserify extends Javascript {
    */
   public static readonly taskOrder: number = 40;
 
+  /**
+   * List of files used by bundler.
+   * @type {any[]}
+   * @protected
+   */
   protected _bundleFiles: string[] = [];
 
+  /**
+   * Bundler with transforms and plugins.
+   * @type {BrowserifyObject | undefined}
+   * @protected
+   */
   protected _bundler: BrowserifyObject | undefined;
 
+  /**
+   * Bundler with basic settings.
+   * @type {BrowserifyObject | undefined}
+   * @protected
+   */
   protected _bundlerOnly: BrowserifyObject | undefined;
 
   /**
@@ -58,6 +73,12 @@ export default class Browserify extends Javascript {
     this._settings.settings = merge(defaultSettings, this._settings.settings, watchify.args);
   }
 
+  /**
+   * Get bundler with transforms and plugins.
+   *
+   * @returns {browserify.BrowserifyObject}
+   * @protected
+   */
   protected get bundler(): BrowserifyObject {
     const config: Config = Config.getInstance();
 
@@ -77,6 +98,12 @@ export default class Browserify extends Javascript {
     return this._bundler;
   }
 
+  /**
+   * Get bundler without transforms and plugins.
+   *
+   * @returns {browserify.BrowserifyObject}
+   * @protected
+   */
   protected get bundlerOnly(): BrowserifyObject {
     // Initialize Browserify bundler only.
     if (!this._bundlerOnly) {
@@ -88,11 +115,26 @@ export default class Browserify extends Javascript {
     return this._bundlerOnly;
   }
 
+  /**
+   * Collect files used by bundler.
+   *
+   * @param {string} absolute
+   * @param {string} relative
+   * @protected
+   */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected _collectFilesForLint(absolute: string, relative: string): void {
     if (this._bundleFiles.indexOf(absolute) < 0) this._bundleFiles.push(absolute);
   }
 
+  /**
+   * Pass files to ESLint.
+   *
+   * @param {string[]} files
+   * @param {TaskCallback} done
+   * @returns {NodeJS.ReadableStream}
+   * @protected
+   */
   protected _esLint(files: string[], done?: TaskCallback): NodeJS.ReadableStream {
     return src(files, { allowEmpty: true, cwd: this._settings.cwd })
       .pipe(esLint(this._settings.settings.eslint))
@@ -107,6 +149,14 @@ export default class Browserify extends Javascript {
       });
   }
 
+  /**
+   * Fake Gulp logging used to provide unified feedback with watchify.
+   *
+   * @param {string} taskName
+   * @param {Undertaker.TaskFunction} task
+   * @param {TaskCallback} done
+   * @protected
+   */
   protected _fakeGulpTask(taskName: string, task: Undertaker.TaskFunction, done: TaskCallback): void {
     const coloredTaskName: string = chalk.cyan(taskName);
     const start = process.hrtime();
@@ -130,7 +180,7 @@ export default class Browserify extends Javascript {
    *
    * @param {NodeJS.ReadableStream} stream
    * @return {NodeJS.ReadableStream}
-   * @private
+   * @protected
    */
   protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     stream = stream.pipe(source(this._settings.filename)).pipe(buffer());
@@ -139,6 +189,12 @@ export default class Browserify extends Javascript {
     return stream;
   }
 
+  /**
+   * Method to change default source for build task.
+   *
+   * @returns {NodeJS.ReadableStream}
+   * @protected
+   */
   protected _hookBuildSrc(): NodeJS.ReadableStream {
     const self = this;
 
@@ -149,6 +205,13 @@ export default class Browserify extends Javascript {
     });
   }
 
+  /**
+   * Method to override lint task.
+   *
+   * @param {TaskCallback} done
+   * @returns {NodeJS.ReadableStream | void}
+   * @protected
+   */
   protected _hookOverrideLint(done?: TaskCallback): void {
     if (this._settings.watch) {
       this._esLint(this._settings.watch, done);
@@ -167,6 +230,13 @@ export default class Browserify extends Javascript {
     );
   }
 
+  /**
+   * Method to override watch task.
+   *
+   * @param {TaskCallback} done
+   * @returns {NodeJS.ReadableStream | void}
+   * @protected
+   */
   protected _hookOverrideWatch(done: TaskCallback): void {
     this.bundler.on("update", () => {
       async.series(

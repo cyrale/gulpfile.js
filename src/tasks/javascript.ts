@@ -174,6 +174,13 @@ export default class Javascript extends TaskExtended {
     }
   }
 
+  /**
+   * Flag current task with error to avoid build execution.
+   *
+   * @param {ESLintErrors} filesWithErrors
+   * @param {TaskCallback} done
+   * @protected
+   */
   protected _esLintResults(filesWithErrors: ESLintErrors, done?: TaskCallback): void {
     const config: Config = Config.getInstance();
 
@@ -237,6 +244,13 @@ export default class Javascript extends TaskExtended {
       );
   }
 
+  /**
+   * Add minification to the stream to generate 2 files: normal and minified.
+   *
+   * @param {NodeJS.ReadableStream} stream
+   * @returns {NodeJS.ReadableStream}
+   * @protected
+   */
   protected _minifyFiles(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     const streamMin: NodeJS.ReadableStream = stream
       .pipe(clone())
@@ -246,6 +260,13 @@ export default class Javascript extends TaskExtended {
     return mergeStream(stream, streamMin);
   }
 
+  /**
+   * Add sourcemap and minification to the stream.
+   *
+   * @param {NodeJS.ReadableStream} stream
+   * @returns {NodeJS.ReadableStream}
+   * @protected
+   */
   protected _sourceMapsAndMinification(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     if (this._settings.sourcemaps) {
       stream = stream.pipe(sourcemapExtractor()).pipe(sourcemaps.init());

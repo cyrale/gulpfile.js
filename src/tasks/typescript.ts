@@ -26,6 +26,11 @@ export default class Typescript extends Browserify {
    */
   public static readonly taskOrder: number = 40;
 
+  /**
+   * Ignore file manager.
+   * @type {Ignore | undefined}
+   * @readonly
+   */
   protected _esLintIgnore: Ignore | undefined;
 
   /**
@@ -65,6 +70,12 @@ export default class Typescript extends Browserify {
     }
   }
 
+  /**
+   * Get bundler only with the necessary to treat TypeScript files.
+   *
+   * @returns {browserify.BrowserifyObject}
+   * @protected
+   */
   protected get bundlerOnly(): BrowserifyObject {
     // Initialize Browserify bundler only.
     if (!this._bundlerOnly) {
@@ -76,6 +87,13 @@ export default class Typescript extends Browserify {
     return this._bundlerOnly;
   }
 
+  /**
+   * Collect files used by bundler.
+   *
+   * @param {string} absolute
+   * @param {string} relative
+   * @protected
+   */
   protected _collectFilesForLint(absolute: string, relative: string): void {
     let ignored = true;
 

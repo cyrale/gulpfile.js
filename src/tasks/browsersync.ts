@@ -70,6 +70,11 @@ export default class Browsersync extends TaskSimple {
     return this._browserSync.stream(settings || {});
   }
 
+  /**
+   * Start task.
+   *
+   * @protected
+   */
   protected _start(): void {
     Config.chdir(this._settings.cwd);
 
@@ -79,6 +84,12 @@ export default class Browsersync extends TaskSimple {
     });
   }
 
+  /**
+   * Watch task.
+   *
+   * @param {TaskCallback} done
+   * @protected
+   */
   protected _watch(done: TaskCallback): void {
     watch(this._settings.watch || [], { cwd: this._settings.cwd }).on("change", (): void => {
       if (this._started) {

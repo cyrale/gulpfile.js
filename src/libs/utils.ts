@@ -4,6 +4,10 @@ export interface TaskNameElements {
   step: string;
 }
 
+/**
+ * List of supported modules.
+ * @type {string[]}
+ */
 export const modules: string[] = [
   "browserify",
   "browsersync",
@@ -32,7 +36,7 @@ export const steps: string[] = ["lint", "build", "watch"];
  * @param {string} task
  * @return {TaskNameElements}
  */
-export const explodeTaskName = (task: string): TaskNameElements => {
+export function explodeTaskName(task: string): TaskNameElements {
   let [type = "", name = "", step = ""] = task.split(":");
 
   if (steps.indexOf(type) >= 0 || type === "start") {
@@ -48,10 +52,17 @@ export const explodeTaskName = (task: string): TaskNameElements => {
     name,
     step,
   };
-};
+}
 
-export const filterObject = (obj: {}, predicate: (o: unknown, key: string) => boolean): {} => {
+/**
+ * Filter object with all elements that pass the test.
+ *
+ * @param {{}} obj
+ * @param {(o: unknown, key: string) => boolean} predicate
+ * @returns {{}}
+ */
+export function filterObject(obj: {}, predicate: (o: unknown, key: string) => boolean): {} {
   return Object.keys(obj)
     .filter(key => predicate((obj as any)[key], key)) // eslint-disable-line @typescript-eslint/no-explicit-any
     .reduce((res, key) => Object.assign(res, { [key]: (obj as any)[key] }), {}); // eslint-disable-line @typescript-eslint/no-explicit-any
-};
+}

@@ -141,6 +141,12 @@ export default class Webpack extends Javascript {
     return stream;
   }
 
+  /**
+   * Method to change default source for lint task.
+   *
+   * @returns {NodeJS.ReadableStream}
+   * @protected
+   */
   protected _hookLintSrc(): NodeJS.ReadableStream {
     const srcLint: string[] = [
       ...(Array.isArray(this._settings.src) ? this._settings.src : [this._settings.src]),

@@ -419,6 +419,13 @@ export default class TaskFactory {
     return (module as any).prototype instanceof TaskSimple;
   }
 
+  /**
+   * Load module linked to task and keep it in cache.
+   *
+   * @param {string} taskName
+   * @returns {unknown}
+   * @private
+   */
   private _loadModule(taskName: string): unknown | void {
     if (!this._modules[taskName]) {
       const module: unknown = TaskFactory._requireModule(taskName);
@@ -433,6 +440,13 @@ export default class TaskFactory {
     return this._modules[taskName];
   }
 
+  /**
+   * Load all modules needed by current settings.
+   *
+   * @param {Options} settings
+   * @returns {ModuleClasses}
+   * @private
+   */
   private _loadModules(settings: ConfigOptions): ModuleClasses {
     const tasks: string[] = Object.keys(settings);
     const progress: CLIProgress.Bar = new CLIProgress.Bar({
@@ -493,6 +507,13 @@ export default class TaskFactory {
     return this._tasks;
   }
 
+  /**
+   * Check if a task run in parallel or series.
+   *
+   * @param {string} taskName
+   * @returns {boolean}
+   * @private
+   */
   private _runInParallel(taskName: string): boolean {
     const { type } = explodeTaskName(taskName);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -530,6 +551,12 @@ export default class TaskFactory {
     return modules.indexOf(taskName) >= 0;
   }
 
+  /**
+   * Display current timestamp like Gulp.
+   *
+   * @returns {string}
+   * @private
+   */
   private static _logTime(): string {
     return "[" + chalk.gray(timestamp("HH:mm:ss")) + "]";
   }
@@ -571,6 +598,12 @@ export default class TaskFactory {
     return tasks.length > 0;
   }
 
+  /**
+   * Import a module linked to a task.
+   * @param {string} taskName
+   * @returns {unknown}
+   * @private
+   */
   private static _requireModule(taskName: string): unknown | void {
     if (!TaskFactory._isValidTask(taskName)) {
       return;

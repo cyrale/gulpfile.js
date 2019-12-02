@@ -63,6 +63,14 @@ export default abstract class Task {
     this._settings = options.settings || {};
   }
 
+  /**
+   * Register task in Gulp.
+   *
+   * @param {string} step
+   * @param {TaskFunction} task
+   * @returns {string}
+   * @protected
+   */
   protected _defineTask(step: string, task: TaskFunction): string {
     const taskName: string = this._taskName(step);
 
