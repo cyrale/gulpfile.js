@@ -1,4 +1,4 @@
-import changeCase from "change-case";
+import { paramCase } from "change-case";
 import { dest } from "gulp";
 import header from "gulp-header";
 import sort from "gulp-sort";
@@ -56,7 +56,7 @@ export default class Sprites extends TaskExtended {
    */
   protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
     const prefix: string = this._settings.settings.prefix === "" ? "" : `${this._settings.settings.prefix}-`;
-    const sanitizedTaskName: string = changeCase.paramCase(this._taskName().replace("sprites:", prefix));
+    const sanitizedTaskName: string = paramCase(this._taskName().replace("sprites:", prefix));
 
     const imgName: string = sanitizedTaskName + ".png";
     const imgNameRetina: string = sanitizedTaskName + "@2x.png";
