@@ -7,6 +7,7 @@ import filter from "lodash/filter";
 import mapValues from "lodash/mapValues";
 import merge from "lodash/merge";
 import reduce from "lodash/reduce";
+import path from "path";
 import PluginError from "plugin-error";
 import prettyBytes from "pretty-bytes";
 import { Transform } from "stream";
@@ -126,6 +127,11 @@ export default class Size {
         if (file.isNull()) {
           cb(null, file);
           return;
+        }
+
+        // Exclude MAP files.
+        if (path.extname(file.path) === ".map") {
+          return cb(null, file);
         }
 
         // Get relative filename regardless of its suffix.
