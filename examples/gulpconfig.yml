@@ -110,7 +110,6 @@ typescript:
       settings:
         eslint:
           configFile: ".eslintrc-ts"
-          useEslintrc: false
           ignorePath: ".eslintignore-ts"
 # ------------------------------------------
 # Images

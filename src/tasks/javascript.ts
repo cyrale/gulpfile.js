@@ -98,7 +98,6 @@ export default class Javascript extends TaskExtended {
         this._settings.settings.eslint = {
           configFile: this._settings.settings.eslint,
           cwd: this._settings.cwd,
-          useEslintrc: false,
         };
       }
     }
