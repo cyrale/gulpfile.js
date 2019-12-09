@@ -209,8 +209,8 @@ sass:
 
 Related documentation:
 
-- [SASS](https://github.com/sass/node-sass#options)
-- [Autoprefixer](https://github.com/postcss/autoprefixer#options)
+- [Sass](https://github.com/sass/node-sass#options)
+- [autoprefixer](https://github.com/postcss/autoprefixer#options)
 - [postcss-assets](https://github.com/borodean/postcss-assets/blob/develop/README.md)
 - [postcss-inline-svg](https://github.com/TrySound/postcss-inline-svg/blob/master/README.md)
 - [postcss-purgecss](https://github.com/FullHuman/postcss-purgecss/blob/master/README.md)
@@ -488,16 +488,16 @@ revision: "build/rev-manifest.json"
 
 Gulp tasks! Built combining the following:
 
-| Feature           | Packages Used                                                                                                         |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Live Updating** | [Browsersync](http://www.browsersync.io/)                                                                             |
+| Feature           | Packages Used                                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Live Updating** | [browsersync](http://www.browsersync.io/)                                                                                 |
 | **Pug**           | [gulp-pug](https://github.com/pugjs/gulp-pug), [gulp-data](https://github.com/colynb/gulp-data), [gulp-pug-linter](https://github.com/ilyakam/gulp-pug-linter) |
-| **SASS**          | [Sass](https://github.com/dlmanning/gulp-sass), [Autoprefixer](https://github.com/postcss/autoprefixer), [postcss-assets](https://github.com/borodean/postcss-assets), [postcss-inline-svg](https://github.com/TrySound/postcss-inline-svg), [postcss-purgecss](https://github.com/FullHuman/postcss-purgecss), [rucksack](https://www.rucksackcss.org/), [CSS MQPacker](https://github.com/hail2u/node-css-mqpacker) |
-| **JavaScript**    | [Babel](http://babeljs.io/), [Terser](https://terser.org/)                                                            |
-| **Browserify**    | [Browserify](http://browserify.org), [Babel](http://babeljs.io/), [Terser](https://terser.org/)                       |
-| **Webpack**       | [Webpack](https://webpack.js.org), [Babel](http://babeljs.io/), [Terser](https://terser.org/)                         |
-| **TypeScript**    | [TypeScript](https://www.typescriptlang.org/), [Babel](http://babeljs.io/), [Terser](https://terser.org/)             |
-| **Images**        | [imagemin](https://www.npmjs.com/package/gulp-imagemin), [imagemin-webp](https://github.com/imagemin/imagemin-webp)   |
-| **Sprites**       | [spritesmith](https://github.com/twolfson/gulp.spritesmith)                                                           |
-| **Fonts**         | [iconfont](https://github.com/nfroidure/gulp-iconfont)                                                                |
-| **SVG store**     | [svstore](https://github.com/w0rm/gulp-svgstore)                                                                      |
+| **SASS**          | [gulp-sass](https://github.com/dlmanning/gulp-sass), [Sass](https://github.com/sass/dart-sass), [gulp-postcss](https://github.com/postcss/gulp-postcss), [autoprefixer](https://github.com/postcss/autoprefixer), [postcss-assets](https://github.com/borodean/postcss-assets), [postcss-inline-svg](https://github.com/TrySound/postcss-inline-svg), [postcss-svgo](https://github.com/cssnano/cssnano), [postcss-purgecss](https://github.com/FullHuman/postcss-purgecss), [rucksack](https://www.rucksackcss.org/), [CSS MQPacker](https://github.com/hail2u/node-css-mqpacker), [cssnano](https://github.com/cssnano/cssnano), [gulp-sass-lint](https://github.com/sasstools/gulp-sass-lint) |
+| **JavaScript**    | [gulp-concat](https://github.com/contra/gulp-concat), [gulp-babel](https://github.com/babel/gulp-babel), [gulp-terser](https://github.com/duan602728596/gulp-terser), [gulp-eslint](https://github.com/adametry/gulp-eslint) |
+| **Browserify**    | [browserify](http://browserify.org), [babelify](https://github.com/babel/babelify), [gulp-terser](https://github.com/duan602728596/gulp-terser), [gulp-eslint](https://github.com/adametry/gulp-eslint) |
+| **Webpack**       | [webpack-stream](https://github.com/shama/webpack-stream), [webpack](https://webpack.js.org), [babelify](https://github.com/babel/babelify), [gulp-terser](https://github.com/duan602728596/gulp-terser), [gulp-eslint](https://github.com/adametry/gulp-eslint) |
+| **TypeScript**    | [browserify](http://browserify.org), [tsify](https://github.com/TypeStrong/tsify), [typescript](https://www.typescriptlang.org/), [babelify](https://github.com/babel/babelify), [gulp-terser](https://github.com/duan602728596/gulp-terser), [gulp-eslint](https://github.com/adametry/gulp-eslint) |
+| **Images**        | [gulp-imagemin](https://www.npmjs.com/package/gulp-imagemin), [imagemin-webp](https://github.com/imagemin/imagemin-webp)  |
+| **Sprites**       | [gulp.spritesmith](https://github.com/twolfson/gulp.spritesmith)                                                          |
+| **Fonts**         | [gulp-iconfont](https://github.com/nfroidure/gulp-iconfont)                                                               |
+| **SVG store**     | [gulp-svgstore](https://github.com/w0rm/gulp-svgstore), [gulp-svgmin](https://github.com/ben-eb/gulp-svgmin)              |
