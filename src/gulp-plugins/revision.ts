@@ -233,7 +233,16 @@ export function pushAndWrite(fileName: string, options: Options): void {
       contents: data,
     });
 
-    fs.writeFile(path.resolve(options.cwd, options.dst), JSON.stringify(_manifest, null, "  "));
+    fs.writeFile(
+      path.resolve(options.cwd, options.dst),
+      JSON.stringify(_manifest, null, "  "),
+      "utf-8",
+      (err: NodeJS.ErrnoException | null): void => {
+        if (err) {
+          throw err;
+        }
+      }
+    );
   });
 }
 
