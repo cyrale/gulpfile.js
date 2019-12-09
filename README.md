@@ -491,7 +491,7 @@ Gulp tasks! Built combining the following:
 | Feature           | Packages Used                                                                                                         |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------- |
 | **Live Updating** | [Browsersync](http://www.browsersync.io/)                                                                             |
-| **Pug**           | [gulp-pug](https://github.com/pugjs/gulp-pug), [gulp-data](https://github.com/colynb/gulp-data)                       |
+| **Pug**           | [gulp-pug](https://github.com/pugjs/gulp-pug), [gulp-data](https://github.com/colynb/gulp-data), [gulp-pug-linter](https://github.com/ilyakam/gulp-pug-linter) |
 | **SASS**          | [Sass](https://github.com/dlmanning/gulp-sass), [Autoprefixer](https://github.com/postcss/autoprefixer), [postcss-assets](https://github.com/borodean/postcss-assets), [postcss-inline-svg](https://github.com/TrySound/postcss-inline-svg), [postcss-purgecss](https://github.com/FullHuman/postcss-purgecss), [rucksack](https://www.rucksackcss.org/), [CSS MQPacker](https://github.com/hail2u/node-css-mqpacker) |
 | **JavaScript**    | [Babel](http://babeljs.io/), [Terser](https://terser.org/)                                                            |
 | **Browserify**    | [Browserify](http://browserify.org), [Babel](http://babeljs.io/), [Terser](https://terser.org/)                       |
