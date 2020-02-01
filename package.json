@@ -59,7 +59,7 @@
     "gulp-filter": "^6.0.0",
     "gulp-header": "^2.0.9",
     "gulp-iconfont": "^10.0.3",
-    "gulp-imagemin": "^6.2.0",
+    "gulp-imagemin": "^7.1.0",
     "gulp-newer": "^1.4.0",
     "gulp-order": "^1.2.0",
     "gulp-plumber": "^1.2.1",
