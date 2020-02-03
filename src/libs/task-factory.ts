@@ -461,12 +461,14 @@ export default class TaskFactory {
     });
 
     for (const [index, task] of tasks.entries()) {
-      this._loadModule(task);
-
-      progress.update(index + 1, {
+      progress.update(index, {
         task: index + 1 >= tasks.length ? " " : tasks[index + 1],
         time: TaskFactory._logTime(),
       });
+
+      this._loadModule(task);
+
+      progress.increment(1);
     }
 
     progress.stop();
