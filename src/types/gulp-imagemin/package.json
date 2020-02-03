@@ -1,0 +1,59 @@
+{
+  "_from": "@types/gulp-imagemin",
+  "_id": "@types/gulp-imagemin@4.1.1",
+  "_inBundle": false,
+  "_integrity": "sha512-jK7bGYae500cCQ74aL41ANeJSnqdZkBaP/+EXOb+X8sfjz+08Tbnc43wlIYSPf8eKv0R5zjQyl60qWCatTc4yQ==",
+  "_location": "/@types/gulp-imagemin",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "@types/gulp-imagemin",
+    "name": "@types/gulp-imagemin",
+    "escapedName": "@types%2fgulp-imagemin",
+    "scope": "@types",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#DEV:/",
+    "#USER"
+  ],
+  "_resolved": "https://registry.npmjs.org/@types/gulp-imagemin/-/gulp-imagemin-4.1.1.tgz",
+  "_shasum": "4c42a7843cc729d265696dc8d0fe52ed7f4b0cd1",
+  "_spec": "@types/gulp-imagemin",
+  "_where": "/home/cyril/projects/other/gulpfile.js",
+  "bugs": {
+    "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/issues"
+  },
+  "bundleDependencies": false,
+  "contributors": [
+    {
+      "name": "Romain Faust",
+      "url": "https://github.com/romain-faust"
+    }
+  ],
+  "dependencies": {
+    "@types/imagemin": "*",
+    "@types/imagemin-gifsicle": "*",
+    "@types/imagemin-jpegtran": "*",
+    "@types/imagemin-optipng": "*",
+    "@types/imagemin-svgo": "*",
+    "@types/node": "*"
+  },
+  "deprecated": false,
+  "description": "TypeScript definitions for gulp-imagemin",
+  "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped#readme",
+  "license": "MIT",
+  "main": "",
+  "name": "@types/gulp-imagemin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DefinitelyTyped/DefinitelyTyped.git"
+  },
+  "scripts": {},
+  "typeScriptVersion": "2.2",
+  "typesPublisherContentHash": "d464b5b42e4b64098deb2503d157185c3f174ad039af0eebecbcb0ab5857d127",
+  "version": "4.1.1"
+}
