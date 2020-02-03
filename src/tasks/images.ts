@@ -177,8 +177,8 @@ export default class Images extends TaskExtended {
    * @private
    */
   private _webPSupportedFile(filename: string): boolean {
-    return (this._webPSupportedExtension as unknown[]).reduce(
-      (acc: boolean, ext: unknown): boolean => acc || minimatch(filename, ext as string),
+    return this._webPSupportedExtension.reduce(
+      (acc: boolean, ext: string): boolean => acc || minimatch(filename, ext),
       false
     );
   }

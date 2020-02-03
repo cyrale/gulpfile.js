@@ -1,5 +1,15 @@
 # gulpfile.js changelog
 
+## 3.2.2
+
+### Breaking changes
+
+- `gulp-imagemin` replace jpegtran by mozjpeg.
+
+### Improvement
+
+- Update dependencies to the latest versions.
+
 ## 3.2.1
 
 - Update dependencies to the latest versions
