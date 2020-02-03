@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import Table from "cli-table";
-import EventEmitter from "events";
+import { EventEmitter } from "events";
 import log from "fancy-log";
 import gzipSize from "gzip-size";
 import filter from "lodash/filter";
