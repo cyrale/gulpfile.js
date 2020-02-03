@@ -1,4 +1,5 @@
-[![Actions Status](https://github.com/cyrale/gulpfile.js/workflows/build/badge.svg)](https://github.com/cyrale/gulpfile.js/actions)
+![build](https://github.com/cyrale/gulpfile.js/workflows/build/badge.svg)
+![publish](https://github.com/cyrale/gulpfile.js/workflows/publish/badge.svg)
 
 ![GitHub top language](https://img.shields.io/github/languages/top/cyrale/gulpfile.js?style=flat-square)
 ![npm](https://img.shields.io/npm/v/gulpfile.js?style=flat-square)
