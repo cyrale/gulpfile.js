@@ -346,7 +346,7 @@ images:
 
 Related documentation:
 
-- [imagemin](https://github.com/sindresorhus/gulp-imagemin#options)
+- [gulp-imagemin](https://github.com/sindresorhus/gulp-imagemin#options)
 - [imagemin-webp](https://github.com/imagemin/imagemin-webp#options)
 
 ### Sprites

@@ -54,7 +54,7 @@ export default class Images extends TaskExtended {
         interlaced: true,
         optimizationLevel: 3,
       },
-      jpegtran: {
+      mozjpeg: {
         progressive: true,
       },
       optipng: {
@@ -128,7 +128,7 @@ export default class Images extends TaskExtended {
     const streamImageMin = stream.pipe(
       imageMin(
         [
-          imageMin.jpegtran(this._settings.settings.jpegtran || {}),
+          imageMin.mozjpeg(this._settings.settings.mozjpeg || {}),
           imageMin.optipng(this._settings.settings.optipng || {}),
           imageMin.gifsicle(this._settings.settings.gifsicle || {}),
           imageMin.svgo(this._settings.settings.svgo || {}),
