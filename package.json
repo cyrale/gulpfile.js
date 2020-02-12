@@ -179,8 +179,7 @@
   "lint-staged": {
     "src/**/*.ts?(x)": [
       "eslint --fix",
-      "prettier --write",
-      "git add"
+      "prettier --write"
     ]
   }
 }
