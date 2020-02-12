@@ -158,6 +158,7 @@ export default class TaskFactory {
         browsersync: this._getUniqueInstanceOf("browsersync"),
       });
     }
+
     return instance;
   }
 

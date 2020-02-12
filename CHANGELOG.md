@@ -1,5 +1,11 @@
 # gulpfile.js changelog
 
+## 3.2.3
+
+### Improvement
+
+- Fix Browsersync to watch correctly external files.
+
 ## 3.2.2
 
 ### Improvement

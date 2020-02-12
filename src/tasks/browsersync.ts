@@ -73,14 +73,16 @@ export default class Browsersync extends TaskSimple {
   /**
    * Start task.
    *
+   * @param {TaskCallback} done
    * @protected
    */
-  protected _start(): void {
+  protected _start(done: TaskCallback): void {
     Config.chdir(this._settings.cwd);
 
     // Initialize Browsersync.
     this._browserSync.init(this._settings.settings, (): void => {
       this._started = true;
+      done();
     });
   }
 
