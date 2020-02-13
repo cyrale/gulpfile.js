@@ -1,5 +1,15 @@
 # gulpfile.js changelog
 
+## 3.2.4
+
+### Improvement
+
+- Pass arguments to the main process.
+
+### Breaking changes
+
+- Remove old binary file.
+
 ## 3.2.3
 
 ### Improvement
