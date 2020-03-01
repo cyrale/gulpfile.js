@@ -5,6 +5,7 @@
 ### Improvement
 
 - Update dependencies to the latest versions.
+- Log changes on external files.
 
 ## 3.2.4
 
