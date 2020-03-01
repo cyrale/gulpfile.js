@@ -1,9 +1,7 @@
 import BrowserSync, { BrowserSyncInstance, StreamOptions } from "browser-sync";
 import chalk from "chalk";
-import log from "fancy-log";
 import { watch } from "gulp";
 import merge from "lodash/merge";
-import prettyHrTime from "pretty-hrtime";
 import through from "through2";
 
 import Config from "../libs/config";
