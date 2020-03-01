@@ -1,5 +1,11 @@
 # gulpfile.js changelog
 
+## 3.2.5
+
+### Improvement
+
+- Update dependencies to the latest versions.
+
 ## 3.2.4
 
 ### Improvement
