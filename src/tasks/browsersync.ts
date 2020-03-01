@@ -1,6 +1,9 @@
 import BrowserSync, { BrowserSyncInstance, StreamOptions } from "browser-sync";
+import chalk from "chalk";
+import log from "fancy-log";
 import { watch } from "gulp";
 import merge from "lodash/merge";
+import prettyHrTime from "pretty-hrtime";
 import through from "through2";
 
 import Config from "../libs/config";
@@ -93,12 +96,20 @@ export default class Browsersync extends TaskSimple {
    * @protected
    */
   protected _watch(done: TaskCallback): void {
-    watch(this._settings.watch || [], { cwd: this._settings.cwd }).on("change", (): void => {
+    watch(this._settings.watch || [], { cwd: this._settings.cwd }).on("change", (path: string): void => {
+      const coloredTaskName: string = chalk.blue(Browsersync.taskName);
+      const coloredStatus: string = chalk.cyan("1 file changed");
+      const coloredPath: string = chalk.magenta(path);
+
+      console.log(`[${coloredTaskName}] ${coloredStatus} (${coloredPath})`);
+
       if (this._started) {
         this._browserSync.reload();
       }
 
       done();
     });
+
+    done();
   }
 }
