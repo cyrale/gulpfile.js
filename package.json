@@ -78,7 +78,7 @@
     "gulp.spritesmith": "^6.11.0",
     "gzip-size": "^5.1.1",
     "ignore": "^5.1.4",
-    "imagemin-webp": "^5.1.0",
+    "imagemin-webp": "^6.0.0",
     "js-yaml": "^3.13.1",
     "lodash": "^4.17.15",
     "merge-stream": "^2.0.0",
