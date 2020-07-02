@@ -72,10 +72,7 @@ function _hash(contents: string | Buffer, hash: Hash): string {
     throw new PluginError("revision", "Expected a Buffer or string");
   }
 
-  return crypto
-    .createHash(hash)
-    .update(contents)
-    .digest("hex");
+  return crypto.createHash(hash).update(contents).digest("hex");
 }
 
 /**
@@ -304,7 +301,7 @@ export default (options: Options): Transform => {
 
       cb();
     },
-    function(cb: TransformCallback): void {
+    function (cb: TransformCallback): void {
       // Merge and write manifest.
       const manifestFile = options.dst;
 

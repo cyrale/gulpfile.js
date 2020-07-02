@@ -39,10 +39,10 @@ export default class Fonts extends TaskExtended {
 
   /**
    * List of glyphs in current font.
-   * @type {any[]}
+   * @type {Record<string, unknown>[]}
    * @private
    */
-  private _glyphs: object[] = [];
+  private _glyphs: Record<string, unknown>[] = [];
 
   /**
    * Task constructor.
@@ -52,7 +52,7 @@ export default class Fonts extends TaskExtended {
   constructor(options: TaskOptions) {
     super(options);
 
-    const defaultSettings: {} = {
+    const defaultSettings: Record<string, unknown> = {
       prefix: "font",
       template: "fontawesome",
     };
@@ -83,15 +83,16 @@ export default class Fonts extends TaskExtended {
         const taskName: string = this._taskName("build");
 
         // Get all variables used in template.
-        const templateVars: {} = {
+        const templateVars: Record<string, unknown> = {
           className: this._sanitizedTaskName,
           fontName: this._sanitizedTaskName,
           fontPath: path.normalize(`${this._settings.settings.sass.rel}/`),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          glyphs: this._glyphs.map((glyph: any): {} => ({
-            codepoint: glyph.unicode[0].charCodeAt(0),
-            name: glyph.name,
-          })),
+          glyphs: this._glyphs.map(
+            (glyph: Record<string, unknown>): Record<string, unknown> => ({
+              codepoint: glyph.unicode[0].charCodeAt(0),
+              name: glyph.name,
+            })
+          ),
           hash: {
             eot: getHashRevision(taskName, `${this._sanitizedTaskName}.eot`),
             svg: getHashRevision(taskName, `${this._sanitizedTaskName}.svg`),
@@ -132,7 +133,7 @@ export default class Fonts extends TaskExtended {
         })
       )
       .pipe(buffer())
-      .on("glyphs", (glyphs: object[]): void => {
+      .on("glyphs", (glyphs: Record<string, unknown>[]): void => {
         this._glyphs = glyphs;
       });
   }

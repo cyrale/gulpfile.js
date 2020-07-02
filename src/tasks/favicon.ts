@@ -33,7 +33,7 @@ export default class Favicon extends TaskExtended {
   constructor(options: TaskOptions) {
     super(options);
 
-    const defaultSettings: {} = {
+    const defaultSettings: Record<string, unknown> = {
       design: {
         androidChrome: {
           assets: {
@@ -163,7 +163,6 @@ export default class Favicon extends TaskExtended {
               const fileName = path.resolve(this._settings.dst, base);
               const rev = getHashRevision(taskName, fileName);
 
-              // eslint-disable-next-line @typescript-eslint/camelcase
               decodedData.favicon.html_code = decodedData.favicon.html_code.replace(url, `${url}?rev=${rev}`);
             }
 

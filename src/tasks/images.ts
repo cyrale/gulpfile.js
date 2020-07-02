@@ -49,7 +49,7 @@ export default class Images extends TaskExtended {
   constructor(options: TaskOptions) {
     super(options);
 
-    const defaultSettings: {} = {
+    const defaultSettings: Record<string, unknown> = {
       gifsicle: {
         interlaced: true,
         optimizationLevel: 3,
@@ -67,7 +67,7 @@ export default class Images extends TaskExtended {
 
     this._settings.settings = merge(defaultSettings, this._settings.settings || {});
 
-    const webpDefaultSettings: {} = {};
+    const webpDefaultSettings: Record<string, unknown> = {};
 
     if (typeof this._settings.settings.webp === "object") {
       this._settings.settings.webp = merge(webpDefaultSettings, this._settings.settings.webp);

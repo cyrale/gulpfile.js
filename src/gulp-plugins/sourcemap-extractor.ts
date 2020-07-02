@@ -12,7 +12,7 @@ const commentSearch = /(?:\/\/[@#][\s]*sourceMappingURL=([^\s'"]+)[\s]*$)|(?:\/\
  * @returns {Transform}
  */
 export default (): Transform => {
-  return through.obj(function(file: File, encoding: string, cb: TransformCallback): void {
+  return through.obj(function (file: File, encoding: string, cb: TransformCallback): void {
     if (file.isNull()) {
       return cb(null, file);
     }

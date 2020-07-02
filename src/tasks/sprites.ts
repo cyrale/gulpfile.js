@@ -40,7 +40,7 @@ export default class Sprites extends TaskExtended {
     // Merge normal and retina image.
     this._settings.src = this._srcGlobs();
 
-    const defaultSettings: {} = {
+    const defaultSettings: Record<string, unknown> = {
       prefix: "sprite",
     };
 
@@ -62,7 +62,7 @@ export default class Sprites extends TaskExtended {
     const imgNameRetina: string = sanitizedTaskName + "@2x.png";
 
     // Normal spritesmith settings.
-    const spritesmithDefaultSettings: {} = {
+    const spritesmithDefaultSettings: Record<string, unknown> = {
       cssName: "_" + sanitizedTaskName + ".scss",
       cssSpritesheetName: "spritesheet-" + sanitizedTaskName,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,7 +84,10 @@ export default class Sprites extends TaskExtended {
       padding: 4,
     };
 
-    let spritesmithSettings: {} = merge(spritesmithDefaultSettings, omit(this._settings.settings, ["prefix", "sass"]));
+    let spritesmithSettings: Record<string, unknown> = merge(
+      spritesmithDefaultSettings,
+      omit(this._settings.settings, ["prefix", "sass"])
+    );
 
     // Add retina treatment to settings.
     if (this._settings["src-1x"] && this._settings["src-2x"]) {

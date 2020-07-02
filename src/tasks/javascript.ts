@@ -106,19 +106,20 @@ export default class Javascript extends TaskExtended {
   /**
    * Display error from Babel, Uglify or other modules used by this task.
    *
-   * @param error
+   * @param {Record<string, unknown>} error
    * @protected
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected _displayError(error: any): void {
+  protected _displayError(error: Record<string, unknown>): void {
     const config: Config = Config.getInstance();
     const cliEngine: CLIEngine = new CLIEngine({});
     const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");
-    const relativeFile: string = path.relative(this._settings.cwd, error.fileName || "");
+    const relativeFile: string = path.relative(this._settings.cwd, (error.fileName as string) || "");
 
     let formattedMessage: CLIEngine.LintResult[] = [];
 
     if (error.cause) {
+      const cause: Record<string, string | number> = error.cause as Record<string, string | number>;
+
       // Message send by gulp-babel
       formattedMessage = [
         {
@@ -128,15 +129,16 @@ export default class Javascript extends TaskExtended {
           fixableWarningCount: 0,
           messages: [
             {
-              column: error.cause.col,
-              line: error.cause.line,
-              message: error.cause.message,
+              column: cause.col as number,
+              line: cause.line as number,
+              message: cause.message as string,
               nodeType: "",
               ruleId: null,
               severity: 2 as Linter.Severity,
               source: null,
             },
           ],
+          usedDeprecatedRules: [],
           warningCount: 0,
         },
       ];
@@ -147,6 +149,8 @@ export default class Javascript extends TaskExtended {
         process.exit(1);
       }
     } else if (error.message && error.loc) {
+      const location: Record<string, number> = error.loc as Record<string, number>;
+
       // Message send by gulp-terser or other
       formattedMessage = [
         {
@@ -156,15 +160,16 @@ export default class Javascript extends TaskExtended {
           fixableWarningCount: 0,
           messages: [
             {
-              column: error.loc ? error.loc.column : 0,
-              line: error.loc ? error.loc.line : 0,
-              message: error.message.replace(error.fileName, relativeFile),
+              column: location.column,
+              line: location.line,
+              message: (error.message as string).replace(error.fileName as string, relativeFile),
               nodeType: "",
               ruleId: null,
               severity: 2 as Linter.Severity,
               source: null,
             },
           ],
+          usedDeprecatedRules: [],
           warningCount: 0,
         },
       ];

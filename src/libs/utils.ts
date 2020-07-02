@@ -57,12 +57,15 @@ export function explodeTaskName(task: string): TaskNameElements {
 /**
  * Filter object with all elements that pass the test.
  *
- * @param {{}} obj
+ * @param {Record<string, unknown>} obj
  * @param {(o: unknown, key: string) => boolean} predicate
- * @returns {{}}
+ * @returns {Record<string, unknown>}
  */
-export function filterObject(obj: {}, predicate: (o: unknown, key: string) => boolean): {} {
+export function filterObject(
+  obj: Record<string, unknown>,
+  predicate: (o: unknown, key: string) => boolean
+): Record<string, unknown> {
   return Object.keys(obj)
-    .filter(key => predicate((obj as any)[key], key)) // eslint-disable-line @typescript-eslint/no-explicit-any
+    .filter((key) => predicate((obj as any)[key], key)) // eslint-disable-line @typescript-eslint/no-explicit-any
     .reduce((res, key) => Object.assign(res, { [key]: (obj as any)[key] }), {}); // eslint-disable-line @typescript-eslint/no-explicit-any
 }

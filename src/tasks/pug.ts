@@ -47,10 +47,10 @@ export default class Pug extends TaskExtended {
   /**
    * Display error from Pug.
    *
-   * @param error
+   * @param {Record<string, unknown>} error
    * @protected
    */
-  protected _displayError(error: unknown): void {
+  protected _displayError(error: Record<string, unknown>): void {
     pugLintStylish([error]);
   }
 
@@ -62,11 +62,11 @@ export default class Pug extends TaskExtended {
    * @protected
    */
   protected _hookBuildBefore(stream: NodeJS.ReadableStream): NodeJS.ReadableStream {
-    let data: unknown[] = [];
+    let data: Record<string, unknown>[] = [];
 
     // Load data from YAML files.
     if (typeof this._settings.settings.data === "string") {
-      data = yaml.safeLoad(fs.readFileSync(this._settings.settings.data, "utf8"));
+      data = yaml.safeLoad(fs.readFileSync(this._settings.settings.data, "utf8")) as Record<string, unknown>[];
     } else if (typeof this._settings.settings.data === "object") {
       for (const filename of this._settings.settings.data as string[]) {
         data = merge(data, yaml.safeLoad(fs.readFileSync(filename, "utf8")));

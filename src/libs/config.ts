@@ -272,7 +272,7 @@ export default class Config {
     if (isEmpty(this._settings)) {
       // Read configuration file.
       try {
-        this._settings = yaml.safeLoad(fs.readFileSync(this._options.configFile, "utf8"));
+        this._settings = yaml.safeLoad(fs.readFileSync(this._options.configFile, "utf8")) as Options;
       } catch (e) {
         log.error(e.stack || String(e));
       }

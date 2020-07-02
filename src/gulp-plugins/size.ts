@@ -200,7 +200,7 @@ export default class Size {
             .pipe(new StreamCounter())
             .on("error", finishSize)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .on("finish", function(this: any) {
+            .on("finish", function (this: any) {
               finishSize(null, this.bytes);
             });
 
@@ -210,7 +210,7 @@ export default class Size {
               .pipe(gzipSize.stream())
               .on("error", finishGzip)
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              .on("end", function(this: any) {
+              .on("end", function (this: any) {
                 finishGzip(null, this.gzipSize);
               });
           }

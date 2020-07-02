@@ -105,7 +105,7 @@ export default class Sass extends TaskExtended {
     this._minifySuffix = ".min";
     this._hideGzippedSize = false;
 
-    const defaultSettings: {} = {
+    const defaultSettings: Record<string, unknown> = {
       SVGO: {},
       assets: {
         cachebuster: isActive(),
@@ -191,18 +191,17 @@ export default class Sass extends TaskExtended {
   /**
    * Display error from SASS.
    *
-   * @param {any} error
+   * @param {Record<string, unknown>} error
    * @protected
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected _displayError(error: any): void {
+  protected _displayError(error: Record<string, unknown>): void {
     const config: Config = Config.getInstance();
 
     log.error(
       sassLint.format([
         {
           errorCount: 1,
-          filePath: error.relativePath || path.relative(this._settings.cwd, error.file || error.path),
+          filePath: error.relativePath || path.relative(this._settings.cwd, (error.file || error.path) as string),
           messages: [
             {
               column: error.column,

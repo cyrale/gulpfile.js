@@ -40,7 +40,7 @@ export default class Webpack extends Javascript {
   constructor(options: TaskOptions) {
     super(options);
 
-    let defaultSettings: {} = {
+    let defaultSettings: Record<string, unknown> = {
       stats: "errors-only",
     };
 
@@ -79,17 +79,16 @@ export default class Webpack extends Javascript {
   /**
    * Display errors from Webpack.
    *
-   * @param {any} error
+   * @param {Record<string, unknown>} error
    * @protected
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected _displayError(error: any): void {
+  protected _displayError(error: Record<string, unknown>): void {
     const cliEngine: CLIEngine = new CLIEngine({});
     const formatter: CLIEngine.Formatter = cliEngine.getFormatter("stylish");
 
     if (error.plugin === "webpack-stream") {
       // Message from webpack
-      const formattedMessage = [
+      const formattedMessage: CLIEngine.LintResult[] = [
         {
           errorCount: 1,
           filePath: "",
@@ -99,13 +98,14 @@ export default class Webpack extends Javascript {
             {
               column: 0,
               line: 0,
-              message: error.message,
+              message: (error.message as string) || "",
               nodeType: "",
               ruleId: null,
               severity: 2 as Linter.Severity,
               source: null,
             },
           ],
+          usedDeprecatedRules: [],
           warningCount: 0,
         },
       ];

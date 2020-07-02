@@ -47,7 +47,7 @@ export default abstract class TaskExtended extends Task {
    * @type {{}}
    * @protected
    */
-  protected _browserSyncSettings: {} = {};
+  protected _browserSyncSettings: Record<string, unknown> = {};
 
   /**
    * Flag to define if task could build sourcemaps.
@@ -166,10 +166,10 @@ export default abstract class TaskExtended extends Task {
   /**
    * Display error.
    *
-   * @param {unknown} error
+   * @param {Record<string, unknown>} error
    * @protected
    */
-  protected _displayError(error: unknown): void {
+  protected _displayError(error: Record<string, unknown>): void {
     log.error(error);
   }
 
@@ -177,11 +177,11 @@ export default abstract class TaskExtended extends Task {
    * Display error and exit if current task is a build task.
    *
    * @param {string} taskName
-   * @param {unknown} error
+   * @param {Record<string, unknown>} error
    * @param {TaskCallback} done
    * @protected
    */
-  protected _displayOrExitOnError(taskName: string, error: unknown, done?: TaskCallback): void {
+  protected _displayOrExitOnError(taskName: string, error: Record<string, unknown>, done?: TaskCallback): void {
     const config: Config = Config.getInstance();
 
     this._displayError(error);
@@ -223,7 +223,9 @@ export default abstract class TaskExtended extends Task {
         });
 
     // Add plumber to avoid exit on error.
-    stream = stream.pipe(plumber((error: unknown): void => this._displayOrExitOnError(taskName, error, done)));
+    stream = stream.pipe(
+      plumber((error: Record<string, unknown>): void => this._displayOrExitOnError(taskName, error, done))
+    );
 
     // If there is no linter or no error, start specific logic of each task.
     if (!this._haveLinter || !this._lintError) {

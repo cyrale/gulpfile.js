@@ -36,7 +36,7 @@ export default class SVGStore extends TaskExtended {
   constructor(options: TaskOptions) {
     super(options);
 
-    const defaultSettings: {} = {
+    const defaultSettings: Record<string, unknown> = {
       svgmin: {
         plugins: [
           {
@@ -107,7 +107,7 @@ export default class SVGStore extends TaskExtended {
           parserOptions: {
             xmlMode: true,
           },
-          run: ($: CheerioStatic, file: Vinyl, done?: Function): void => {
+          run: ($: CheerioStatic, file: Vinyl, done?: () => unknown): void => {
             // Append view and use tags to the SVG.
             let offsetY = 0;
             let maxWidth = 0;

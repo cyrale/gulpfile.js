@@ -48,7 +48,7 @@ export default class Browsersync extends TaskSimple {
   public constructor(options: TaskOptions) {
     super(options);
 
-    const defaultSetting: {} = {
+    const defaultSetting: Record<string, unknown> = {
       open: false,
       ui: false,
     };

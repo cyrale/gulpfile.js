@@ -64,7 +64,7 @@ export default class Browserify extends Javascript {
     super(options);
 
     // Merge settings with default.
-    const defaultSettings: {} = {
+    const defaultSettings: Record<string, unknown> = {
       basedir: this._settings.cwd,
       debug: this._settings.sourcemaps,
       entries: this._settings.src,
@@ -199,7 +199,7 @@ export default class Browserify extends Javascript {
     const self = this;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.bundler.bundle().on("error", function(this: any, err: unknown): void {
+    return this.bundler.bundle().on("error", function (this: any, err: Record<string, unknown>): void {
       self._displayError(err);
       this.emit("end");
     });
