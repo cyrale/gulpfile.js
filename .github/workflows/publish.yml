@@ -10,37 +10,59 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [12.x]
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }} on ${{ matrix.os }}
+        uses: actions/setup-node@v1
         with:
-          node-version: 10
-      - run: npm ci
-      - run: npm run lint
+          node-version: ${{ matrix.node-version }}
+      - name: Install pnpm
+        run: npm add -g pnpm
+      - run: pnpm install
+        env:
+          CI: true
+      - run: pnpm run lint
 
   build:
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [12.x]
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }} on ${{ matrix.os }}
+        uses: actions/setup-node@v1
         with:
-          node-version: 10
-      - run: npm ci
-      - run: npm run build
+          node-version: ${{ matrix.node-version }}
+      - name: Install pnpm
+        run: npm add -g pnpm
+      - run: pnpm install
+        env:
+          CI: true
+      - run: pnpm run build
 
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 10
+          node-version: 12
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
-      - run: npm publish
+      - name: Install pnpm
+        run: npm add -g pnpm
+      - run: pnpm install
+        env:
+          CI: true
+      - run: pnpm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
 
@@ -48,13 +70,17 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 10
+          node-version: 12
           registry-url: https://npm.pkg.github.com/
           scope: '@cyrale'
-      - run: npm ci
-      - run: npm publish --registry=https://npm.pkg.github.com/@cyrale
+      - name: Install pnpm
+        run: npm add -g pnpm
+      - run: pnpm install
+        env:
+          CI: true
+      - run: pnpm publish --registry=https://npm.pkg.github.com/@cyrale
         env:
           NODE_AUTH_TOKEN: ${{secrets.PUBLISH_GITHUB_TOKEN}}
