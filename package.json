@@ -4,7 +4,8 @@
   "description": "Because I spent too much time redoing my gulp tasks.",
   "license": "MIT",
   "engines": {
-    "node": ">=10.14.8"
+    "node": ">=12.18",
+    "pnpm": ">=5.5"
   },
   "homepage": "https://github.com/cyrale/gulpfile.js",
   "repository": {
@@ -16,12 +17,12 @@
     "gulpfile.js": "bin/gulpfile.js.js"
   },
   "scripts": {
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "pnpm run build",
     "build": "tsc --build",
     "watch": "tsc --watch",
     "lint": "eslint \"src/**/*.ts?(x)\"",
     "pretty": "prettier --write \"src/**/*.ts?(x)\"",
-    "examples": "npx gulp --gulpfile dist/app.js --configfile examples/gulpconfig.yml"
+    "examples": "pnpx gulp --gulpfile dist/app.js --configfile examples/gulpconfig.yml"
   },
   "dependencies": {
     "@babel/core": "^7.11.0",
