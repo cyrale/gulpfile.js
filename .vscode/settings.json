@@ -1,0 +1,4 @@
+{
+  "sasslint.enable": true,
+  "stylelint.enable": false
+}
