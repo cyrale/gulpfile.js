@@ -36,7 +36,7 @@
     "babel-loader": "^8.1.0",
     "babelify": "^10.0.0",
     "browser-sync": "^2.26.12",
-    "browserify": "^16.5.2",
+    "browserify": "^17.0.0",
     "chalk": "^4.1.0",
     "change-case": "^4.1.1",
     "cli-progress": "^3.8.2",
