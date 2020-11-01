@@ -167,7 +167,7 @@
     "@types/vinyl-source-stream": "^0.0.30",
     "@types/watchify": "^3.11.0",
     "@types/webpack": "^4.41.21",
-    "@types/webpack-sources": "^1.4.2",
+    "@types/webpack-sources": "^2.0.0",
     "@types/webpack-stream": "^3.2.11",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
