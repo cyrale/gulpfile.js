@@ -21,12 +21,10 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install pnpm
-        run: npm add -g pnpm
-      - run: pnpm install
+      - run: npm install
         env:
           CI: true
-      - run: pnpm run lint
+      - run: npm run lint
 
   build:
     needs: lint
@@ -41,9 +39,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install pnpm
-        run: npm add -g pnpm
-      - run: pnpm install
+      - run: npm install
         env:
           CI: true
-      - run: pnpm run build
+      - run: npm run build
