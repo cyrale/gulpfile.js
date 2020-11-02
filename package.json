@@ -107,7 +107,7 @@
     "through2": "^4.0.2",
     "time-stamp": "^2.2.0",
     "tsify": "^5.0.0",
-    "typescript": "^3.9.7",
+    "typescript": "^4.0.5",
     "vinyl-buffer": "^1.0.1",
     "vinyl-file": "^3.0.0",
     "vinyl-named": "^1.1.0",
