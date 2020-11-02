@@ -197,6 +197,8 @@ export default class Sass extends TaskExtended {
   protected _displayError(error: Record<string, unknown>): void {
     const config: Config = Config.getInstance();
 
+    console.log(error);
+
     log.error(
       sassLint.format([
         {
