@@ -1,4 +1,4 @@
-import cheerio from "gulp-cheerio";
+import gulpCheerio from "gulp-cheerio";
 import rename from "gulp-rename";
 import svgMin from "gulp-svgmin";
 import svgStore from "gulp-svgstore";
@@ -103,23 +103,23 @@ export default class SVGStore extends TaskExtended {
       )
       .pipe(svgStore(this._settings.settings.svgstore))
       .pipe(
-        cheerio({
+        gulpCheerio({
           parserOptions: {
             xmlMode: true,
           },
-          run: ($: CheerioStatic, file: Vinyl, done?: () => unknown): void => {
+          run: ($: cheerio.Root, file: Vinyl, done?: () => unknown): void => {
             // Append view and use tags to the SVG.
             let offsetY = 0;
             let maxWidth = 0;
 
-            const views: Cheerio = $("<views />");
-            const uses: Cheerio = $("<uses />");
+            const views: cheerio.Cheerio = $("<views />");
+            const uses: cheerio.Cheerio = $("<uses />");
 
             $("symbol")
               .filter(
-                (index: number, symbol: CheerioElement): boolean => !!symbol.attribs.id && !!symbol.attribs.viewBox
+                (index: number, symbol: cheerio.Element): boolean => !!symbol.attribs.id && !!symbol.attribs.viewBox
               )
-              .each((index: number, symbol: CheerioElement): void => {
+              .each((index: number, symbol: cheerio.Element): void => {
                 if (this._settings.settings.prefix) {
                   symbol.attribs.id = `${this._settings.settings.prefix}-${symbol.attribs.id}`;
                 }
