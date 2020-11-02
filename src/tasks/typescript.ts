@@ -100,9 +100,7 @@ export default class Typescript extends Browserify {
     if (!this._esLintIgnore) {
       this._bundleFiles.push(absolute);
     } else {
-      try {
-        ignored = this._esLintIgnore.ignores(relative);
-      } catch (e) {}
+      ignored = this._esLintIgnore.ignores(relative);
 
       if (!ignored && this._bundleFiles.indexOf(absolute) < 0) this._bundleFiles.push(absolute);
     }

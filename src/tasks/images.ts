@@ -72,7 +72,7 @@ export default class Images extends TaskExtended {
     if (typeof this._settings.settings.webp === "object") {
       this._settings.settings.webp = merge(webpDefaultSettings, this._settings.settings.webp);
     } else {
-      this._settings.settings.webp = !!this._settings.settings.webp ? webpDefaultSettings : false;
+      this._settings.settings.webp = this._settings.settings.webp ? webpDefaultSettings : false;
     }
   }
 

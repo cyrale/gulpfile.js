@@ -1,27 +1,30 @@
 module.exports = {
-  "root": true,
-  "env": {
-    "browser": true,
-    "es6": true,
-    "node": true
+  root: true,
+  env: {
+    browser: true,
+    es6: true,
+    node: true,
   },
-  "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "sourceType": "module"
+  parser: "@typescript-eslint/parser",
+  parserOptions: {
+    sourceType: "module",
   },
-  "extends": [
+  plugins: ["@typescript-eslint"],
+  extends: [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
     "prettier/@typescript-eslint",
-    "plugin:prettier/recommended"
+    "plugin:prettier/recommended",
   ],
-  "rules": {
+  rules: {
     "@typescript-eslint/no-this-alias": [
       "error",
       {
         allowDestructuring: true, // Allow `const { props, state } = this`; false by default
-        allowedNames: ["self"],   // Allow `const self = this`; `[]` by default
+        allowedNames: ["self"], // Allow `const self = this`; `[]` by default
       },
     ],
-    "prettier/prettier": "warn"
+    "prettier/prettier": "warn",
   },
 };

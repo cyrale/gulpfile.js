@@ -149,50 +149,46 @@ export default class Favicon extends TaskExtended {
           throw errorRead;
         }
 
-        try {
-          const decodedData = JSON.parse(data.toString());
+        const decodedData = JSON.parse(data.toString());
 
-          if (isActive()) {
-            // Get generated files and manage revision.
-            const dir = decodedData.files_location.path;
+        if (isActive()) {
+          // Get generated files and manage revision.
+          const dir = decodedData.files_location.path;
 
-            for (const iconURL of decodedData.favicon.files_urls) {
-              const base = path.basename(iconURL);
-              const url = path.join(dir, base);
+          for (const iconURL of decodedData.favicon.files_urls) {
+            const base = path.basename(iconURL);
+            const url = path.join(dir, base);
 
-              const fileName = path.resolve(this._settings.dst, base);
-              const rev = getHashRevision(taskName, fileName);
+            const fileName = path.resolve(this._settings.dst, base);
+            const rev = getHashRevision(taskName, fileName);
 
-              decodedData.favicon.html_code = decodedData.favicon.html_code.replace(url, `${url}?rev=${rev}`);
-            }
-
-            fs.writeFile(
-              markupFile,
-              JSON.stringify(decodedData, null, "  "),
-              (errorWrite: NodeJS.ErrnoException | null): void => {
-                if (errorWrite) {
-                  throw errorWrite;
-                }
-
-                // Update revision file.
-                pushAndWrite(markupFile, {
-                  taskName,
-                  cwd: this._settings.cwd,
-                  dst: this._settings.revision,
-                });
-              }
-            );
+            decodedData.favicon.html_code = decodedData.favicon.html_code.replace(url, `${url}?rev=${rev}`);
           }
 
-          // Check for new version of favicon.
-          favicon.checkForUpdates(decodedData.version, (errorUpdate: unknown): void => {
-            if (errorUpdate) {
-              throw errorUpdate;
+          fs.writeFile(
+            markupFile,
+            JSON.stringify(decodedData, null, "  "),
+            (errorWrite: NodeJS.ErrnoException | null): void => {
+              if (errorWrite) {
+                throw errorWrite;
+              }
+
+              // Update revision file.
+              pushAndWrite(markupFile, {
+                taskName,
+                cwd: this._settings.cwd,
+                dst: this._settings.revision,
+              });
             }
-          });
-        } catch (e) {
-          throw e;
+          );
         }
+
+        // Check for new version of favicon.
+        favicon.checkForUpdates(decodedData.version, (errorUpdate: unknown): void => {
+          if (errorUpdate) {
+            throw errorUpdate;
+          }
+        });
       });
 
       done();
