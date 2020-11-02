@@ -113,7 +113,7 @@
     "vinyl-source-stream": "^2.0.0",
     "vinyl-sourcemaps-apply": "^0.2.1",
     "watchify": "^3.11.1",
-    "webpack": "^4.44.1",
+    "webpack": "^5.3.2",
     "webpack-stream": "^5.2.1"
   },
   "devDependencies": {
