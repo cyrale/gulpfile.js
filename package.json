@@ -132,7 +132,7 @@
     "@types/fibers": "^3.1.0",
     "@types/gulp": "^4.0.6",
     "@types/gulp-babel": "^6.1.29",
-    "@types/gulp-cheerio": "^0.0.32",
+    "@types/gulp-cheerio": "^0.0.33",
     "@types/gulp-concat": "^0.0.32",
     "@types/gulp-filter": "^3.0.33",
     "@types/gulp-header": "^2.0.0",
