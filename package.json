@@ -86,7 +86,7 @@
     "minimist": "^1.2.5",
     "perfectionist": "^2.4.0",
     "plugin-error": "^1.0.1",
-    "postcss": "^7.0.35",
+    "postcss": "^8.2.10",
     "postcss-assets": "^5.0.0",
     "postcss-discard-comments": "^4.0.2",
     "postcss-discard-empty": "^4.0.1",
